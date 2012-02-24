@@ -67,36 +67,6 @@ class SfdcConnection extends AbstractConnection
     }
 
     /**
-     * (PHP 5 &gt;= 5.1.0)<br/>
-     * String representation of object
-     *
-     * @link http://php.net/manual/en/serializable.serialize.php
-     * @return string the string representation of the object or &null;
-     */
-    public function serialize()
-    {
-        return array_merge(parent::serialize(), array(
-            'loginResult' => $this->getLoginResult()
-        ));
-    }
-
-    /**
-     * (PHP 5 &gt;= 5.1.0)<br/>
-     * Constructs the object
-     * @link http://php.net/manual/en/serializable.unserialize.php
-     * @param string $serialized <p>
-     * The string representation of the object.
-     * </p>
-     * @return mixed the original value unserialized.
-     */
-    public function unserialize($serialized)
-    {
-        $data = parent::unserialize($serialized);
-
-        $this->loginResult = $data['loginResult'];
-    }
-
-    /**
      * Returns the login result. Expected to be null unless
      * login() has been called.
      *
@@ -116,4 +86,38 @@ class SfdcConnection extends AbstractConnection
     {
         return null !== $this->loginResult;
     }
+
+    /**
+     * (PHP 5 &gt;= 5.1.0)<br/>
+     * String representation of object
+     *
+     * @link http://php.net/manual/en/serializable.serialize.php
+     * @return string the string representation of the object or &null;
+     */
+    public function serialize()
+    {
+        return serialize(array(
+            'loginResult' => $this->loginResult,
+            '__parentData' => parent::serialize()
+        ));
+    }
+
+    /**
+     * (PHP 5 &gt;= 5.1.0)<br/>
+     * Constructs the object
+     * @link http://php.net/manual/en/serializable.unserialize.php
+     * @param string $serialized <p>
+     * The string representation of the object.
+     * </p>
+     * @return mixed the original value unserialized.
+     */
+    public function unserialize($serialized)
+    {
+        $data = unserialize($serialized);
+
+        $this->loginResult = $data['loginResult'];
+
+        parent::unserialize($data['__parentData']);
+    }
+
 }

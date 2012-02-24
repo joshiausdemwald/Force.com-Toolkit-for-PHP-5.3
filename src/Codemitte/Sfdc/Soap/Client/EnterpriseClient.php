@@ -60,7 +60,7 @@ class EnterpriseClient extends BaseClient
     }
 
     /**
-     * describeLayout()
+     * describeSobject()
      *
      * @param string $sObjectType
      *

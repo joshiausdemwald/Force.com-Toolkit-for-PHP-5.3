@@ -60,21 +60,6 @@ abstract class AbstractConnection implements ConnectionInterface
     private $soapOutputHeaders           = array();
 
     /**
-     * @var callback
-     */
-    private $preProcessArgumentsCallback;
-
-    /**
-     * @var callback
-     */
-    private $preProcessResultCallback;
-
-    /**
-     * @var callback
-     */
-    private $doRequestCallback;
-
-    /**
      * Constructor.
      *
      * @param string $wsdl
@@ -89,31 +74,6 @@ abstract class AbstractConnection implements ConnectionInterface
             'soapVersion' => SOAP_1_2,
 
         ), $options));
-
-        // FILL CALLBACKS
-        $this->preProcessArgumentsCallback = function(array $arguments) { return $arguments; };
-
-        $this->preProcessResultCallback = function($result) { return $result; };
-
-        $this->doRequestCallback = function(SoapClientCommon $client, $request, $location, $action, $version, $one_way = null)
-        {
-            $callable = array($client,'SoapClient::__doRequest');
-
-            $args = array(
-                $request,
-                $location,
-                $action,
-                $version
-            );
-
-            // Perform request as is
-            if (null !== $one_way)
-            {
-                $args[] = $one_way;
-            }
-
-            return call_user_func_array($callable, $args);
-        };
 
         $this->configure($this->options);
     }
@@ -131,42 +91,6 @@ abstract class AbstractConnection implements ConnectionInterface
     }
 
     /**
-     * setPreProcessArgumentsCallback()
-     *
-     * @param callback $callback
-     */
-    public function setPreProcessArgumentsCallback($callback)
-    {
-        $this->soapClient = null;
-
-        $this->preProcessArgumentsCallback = $callback;
-    }
-
-    /**
-     * setPreProcessResult()
-     *
-     * @param callback $callback
-     */
-    public function setPreProcessResultCallback($callback)
-    {
-        $this->soapClient = null;
-
-        $this->preProcessResultCallback = $callback;
-    }
-
-    /**
-     * doRequestCallback()
-     *
-     * @param callback $callback
-     */
-    public function setDoRequestCallback($callback)
-    {
-        $this->soapClient = null;
-
-        $this->doRequestCallback = $callback;
-    }
-
-   /**
      * setWsdl()
      *
      * @param $wsdl
@@ -395,7 +319,7 @@ abstract class AbstractConnection implements ConnectionInterface
     /**
      * Returns the soap client.
      *
-     * @return SoapClient
+     * @return SoapClientCommon
      */
     public function getSoapClient()
     {
@@ -452,13 +376,17 @@ abstract class AbstractConnection implements ConnectionInterface
             }
         }
 
-        return new SoapClientCommon($this->doRequestCallback, $wsdl, array_merge(
-            $this->getOptions(),
-            array(
-                'classmap' => $this->classMap,
-                'typemap' => $this->typeMap
+        return new SoapClientCommon(
+            array($this, 'doRequestCallback'),
+            $wsdl,
+            array_merge(
+                $this->getOptions(),
+                array(
+                    'classmap' => $this->classMap,
+                    'typemap' => $this->typeMap
+                )
             )
-        ));
+        );
     }
 
     /**
@@ -477,7 +405,7 @@ abstract class AbstractConnection implements ConnectionInterface
 
         $result = $soapClient->__soapCall(
             $name,
-            call_user_func($this->preProcessArgumentsCallback, $arguments),
+            $this->preProcessArguments($arguments),
             null, // Options are already set to the SOAP client object
             count($soapHeaders) > 0 ? $soapHeaders : null,
             $this->soapOutputHeaders
@@ -486,7 +414,7 @@ abstract class AbstractConnection implements ConnectionInterface
         // Reset non-permanent input headers
         $this->soapInputHeaders = array();
 
-        return call_user_func($this->preProcessResultCallback, $result);
+        return $this->preProcessResult($result);
     }
 
     /**
@@ -541,11 +469,17 @@ abstract class AbstractConnection implements ConnectionInterface
      */
     public function serialize()
     {
-        return serialize(array(
-            'options' => $this->getOptions(),
-            'wsdl' => $this->getWsdl(),
-            'permanentSoapInputHeaders' => $this->permanentSoapInputHeaders
-        ));
+        $this->soapClient = null;
+
+        $this->soapInputHeaders = array();
+
+        $retVal = array();
+
+        foreach($this AS $key => $value)
+        {
+            $retVal[$key] = $value;
+        }
+        return serialize($retVal);
     }
 
     /**
@@ -560,12 +494,71 @@ abstract class AbstractConnection implements ConnectionInterface
     public function unserialize($serialized)
     {
         $data = unserialize($serialized);
-        $this->options = $data['options'];
-        $this->setWsdl($data['wsdl']);
-        $this->permanentSoapInputHeaders = $data['permanentSoapInputHeaders'];
-        $this->setLocation($this->loginResult->getServerUrl());
 
-        return $data;
+        foreach($data AS $key => $value)
+        {
+            $this->$key = $value;
+        }
+    }
+
+    /**
+     * preProcessArguments()
+     *
+     * @internal
+     *
+     * @param array $arguments
+     *
+     * @return array
+     */
+    public function preProcessArguments(array $arguments)
+    {
+        return $arguments;
+    }
+
+    /**
+     * preProcessResult()
+     *
+     * @internal
+     *
+     * @param $result
+     *
+     * @return mixed
+     */
+    public function preProcessResult($result)
+    {
+        return $result;
+    }
+
+    /**
+     * doRequestCallback()
+     *
+     * @internal
+     * @param SoapClientCommon $client
+     * @param $request
+     * @param $location
+     * @param $action
+     * @param $version
+     * @param null $one_way
+     * @return mixed
+     */
+    public function doRequestCallback(SoapClientCommon $client, $request, $location, $action, $version, $one_way = null)
+    {
+        $callable = array($client, 'parent::__doRequest');
+
+        $args = array(
+            $request,
+            $location,
+            $action,
+            $version
+        );
+
+        // Perform request as is
+        if (null !== $one_way)
+        {
+            $args[] = $one_way;
+        }
+
+        return call_user_func_array($callable, $args);
     }
 
     /**
