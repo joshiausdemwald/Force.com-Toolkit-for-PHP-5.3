@@ -1,10 +1,12 @@
 <?php
 namespace Codemitte\Sfdc\Soap\Mapping\Base;
 
+use Codemitte\Sfdc\Soap\Mapping\ClassInterface;
+
 /**
  * UserInfo
  */
-class GetUserInfoResult
+class GetUserInfoResult implements ClassInterface
 {
     /**
      * @var bool

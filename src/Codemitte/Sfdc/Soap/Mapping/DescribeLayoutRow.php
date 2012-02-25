@@ -1,7 +1,9 @@
 <?php
 namespace Codemitte\Sfdc\Soap\Mapping;
 
-class DescribeLayoutRow
+use Codemitte\Sfdc\Soap\Mapping\ClassInterface;
+
+class DescribeLayoutRow implements ClassInterface
 {
 
   /**

@@ -1,7 +1,9 @@
 <?php
 namespace Codemitte\Sfdc\Soap\Mapping\Base;
 
-class LoginScopeHeader
+use Codemitte\Sfdc\Soap\Mapping\ClassInterface;
+
+class LoginScopeHeader implements ClassInterface
 {
     /**
      *

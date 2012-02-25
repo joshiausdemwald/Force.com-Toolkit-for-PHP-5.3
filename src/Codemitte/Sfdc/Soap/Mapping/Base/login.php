@@ -1,7 +1,9 @@
 <?php
 namespace Codemitte\Sfdc\Soap\Mapping\Base;
 
-class login
+use Codemitte\Sfdc\Soap\Mapping\ClassInterface;
+
+class login implements ClassInterface
 {
     /**
      * @var string $username

@@ -1,7 +1,9 @@
 <?php
 namespace Codemitte\Sfdc\Soap\Mapping;
 
-class DescribeLayoutSection
+use Codemitte\Sfdc\Soap\Mapping\ClassInterface;
+
+class DescribeLayoutSection implements ClassInterface
 {
   /**
    * 

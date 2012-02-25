@@ -23,10 +23,10 @@ class EnterpriseClient extends BaseClient
         $connection->registerClass('DescribeLayoutRow', 'Codemitte\\Sfdc\\Soap\\Mapping\\DescribeLayoutRow');
         $connection->registerClass('DescribeLayoutSection', 'Codemitte\\Sfdc\\Soap\\Mapping\\DescribeLayoutSection');
 
-        $connection->registerType('ID', 'ID');
-        $connection->registerType('QueryLocator', 'QueryLocator');
-        $connection->registerType('StatusCode', 'StatusCode');
-        $connection->registerType('fieldType', 'fieldType');
+        $connection->registerType('ID', 'Codemitte\\Sfdc\\Soap\\Mapping\\Type\\ID');
+        $connection->registerType('QueryLocator', 'Codemitte\\Sfdc\\Soap\\Mapping\\Type\\QueryLocator');
+        $connection->registerType('StatusCode', 'Codemitte\\Sfdc\\Soap\\Mapping\\Type\\StatusCode');
+        $connection->registerType('fieldType', 'Codemitte\\Sfdc\\Soap\\Mapping\\Type\\fieldType');
     }
 
     /**

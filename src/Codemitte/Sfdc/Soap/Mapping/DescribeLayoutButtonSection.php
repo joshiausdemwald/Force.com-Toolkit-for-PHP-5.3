@@ -1,7 +1,9 @@
 <?php
 namespace Codemitte\Sfdc\Soap\Mapping;
 
-class DescribeLayoutButtonSection
+use Codemitte\Sfdc\Soap\Mapping\ClassInterface;
+
+class DescribeLayoutButtonSection implements ClassInterface
 {
 
     /**

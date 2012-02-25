@@ -3,4 +3,6 @@ namespace Codemitte\Sfdc\Soap\Mapping\Base;
 
 use \RuntimeException;
 
-class LoginFault extends RuntimeException { }
+use Codemitte\Sfdc\Soap\Mapping\ClassInterface;
+
+class LoginFault extends RuntimeException implements ClassInterface { }

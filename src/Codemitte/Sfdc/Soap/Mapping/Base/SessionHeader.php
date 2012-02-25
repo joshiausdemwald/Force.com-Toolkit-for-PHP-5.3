@@ -1,7 +1,9 @@
 <?php
 namespace Codemitte\Sfdc\Soap\Mapping\Base;
 
-class SessionHeader
+use Codemitte\Sfdc\Soap\Mapping\ClassInterface;
+
+class SessionHeader implements ClassInterface
 {
 
     /**

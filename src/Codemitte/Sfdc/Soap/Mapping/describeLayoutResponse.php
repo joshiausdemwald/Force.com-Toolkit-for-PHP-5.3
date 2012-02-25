@@ -1,10 +1,12 @@
 <?php
 namespace Codemitte\Sfdc\Soap\Mapping;
 
+use Codemitte\Sfdc\Soap\Mapping\ClassInterface;
+
 /**
  * describeLayoutResponse
  */
-class describeLayoutResponse
+class describeLayoutResponse implements ClassInterface
 {
     /**
      * @var DescribeLayoutResult $result

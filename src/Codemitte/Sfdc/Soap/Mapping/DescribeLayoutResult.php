@@ -1,7 +1,9 @@
 <?php
 namespace Codemitte\Sfdc\Soap\Mapping;
 
-class DescribeLayoutResult
+use Codemitte\Sfdc\Soap\Mapping\ClassInterface;
+
+class DescribeLayoutResult implements ClassInterface
 {
    /**
      * @var array $layouts

@@ -1,10 +1,12 @@
 <?php
 namespace Codemitte\Sfdc\Soap\Mapping\Base;
 
+use Codemitte\Sfdc\Soap\Mapping\ClassInterface;
+
 /**
  * LoginResult
  */
-class LoginResult
+class LoginResult implements ClassInterface
 {
     /**
      * @var string

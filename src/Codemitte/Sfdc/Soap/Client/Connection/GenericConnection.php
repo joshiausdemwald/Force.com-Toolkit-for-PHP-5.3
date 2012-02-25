@@ -15,7 +15,7 @@ use Codemitte\Sfdc\Soap\Client\Connection\SoapClientCommon;
  */
 class GenericConnection implements ConnectionInterface
 {
-    const TYPE_MAP_NAMESPACE = 'Codemitte\\Sfdc\\Soap\\Mapping\\Type';
+    const CLASS_MAP_INTERFACE = 'Codemitte\\Sfdc\\Soap\\Mapping\\ClassInterface';
 
     const TYPE_MAP_INTERFACE = 'Codemitte\\Sfdc\\Soap\\Mapping\\Type\\TypeInterface';
 
@@ -310,19 +310,6 @@ class GenericConnection implements ConnectionInterface
     }
 
     /**
-     * Adds classes to the connection's soap classmap.
-     *
-     * @param string $type
-     * @param string $classname
-     */
-    public function registerClass($type, $classname)
-    {
-        $this->soapClient = null;
-
-        $this->classMap[$type] = $classname;
-    }
-
-    /**
      * Return a list of available functions
      *
      * @return array
@@ -486,18 +473,40 @@ class GenericConnection implements ConnectionInterface
     }
 
     /**
-     * Adds types to the connection's soap typemap.
+     * Adds classes to the connection's soap classmap.
      *
-     * @throws RuntimeException
-     * @param string $namespace
-     * @param string $typename
-     * @param string $class
+     * @param string $type
+     * @param string $classname
      */
-    public function registerType($typename, $class, $namespace = null)
+    public function registerClass($type, $classname)
     {
         $this->soapClient = null;
 
-        $classname = self::TYPE_MAP_NAMESPACE . '\\' . $class;
+        if( ! class_exists($classname))
+        {
+            throw new MappingException(sprintf('Complex type mapping class "%s" does not exist. (Tried to map soap class "%s".)', $classname, $this->getOption('uri') . '.' . $type));
+        }
+
+        if( ! in_array(self::CLASS_MAP_INTERFACE, class_implements($classname)))
+        {
+            throw new MappingException(sprintf('Complex type class "%s" must implement interface "%s"! (Tried to map soap class "%s".)', $classname, self::CLASS_MAP_INTERFACE, $this->getOption('uri') . '.' . $type));
+        }
+
+        $this->classMap[$type] = $classname;
+    }
+
+    /**
+     * Adds types to the connection's soap typemap.
+     *
+     * @throws RuntimeException
+     *
+     * @param string $typename
+     * @param $classname
+     * @param string $namespace
+     */
+    public function registerType($typename, $classname, $namespace = null)
+    {
+        $this->soapClient = null;
 
         if(null === $namespace)
         {
@@ -511,12 +520,12 @@ class GenericConnection implements ConnectionInterface
 
         if( ! class_exists($classname))
         {
-            throw new RuntimeException(sprintf('Class "%s" does not exist!', $class));
+            throw new MappingException(sprintf('Simple type mapping class "%s" does not exist! (Tried to map %s)', $classname, $namespace . '.'. $typename));
         }
 
         if( ! in_array(self::TYPE_MAP_INTERFACE, class_implements($classname)))
         {
-            throw new RuntimeException(sprintf('Type map Class "%s" must implement interface !', $class));
+            throw new MappingException(sprintf('Stimple type mapping class "%s" must implement interface! (Tried to map %s)', $classname, $namespace . '.' . $typename));
         }
 
         // Avoid duplicates
