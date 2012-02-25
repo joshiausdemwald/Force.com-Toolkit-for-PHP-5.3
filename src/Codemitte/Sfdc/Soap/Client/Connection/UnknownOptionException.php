@@ -4,4 +4,4 @@ namespace Codemitte\Sfdc\Soap\Client\Connection;
 /**
  * UnknownSoapClientOptionException
  */
-class UnkownOptionException extends ConnectionException {}
+class UnknownOptionException extends ConnectionException {}

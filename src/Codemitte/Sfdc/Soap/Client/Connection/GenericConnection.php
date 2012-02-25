@@ -4,20 +4,34 @@ namespace Codemitte\Sfdc\Soap\Client\Connection;
 use \BadMethodCallException;
 
 use \SoapHeader;
-use \SoapVar;
-use \SoapParam;
 use \SoapFault;
 
 use Codemitte\Sfdc\Soap\Client\Connection\SoapClientCommon;
 
 /**
- * Abstract connection.
+ * Generic connection.
+ *
+ * Derived from Zend_Soap_Client (@copyright  Copyright (c) 2005-2011 Zend Technologies USA Inc. (http://www.zend.com))
  */
-abstract class AbstractConnection implements ConnectionInterface
+class GenericConnection implements ConnectionInterface
 {
     const TYPE_MAP_NAMESPACE = 'Codemitte\\Sfdc\\Soap\\Mapping\\Type';
 
     const TYPE_MAP_INTERFACE = 'Codemitte\\Sfdc\\Soap\\Mapping\\Type\\TypeInterface';
+
+    const DEFAULT_OPTION_DESERIALIZE_AS_ARRAY = true;
+
+    const DEFAULT_OPTION_ENCODING = 'utf-8';
+
+    const DEFAULT_OPTION_TRACE = true;
+
+    const DEFAULT_OPTION_EXCEPTIONS = true;
+
+    const DEFAULT_OPTION_KEEP_ALIVE = true;
+
+    const DEFAULT_OPTION_CACHE_WSDL = WSDL_CACHE_MEMORY;
+
+    const DEFAULT_OPTION_USER_AGENT = 'Force.com-Toolkit-For-PHP5.3/v0.0.1Beta';
 
     /**
      * @var SoapClientCommon
@@ -69,13 +83,11 @@ abstract class AbstractConnection implements ConnectionInterface
     {
         $this->wsdl = $wsdl;
 
-        $this->setOptions(array_merge(array(
-            'encoding' => 'UTF-8',
-            'soapVersion' => SOAP_1_2,
+        $this->setOption('deserialize_as_array', self::DEFAULT_OPTION_DESERIALIZE_AS_ARRAY);
 
-        ), $options));
+        $this->setOptions($options);
 
-        $this->configure($this->options);
+        $this->configure($options);
     }
 
     /**
@@ -133,7 +145,7 @@ abstract class AbstractConnection implements ConnectionInterface
     {
         $this->soapClient = null;
 
-        $this->options = array_merge_recursive($this->options, $this->normalizeOptions($options));
+        $this->options = array_merge($this->options, $this->normalizeOptions($options));
     }
 
     /**
@@ -156,7 +168,7 @@ abstract class AbstractConnection implements ConnectionInterface
      *
      * @return mixed
      */
-    public function getOption($key)
+    public function getOption($key, $default = null)
     {
         $key = $this->normalizeOption($key);
 
@@ -164,7 +176,7 @@ abstract class AbstractConnection implements ConnectionInterface
         {
             return $this->options[$key];
         }
-        return null;
+        return $default;
     }
 
     /**
@@ -236,40 +248,64 @@ abstract class AbstractConnection implements ConnectionInterface
     /**
      * Retrieve request XML
      *
+     * @throws MissingOptionException
+     *
      * @return string
      */
     public function getLastRequest()
     {
+        if(true !== $this->getOption('trace', self::DEFAULT_OPTION_TRACE))
+        {
+            throw new MissingOptionException('getLastRequest() only works when "trace" option is set to true.');
+        }
         return $this->getSoapClient()->__getLastRequest();
     }
 
     /**
      * Get response XML
      *
+     * @throws MissingOptionException
+     *
      * @return string
      */
     public function getLastResponse()
     {
+        if(true !== $this->getOption('trace', self::DEFAULT_OPTION_TRACE))
+        {
+            throw new MissingOptionException('getLastResponse() only works when "trace" option is set to true.');
+        }
         return $this->getSoapClient()->__getLastResponse();
     }
 
     /**
      * Retrieve request headers
      *
+     * @throws MissingOptionException
+     *
      * @return string
      */
     public function getLastRequestHeaders()
     {
+        if(true !== $this->getOption('trace'))
+        {
+            throw new MissingOptionException('getLastRequestHeaders() only works when "trace" option is set to true.');
+        }
         return $this->getSoapClient()->__getLastRequestHeaders();
     }
 
     /**
      * Retrieve response headers (as string)
      *
+     * @throws MissingOptionException
+     *
      * @return string
      */
     public function getLastResponseHeaders()
     {
+        if(true !== $this->getOption('trace'))
+        {
+            throw new MissingOptionException('getLastResponseHeaders() only works when "trace" option is set to true.');
+        }
         return $this->getSoapClient()->__getLastResponseHeaders();
     }
 
@@ -317,20 +353,6 @@ abstract class AbstractConnection implements ConnectionInterface
     }
 
     /**
-     * Returns the soap client.
-     *
-     * @return SoapClientCommon
-     */
-    public function getSoapClient()
-    {
-        if (null === $this->soapClient)
-        {
-            $this->soapClient = $this->initSoapClientObject();
-        }
-        return $this->soapClient;
-    }
-
-    /**
      * setCookie()
      *
      * @param string $name
@@ -344,6 +366,20 @@ abstract class AbstractConnection implements ConnectionInterface
     }
 
     /**
+     * Returns the soap client.
+     *
+     * @return SoapClientCommon
+     */
+    protected function getSoapClient()
+    {
+        if (null === $this->soapClient)
+        {
+            $this->soapClient = $this->initSoapClientObject();
+        }
+        return $this->soapClient;
+    }
+
+    /**
      * Initialize SOAP Client object
      *
      * @throws Zend_Soap_Client_Exception
@@ -352,6 +388,27 @@ abstract class AbstractConnection implements ConnectionInterface
     protected function initSoapClientObject()
     {
         $wsdl = $this->getWsdl();
+
+        // INJECT DEFAULT OPTIONS
+        $this->options = array_merge(
+            array(
+                 'encoding'      => self::DEFAULT_OPTION_ENCODING,
+                 'soap_version'  => SOAP_1_2,
+                 'features'      => SOAP_SINGLE_ELEMENT_ARRAYS | SOAP_USE_XSI_ARRAY_TYPE,
+                 'trace'         => self::DEFAULT_OPTION_TRACE,
+                 'exceptions'    => self::DEFAULT_OPTION_EXCEPTIONS,
+                 'keep_alive'    => self::DEFAULT_OPTION_CACHE_WSDL,
+                 'cache_wsdl'    => WSDL_CACHE_MEMORY,
+                 'useragent'     => self::DEFAULT_OPTION_USER_AGENT
+            ),
+
+            $this->getOptions(),
+
+            array(
+                 'classmap' => $this->classMap,
+                 'typemap' => $this->typeMap
+            )
+        );
 
         if (null === $wsdl)
         {
@@ -368,35 +425,34 @@ abstract class AbstractConnection implements ConnectionInterface
         {
             if (null !== $this->getOption('use'))
             {
-                throw new RedundantOptionException('"use" parameter only works in non-WSDL mode.');
+                throw new RedundantOptionException('"use" option only works in non-WSDL mode.');
             }
             if (null !== $this->getOption('style'))
             {
-                throw new RedundantOptionException('"style" parameter only works in non-WSDL mode.');
+                throw new RedundantOptionException('"style" option only works in non-WSDL mode.');
             }
         }
 
         return new SoapClientCommon(
             array($this, 'doRequestCallback'),
             $wsdl,
-            array_merge(
-                $this->getOptions(),
-                array(
-                    'classmap' => $this->classMap,
-                    'typemap' => $this->typeMap
-                )
-            )
+            $this->options
         );
     }
 
     /**
-     * Perform a SOAP call.
+     * Performs a soap call to the given $name
+     * action and the $args arguments list.
      *
-     * @param string $name
-     * @param array  $arguments
+     * $args may be an array with named key-value-
+     * pairs or a popo (plain old php object).
+     *
+     * @abstract
+     * @param $name
+     * @param mixed $args
      * @return mixed
      */
-    public function __call($name, $arguments)
+    public function soapCall($name, $arguments)
     {
         $soapClient = $this->getSoapClient();
 
@@ -414,7 +470,19 @@ abstract class AbstractConnection implements ConnectionInterface
         // Reset non-permanent input headers
         $this->soapInputHeaders = array();
 
-        return $this->preProcessResult($result);
+        return $this->postProcessResult($this->preProcessResult($result));
+    }
+
+    /**
+     * "Magic" method for performing soap calls.
+     *
+     * @param string $name
+     * @param array  $arguments
+     * @return mixed
+     */
+    public function __call($name, $arguments)
+    {
+        return $this->soapCall($name, $arguments);
     }
 
     /**
@@ -530,6 +598,25 @@ abstract class AbstractConnection implements ConnectionInterface
     }
 
     /**
+     * @internal
+     *
+     * @param $result
+     *
+     * @return mixed
+     */
+    public function postProcessResult($result)
+    {
+        if(
+            is_object($result) &&
+            $result instanceof \stdClass &&
+            $this->getOption('deserialize_as_array', self::DEFAULT_OPTION_DESERIALIZE_AS_ARRAY))
+        {
+            return (array)$result;
+        }
+        return $result;
+    }
+
+    /**
      * doRequestCallback()
      *
      * @internal
@@ -591,6 +678,9 @@ abstract class AbstractConnection implements ConnectionInterface
     {
         switch ($key)
         {
+            case 'deserializeAsArray':
+            case 'deserialize_as_array':
+                return 'deserialize_as_array';
             case 'trace':
                 return 'trace';
                 break;
@@ -652,6 +742,8 @@ abstract class AbstractConnection implements ConnectionInterface
             case 'userAgent':
             case 'user_agent':
                 return 'user_agent';
+            case 'exceptions':
+                return 'exceptions';
 
             // Not used now
             // case 'connectionTimeout':
@@ -661,5 +753,32 @@ abstract class AbstractConnection implements ConnectionInterface
             default:
                 throw new UnknownOptionException(sprintf('Unknown SOAP client option "%s"', $key));
         }
+    }
+
+    /**
+     * Sets the location of the webservice.
+     * This corresponds to the "location" option
+     * that can be set by calling "setOption('location')".
+     *
+     * Optional in wsdl mode.
+     *
+     * @param string $location
+     */
+    public function setLocation($location)
+    {
+        $this->setOption('location', $location);
+    }
+
+    /**
+     * Returns the webservice location if defined
+     * or null when in wsdl mode (in this case
+     * the location will be introspected).
+     *
+     *
+     * @return string $location
+     */
+    public function getLocation()
+    {
+        return $this->getOption('location');
     }
 }

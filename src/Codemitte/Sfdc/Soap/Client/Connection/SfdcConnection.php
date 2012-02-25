@@ -7,7 +7,7 @@ use Codemitte\Sfdc\Soap\Mapping\Base\login;
 /**
  * Connection
  */
-class SfdcConnection extends AbstractConnection
+class SfdcConnection extends GenericConnection
 {
     /**
      * @var \Codemitte\Sfdc\Soap\Mapping\Base\LoginResult
@@ -25,18 +25,14 @@ class SfdcConnection extends AbstractConnection
     {
         parent::__construct($wsdl);
 
-        $options = array(
-            'features' => SOAP_SINGLE_ELEMENT_ARRAYS | SOAP_USE_XSI_ARRAY_TYPE | SOAP_WAIT_ONE_WAY_CALLS,
-            'keep_alive' => true,
-            'soap_version' => SOAP_1_1
-        );
-
         if(null !== $serviceLocation)
         {
-            $options['location'] = $serviceLocation;
+            $this->setOption('location', $serviceLocation);
         }
 
-        $this->setOptions($options);
+        $this->setOptions(array(
+            'soapVersion' => SOAP_1_1
+        ));
 
         $this->registerClass('GetUserInfoResult', 'Codemitte\\Sfdc\\Soap\\Mapping\\Base\\GetUserInfoResult');
         $this->registerClass('login', 'Codemitte\\Sfdc\\Soap\\Mapping\\Base\\login');
