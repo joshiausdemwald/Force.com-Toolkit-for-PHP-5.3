@@ -2,6 +2,7 @@
 namespace Codemitte\Soap\Client\Connection;
 
 use \BadMethodCallException;
+use \InvalidArgumentException;
 
 use \SoapHeader;
 use \SoapFault AS GenericSoapFault;
@@ -362,8 +363,6 @@ class Connection implements ConnectionInterface
         if($permanent)
         {
             $this->permanentSoapInputHeaders = $headers;
-
-            $this->getSoapClient()->__setSoapHeaders($this->permanentSoapInputHeaders);
         }
         else
         {
@@ -384,8 +383,6 @@ class Connection implements ConnectionInterface
         if ($permanent)
         {
             $this->permanentSoapInputHeaders[] = $header;
-
-            $this->getSoapClient()->__setSoapHeaders($this->permanentSoapInputHeaders);
         }
         else
         {
@@ -426,8 +423,6 @@ class Connection implements ConnectionInterface
      */
     public function resetSoapInputHeaders()
     {
-        $this->getSoapClient()->__setSoapHeaders(null);
-
         $this->permanentSoapInputHeaders = array();
 
         $this->soapInputHeaders = array();
@@ -640,7 +635,7 @@ class Connection implements ConnectionInterface
     {
         $soapClient = $this->getSoapClient();
 
-        $headers = $this->soapInputHeaders;
+        $headers = array_merge($this->permanentSoapInputHeaders, $this->soapInputHeaders);
 
         $this->soapInputHeaders = array();
 

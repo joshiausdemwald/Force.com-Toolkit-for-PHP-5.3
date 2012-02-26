@@ -12,6 +12,11 @@ use \SoapClient;
 class SoapClientCommon extends SoapClient
 {
     /**
+     * @var string $outputHeaders
+     */
+    private $outputHeaders;
+
+    /**
      * doRequest() pre-processing method
      *
      * @var callback
@@ -53,7 +58,24 @@ class SoapClientCommon extends SoapClient
         {
             $params[] = $one_way;
         }
-
         return call_user_func_array($this->doRequestCallback, $params);
+    }
+
+    /**
+     * __SoapCall
+     *
+     * @param $function
+     * @param $arguments
+     * @param array $options
+     * @param null $input_headers
+     * @param null $output_headers
+     */
+    public function __soapCall($function, $arguments, $options = array(), $input_headers = null, &$output_headers = null)
+    {
+        $retVal = parent::__soapCall($function, $arguments, $options, $input_headers, $output_headers);
+
+        $this->outputHeaders = $output_headers;
+
+        return $retVal;
     }
 }

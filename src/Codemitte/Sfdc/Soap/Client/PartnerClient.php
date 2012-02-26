@@ -4,9 +4,9 @@ namespace Codemitte\Sfdc\Soap\Client;
 use Codemitte\Sfdc\Soap\Client\Connection\SfdcConnectionInterface;
 
 /**
- * EnterpriseClient
+ * PartnerClient
  */
-class EnterpriseClient extends API
+class PartnerClient extends API
 {
     /**
      * @param SfdcConnectionInterface $connection
@@ -23,7 +23,6 @@ class EnterpriseClient extends API
      */
     public function getUri()
     {
-        return 'urn:enterprise.soap.sforce.com';
+        return 'urn:partner.soap.sforce.com';
     }
 }
-

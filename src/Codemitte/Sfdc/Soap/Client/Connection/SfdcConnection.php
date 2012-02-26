@@ -182,7 +182,7 @@ class SfdcConnection extends Connection implements SfdcConnectionInterface
      */
     public function login(login $credentials)
     {
-        $response = $this->__call('login', array($credentials));
+        $response = $this->soapCall('login', array($credentials));
 
         $this->loginResult = $response->getResult();
 

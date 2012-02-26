@@ -7,7 +7,7 @@ use \BadMethodCallException;
 
 use Codemitte\Sfdc\Soap\Client\Connection\SfdcConnectionInterface;
 
-use Codemitte\Sfdc\Soap\Mapping\Base\SessionHeader;
+use Codemitte\Sfdc\Soap\Header\SessionHeader;
 /**
  * BaseClient
  *
@@ -36,17 +36,13 @@ abstract class BaseClient implements ClientInterface
 
         $this->connection->setOption('uri', $this->getUri());
 
-        // ADD PERMANENT SESSION HEADER
-        $this->connection->addSoapInputHeader(
-            new \SoapHeader($this->getUri(), 'SessionHeader', new SessionHeader(
-                    $this->connection->getLoginResult()->getSessionId()
-                ),
-                true
-            ),
-            true
-        );
+        $connection->registerClass('SessionHeader', 'Codemitte\\Sfdc\\Soap\\Mapping\\Base\\SessionHeader');
 
-        $this->connection->registerClass('SessionHeader', '\\Codemitte\\Sfdc\\Soap\\Mapping\\Base\\SessionHeader');
+        // ADD PERMANENT SESSION HEADER
+        $this->connection->addSoapInputHeader(new SessionHeader(
+            $this->getUri(),
+            $this->connection->getLoginResult()->getSessionId()
+        ), true);
 
         $this->configure($connection);
     }

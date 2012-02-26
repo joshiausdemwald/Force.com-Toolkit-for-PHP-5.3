@@ -5,16 +5,14 @@ use Codemitte\Sfdc\Soap\Mapping\ClassInterface;
 
 class SessionHeader implements ClassInterface
 {
-
     /**
-     *
      * @var string $sessionId
+     *
      * @access private
      */
     private $sessionId;
 
     /**
-     *
      * @param string $sessionId
      *
      * @access public
