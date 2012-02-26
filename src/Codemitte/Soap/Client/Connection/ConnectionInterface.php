@@ -1,5 +1,5 @@
 <?php
-namespace Codemitte\Sfdc\Soap\Client\Connection;
+namespace Codemitte\Soap\Client\Connection;
 
 use \Serializable;
 use \SoapHeader;
@@ -61,6 +61,40 @@ interface ConnectionInterface extends Serializable
      * @return string $location
      */
     public function getLocation();
+
+    /**
+     * Sets the target namespace of the webservice if in
+     * non-wsdl-mode, overrides in wsdl-mode.
+     *
+     * @abstract
+     *
+     * @param $uri
+     *
+     * @return void
+     */
+    public function setURI($uri);
+
+    /**
+     * Returns the target namespace of the webservice (if
+     * defined, otherwise NULL - it then will be introspected
+     * by the soap client).
+     *
+     * @abstract
+     *
+     * @return string
+     */
+    public function getURI();
+
+    /**
+     * Overrides and sets per-request or permanent soap input headers,
+     * dependent on the $permanent flag.
+     *
+     * @abstract
+     * @param array $header
+     * @param bool $permanent
+     * @return void
+     */
+    public function setSoapInputHeaders(array $headers, $permanent = false);
 
     /**
      * Add SOAP input header

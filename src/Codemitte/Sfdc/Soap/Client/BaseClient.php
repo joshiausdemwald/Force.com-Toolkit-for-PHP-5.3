@@ -5,8 +5,7 @@ use \SoapHeader;
 use \Serializable;
 use \BadMethodCallException;
 
-use Codemitte\Sfdc\Soap\Client\Connection\ConnectionInterface;
-use Codemitte\Sfdc\Soap\Client\Connection\SfdcConnection;
+use Codemitte\Sfdc\Soap\Client\Connection\SfdcConnectionInterface;
 
 use Codemitte\Sfdc\Soap\Mapping\Base\SessionHeader;
 /**
@@ -17,16 +16,16 @@ use Codemitte\Sfdc\Soap\Mapping\Base\SessionHeader;
 abstract class BaseClient implements SoapClientInterface, Serializable
 {
     /**
-     * @var ConnectionInterface
+     * @var SfdcConnectionInterface
      */
     private $connection;
 
     /**
      * Constructor.
      *
-     * @param ConnectionInterface $connection
+     * @param SfdcConnectionInterface $connection
      */
-    public function __construct(ConnectionInterface $connection)
+    public function __construct(SfdcConnectionInterface $connection)
     {
         $this->connection = $connection;
 
@@ -51,16 +50,16 @@ abstract class BaseClient implements SoapClientInterface, Serializable
      * Meant to be overritten by implementations to e.g. register
      * class mappings.
      *
-     * @param ConnectionInterface $connection
+     * @param SfdcConnectionInterface $connection
      */
-    protected function configure(ConnectionInterface $connection) {
+    protected function configure(SfdcConnectionInterface $connection) {
 
     }
 
     /**
      * getConnection()
      *
-     * @return ConnectionInterface
+     * @return SfdcConnectionInterface
      */
     public function getConnection()
     {

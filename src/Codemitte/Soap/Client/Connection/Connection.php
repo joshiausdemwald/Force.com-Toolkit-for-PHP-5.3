@@ -1,19 +1,79 @@
 <?php
-namespace Codemitte\Sfdc\Soap\Client\Connection;
+namespace Codemitte\Soap\Client\Connection;
 
 use \BadMethodCallException;
 
 use \SoapHeader;
-use \SoapFault;
-
-use Codemitte\Sfdc\Soap\Client\Connection\SoapClientCommon;
+use \SoapFault AS GenericSoapFault;
 
 /**
- * Generic connection.
+ * Connection: Generic SOAP Client connection class.
+ *
+ * Options:
+ * An array of options. If working in WSDL mode, this parameter is optional. If working in non-WSDL mode, the "location"
+ * and "uri" options must be set, where location is the URL of the SOAP server to send the request to, and "uri" is the
+ * target namespace of the SOAP service.
+ *
+ * The "style" and "use" options only work in non-WSDL mode. In WSDL mode, they come from the WSDL file.
+ *
+ * Available options:
+ *  - "deserialize_as_array": Deserializes SOAP-Responses as native arrays rather as instances of \stdClass
+ *  - "trace": Trace soap requests and responses so that methods like "getLastResponse()" are enabled to be used and
+ *             faults may be backtraced.
+ *  - "encoding": The encoding option defines internal character encoding. This option does not change the encoding of
+ *                SOAP requests (it is always utf-8), but converts strings into it.
+ *  - "keep_alive": The keep_alive option is a boolean value defining whether to send the Connection: Keep-Alive header
+ *                  or Connection: close.
+ *  - "soap_version": The soap_version option specifies whether to use SOAP 1.1 (default), or SOAP 1.2 client. Use on of
+ *                    the SOAP_X_Y-constants.
+ *  - "compression": For example gzip compression. Code sample: <code>
+ *                   $options = array(
+ *                       'compression' => SOAP_COMPRESSION_ACCEPT | SOAP_COMPRESSION_GZIP | 9 // 9 is the gzip level
+ *                   );</code>.
+ *  - "exceptions": If set to false, soapCall() returns an instance of \SoapFault in the case of an error. Otherwise, an
+ *                  instance of \SoapFault will be thrown as an exception.
+ *  - "connection_timeout": The connection_timeout option defines a timeout in seconds for the connection to the SOAP
+ *                          service. This option does not define a timeout for services with slow responses. To limit
+ *                          the time to wait for calls to finish the default_socket_timeout setting is available.
+ *  - "cache_wsdl": The cache_wsdl option is one of WSDL_CACHE_NONE, WSDL_CACHE_DISK, WSDL_CACHE_MEMORY or
+ *                  WSDL_CACHE_BOTH.
+ *  - "user_agent": The user_agent option specifies string to use in User-Agent header.
+ *  - "stream_context": The stream_context option is a resource for context. Example: <code>
+ *                           $socket_context = stream_context_create(
+ *                                           array('http' =>
+ *                                              array(
+ *                                                  'protocol_version'  => 1.0
+ *                                              )
+ *                                          )
+ *                           );
+ *                           new SoapClient([...],array('stream_context' => $socket_context));</code>
+ * - "features": The features option is a bitmask of SOAP_SINGLE_ELEMENT_ARRAYS, SOAP_USE_XSI_ARRAY_TYPE, SOAP_WAIT_ONE_WAY_CALLS.
+ *
+ * For HTTP authentication, the login and password options can be used to supply credentials.
+ *
+ * For making an HTTP connection through a proxy server, the options "proxy_host", "proxy_port", "proxy_login" and
+ * "proxy_password" are also available. For HTTPS client certificate authentication use "local_cert" and "passphrase"
+ * options. An authentication may be supplied in the authentication option. The authentication method may be
+ * either SOAP_AUTHENTICATION_BASIC (default) or SOAP_AUTHENTICATION_DIGEST.
+ *  - "login": The HTTP auth username.
+ *  - "password": The HTTP auth password.
+ *  - "proxy_host" The proxy hostname.
+ *  - "proxy_port" The proxy hosts's port
+ *  - "proxy_login: The proxy auth username
+ *  - "proxy_password: The proxy auth password
+ *  - "local_cert":
+ *  - "passphrase"
+ *
+ *
+ * PHP SOAP Extension's .ini Options:
+ *   -  soap.wsdl_cache_enabled	1	        aktiviert oder deaktiviert den WSDL-Cache
+ *   -  soap.wsdl_cache_dir	    /tmp	    Verzeichnis für den WSDL-Cache
+ *   -  soap.wsdl_cache_ttl	    86400	    Zeitraum in Sekunden wie lange zwischengespeicherte WSDL-Dateien genutzt werden sollen
+ *   -  soap.wsdl_cache_limit	    5	        maximale Anzahl von WSDL-Dateien, die gespeichert werden können
  *
  * Derived from Zend_Soap_Client (@copyright  Copyright (c) 2005-2011 Zend Technologies USA Inc. (http://www.zend.com))
  */
-class GenericConnection implements ConnectionInterface
+class Connection implements ConnectionInterface
 {
     const CLASS_MAP_INTERFACE = 'Codemitte\\Sfdc\\Soap\\Mapping\\ClassInterface';
 
@@ -27,11 +87,11 @@ class GenericConnection implements ConnectionInterface
 
     const DEFAULT_OPTION_EXCEPTIONS = true;
 
-    const DEFAULT_OPTION_KEEP_ALIVE = true;
-
     const DEFAULT_OPTION_CACHE_WSDL = WSDL_CACHE_MEMORY;
 
     const DEFAULT_OPTION_USER_AGENT = 'Force.com-Toolkit-For-PHP5.3/v0.0.1Beta';
+
+    const DEFAULT_OPTION_KEEP_ALIVE = true;
 
     /**
      * @var SoapClientCommon
@@ -100,6 +160,60 @@ class GenericConnection implements ConnectionInterface
     protected function configure(array $options)
     {
 
+    }
+
+    /**
+     * Sets the location of the webservice.
+     * This corresponds to the "location" option
+     * that can be set by calling "setOption('location')".
+     *
+     * Optional in wsdl mode.
+     *
+     * @param string $location
+     */
+    public function setLocation($location)
+    {
+        $this->setOption('location', $location);
+    }
+
+    /**
+     * Returns the webservice location if defined
+     * or null when in wsdl mode (in this case
+     * the location will be introspected).
+     *
+     *
+     * @return string $location
+     */
+    public function getLocation()
+    {
+        return $this->getOption('location');
+    }
+
+    /**
+     * Sets the target namespace of the webservice if in
+     * non-wsdl-mode, overrides in wsdl-mode.
+     *
+     *
+     * @param $uri
+     *
+     * @return void
+     */
+    public function setURI($uri)
+    {
+        $this->setOption('uri', $uri);
+    }
+
+    /**
+     * Returns the target namespace of the webservice (if
+     * defined, otherwise NULL - it then will be introspected
+     * by the soap client).
+     *
+     *
+     * @return string
+     */
+    public function getURI()
+    {
+        return $this->getOption('uri');
     }
 
     /**
@@ -180,16 +294,43 @@ class GenericConnection implements ConnectionInterface
     }
 
     /**
+     * Overrides and sets per-request or permanent soap input headers,
+     * dependent on the $permanent flag.
+     *
+     * @param array $headers
+     * @param bool $permanent
+     *
+     * @return void
+     */
+    public function setSoapInputHeaders(array $headers, $permanent = false)
+    {
+        if($permanent)
+        {
+            $this->permanentSoapInputHeaders = $headers;
+
+            $this->getSoapClient()->__setSoapHeaders($this->permanentSoapInputHeaders);
+        }
+        else
+        {
+            $this->soapInputHeaders = $headers;
+        }
+    }
+
+    /**
      * Add SOAP input header
      *
      * @param SoapHeader $header
      * @param bool $permanent
+     *
+     * @return void
      */
     public function addSoapInputHeader(SoapHeader $header, $permanent = false)
     {
         if ($permanent)
         {
             $this->permanentSoapInputHeaders[] = $header;
+
+            $this->getSoapClient()->__setSoapHeaders($this->permanentSoapInputHeaders);
         }
         else
         {
@@ -230,6 +371,8 @@ class GenericConnection implements ConnectionInterface
      */
     public function resetSoapInputHeaders()
     {
+        $this->getSoapClient()->__setSoapHeaders(null);
+
         $this->permanentSoapInputHeaders = array();
 
         $this->soapInputHeaders = array();
@@ -384,7 +527,6 @@ class GenericConnection implements ConnectionInterface
                  'features'      => SOAP_SINGLE_ELEMENT_ARRAYS | SOAP_USE_XSI_ARRAY_TYPE,
                  'trace'         => self::DEFAULT_OPTION_TRACE,
                  'exceptions'    => self::DEFAULT_OPTION_EXCEPTIONS,
-                 'keep_alive'    => self::DEFAULT_OPTION_CACHE_WSDL,
                  'cache_wsdl'    => WSDL_CACHE_MEMORY,
                  'useragent'     => self::DEFAULT_OPTION_USER_AGENT
             ),
@@ -443,19 +585,51 @@ class GenericConnection implements ConnectionInterface
     {
         $soapClient = $this->getSoapClient();
 
-        // MERGES BOTH PERMANENT AND NON-PERMANENT HEADERS
-        $soapHeaders = $this->getSoapInputHeaders();
+        $headers = $this->soapInputHeaders;
 
-        $result = $soapClient->__soapCall(
-            $name,
-            $this->preProcessArguments($arguments),
-            null, // Options are already set to the SOAP client object
-            count($soapHeaders) > 0 ? $soapHeaders : null,
-            $this->soapOutputHeaders
-        );
-
-        // Reset non-permanent input headers
         $this->soapInputHeaders = array();
+
+        try
+        {
+            $result = $soapClient->__soapCall(
+                $name,
+                $this->preProcessArguments($arguments),
+                null, // Options are already set to the SOAP client object
+                count($headers) > 0 ? $headers : null,
+                $this->soapOutputHeaders
+            );
+
+            if($result instanceof GenericSoapFault)
+            {
+                return $result;
+            }
+        }
+        catch(GenericSoapFault $e)
+        {
+            $ex = null;
+
+            if(null === $this->getOption('trace'))
+            {
+                $ex = new SoapFault($e);
+            }
+            else
+            {
+                $ex = new TracedSoapFault(
+                    $this->getLastRequest(),
+                    $this->getLastRequestHeaders(),
+                    $this->getLastResponse(),
+                    $this->getLastResponseHeaders(),
+
+                    $e
+                );
+
+                if(true === $this->getOption('exceptions'))
+                {
+                    throw $ex;
+                }
+                return $ex;
+            }
+        }
 
         return $this->postProcessResult($this->preProcessResult($result));
     }
@@ -576,6 +750,11 @@ class GenericConnection implements ConnectionInterface
         {
             $this->$key = $value;
         }
+
+        if(count($this->permanentSoapInputHeaders) > 0)
+        {
+            $this->setSoapInputHeaders($this->permanentSoapInputHeaders, true);
+        }
     }
 
     /**
@@ -690,13 +869,16 @@ class GenericConnection implements ConnectionInterface
             case 'deserializeAsArray':
             case 'deserialize_as_array':
                 return 'deserialize_as_array';
-            case 'trace':
-                return 'trace';
-                break;
             case 'keepAlive':
             case 'keepalive':
             case 'keep_alive':
                 return 'keep_alive';
+            case 'trace':
+                return 'trace';
+            case 'connection_timeout':
+            case 'connectionTimeout':
+            case 'timeout':
+                return 'connection_timeout';
             case 'encoding':
                 return 'encoding';
             case 'soapVersion':
@@ -762,32 +944,5 @@ class GenericConnection implements ConnectionInterface
             default:
                 throw new UnknownOptionException(sprintf('Unknown SOAP client option "%s"', $key));
         }
-    }
-
-    /**
-     * Sets the location of the webservice.
-     * This corresponds to the "location" option
-     * that can be set by calling "setOption('location')".
-     *
-     * Optional in wsdl mode.
-     *
-     * @param string $location
-     */
-    public function setLocation($location)
-    {
-        $this->setOption('location', $location);
-    }
-
-    /**
-     * Returns the webservice location if defined
-     * or null when in wsdl mode (in this case
-     * the location will be introspected).
-     *
-     *
-     * @return string $location
-     */
-    public function getLocation()
-    {
-        return $this->getOption('location');
     }
 }

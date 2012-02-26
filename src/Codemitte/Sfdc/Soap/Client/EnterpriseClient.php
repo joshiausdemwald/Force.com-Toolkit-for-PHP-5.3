@@ -1,7 +1,7 @@
 <?php
 namespace Codemitte\Sfdc\Soap\Client;
 
-use Codemitte\Sfdc\Soap\Client\Connection\ConnectionInterface;
+use Codemitte\Sfdc\Soap\Client\Connection\SfdcConnectionInterface;
 
 /**
  * EnterpriseClient
@@ -9,9 +9,9 @@ use Codemitte\Sfdc\Soap\Client\Connection\ConnectionInterface;
 class EnterpriseClient extends BaseClient
 {
     /**
-     * @param ConnectionInterface $connection
+     * @param SfdcConnectionInterface $connection
      */
-    public function configure(ConnectionInterface $connection)
+    public function configure(SfdcConnectionInterface $connection)
     {
         $connection->registerClass('DescribeLayout', 'Codemitte\\Sfdc\\Soap\\Mapping\\DescribeLayout');
         $connection->registerClass('DescribeLayoutButton', 'Codemitte\\Sfdc\\Soap\\Mapping\\DescribeLayoutButton');

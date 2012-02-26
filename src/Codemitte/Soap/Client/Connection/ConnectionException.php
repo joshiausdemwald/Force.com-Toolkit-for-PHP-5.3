@@ -1,5 +1,5 @@
 <?php
-namespace Codemitte\Sfdc\Soap\Client\Connection;
+namespace Codemitte\Soap\Client\Connection;
 
 use \RuntimeException;
 

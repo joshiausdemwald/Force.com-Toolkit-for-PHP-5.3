@@ -1,13 +1,15 @@
 <?php
 namespace Codemitte\Sfdc\Soap\Client\Connection;
 
+use Codemitte\Soap\Client\Connection\Connection;
+
 use Codemitte\Sfdc\Soap\Mapping\Base\login;
 
 
 /**
  * Connection
  */
-class SfdcConnection extends GenericConnection
+class SfdcConnection extends Connection implements SfdcConnectionInterface
 {
     /**
      * @var \Codemitte\Sfdc\Soap\Mapping\Base\LoginResult
@@ -31,7 +33,9 @@ class SfdcConnection extends GenericConnection
         }
 
         $this->setOptions(array(
-            'soapVersion' => SOAP_1_1
+            'soap_version' => SOAP_1_1,
+            'exceptions' => true,
+            'trace' => true
         ));
 
         $this->registerClass('GetUserInfoResult', 'Codemitte\\Sfdc\\Soap\\Mapping\\Base\\GetUserInfoResult');
@@ -44,8 +48,6 @@ class SfdcConnection extends GenericConnection
 
     /**
      * Registers the given username to the specified organisation.
-     *
-     * @abstract
      *
      * @param login $credentials
      *
