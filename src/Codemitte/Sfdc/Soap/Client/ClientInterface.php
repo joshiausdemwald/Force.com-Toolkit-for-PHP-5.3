@@ -1,13 +1,15 @@
 <?php
 namespace Codemitte\Sfdc\Soap\Client;
 
+use \Serializable;
+
 /**
  * SoapClientInterface
  *
  * @interface
  * @abstract
  */
-interface SoapClientInterface
+interface ClientInterface extends Serializable
 {
     /**
      * Returns the Connection to the soap service as an extension
@@ -25,4 +27,14 @@ interface SoapClientInterface
      * @return string $uri
      */
     public function getUri();
+
+    /**
+     * Returns the API version the client implementation
+     * fits to.
+     *
+     * @abstract
+     *
+     * @return string
+     */
+    public function getAPIVersion();
 }

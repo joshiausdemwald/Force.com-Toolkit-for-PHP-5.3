@@ -136,6 +136,61 @@ class Connection implements ConnectionInterface
     /**
      * Constructor.
      *
+     * Options:
+     * An array of options. If working in WSDL mode, this parameter is optional. If working in non-WSDL mode, the "location"
+     * and "uri" options must be set, where location is the URL of the SOAP server to send the request to, and "uri" is the
+     * target namespace of the SOAP service.
+     *
+     * The "style" and "use" options only work in non-WSDL mode. In WSDL mode, they come from the WSDL file.
+     *
+     * Available options:
+     *  - "deserialize_as_array": Deserializes SOAP-Responses as native arrays rather as instances of \stdClass
+     *  - "trace": Trace soap requests and responses so that methods like "getLastResponse()" are enabled to be used and
+     *             faults may be backtraced.
+     *  - "encoding": The encoding option defines internal character encoding. This option does not change the encoding of
+     *                SOAP requests (it is always utf-8), but converts strings into it.
+     *  - "keep_alive": The keep_alive option is a boolean value defining whether to send the Connection: Keep-Alive header
+     *                  or Connection: close.
+     *  - "soap_version": The soap_version option specifies whether to use SOAP 1.1 (default), or SOAP 1.2 client. Use on of
+     *                    the SOAP_X_Y-constants.
+     *  - "compression": For example gzip compression. Code sample: <code>
+     *                   $options = array(
+     *                       'compression' => SOAP_COMPRESSION_ACCEPT | SOAP_COMPRESSION_GZIP | 9 // 9 is the gzip level
+     *                   );</code>.
+     *  - "exceptions": If set to false, soapCall() returns an instance of \SoapFault in the case of an error. Otherwise, an
+     *                  instance of \SoapFault will be thrown as an exception.
+     *  - "connection_timeout": The connection_timeout option defines a timeout in seconds for the connection to the SOAP
+     *                          service. This option does not define a timeout for services with slow responses. To limit
+     *                          the time to wait for calls to finish the default_socket_timeout setting is available.
+     *  - "cache_wsdl": The cache_wsdl option is one of WSDL_CACHE_NONE, WSDL_CACHE_DISK, WSDL_CACHE_MEMORY or
+     *                  WSDL_CACHE_BOTH.
+     *  - "user_agent": The user_agent option specifies string to use in User-Agent header.
+     *  - "stream_context": The stream_context option is a resource for context. Example: <code>
+     *                           $socket_context = stream_context_create(
+     *                                           array('http' =>
+     *                                              array(
+     *                                                  'protocol_version'  => 1.0
+     *                                              )
+     *                                          )
+     *                           );
+     *                           new SoapClient([...],array('stream_context' => $socket_context));</code>
+     * - "features": The features option is a bitmask of SOAP_SINGLE_ELEMENT_ARRAYS, SOAP_USE_XSI_ARRAY_TYPE, SOAP_WAIT_ONE_WAY_CALLS.
+     *
+     * For HTTP authentication, the login and password options can be used to supply credentials.
+     *
+     * For making an HTTP connection through a proxy server, the options "proxy_host", "proxy_port", "proxy_login" and
+     * "proxy_password" are also available. For HTTPS client certificate authentication use "local_cert" and "passphrase"
+     * options. An authentication may be supplied in the authentication option. The authentication method may be
+     * either SOAP_AUTHENTICATION_BASIC (default) or SOAP_AUTHENTICATION_DIGEST.
+     *  - "login": The HTTP auth username.
+     *  - "password": The HTTP auth password.
+     *  - "proxy_host" The proxy hostname.
+     *  - "proxy_port" The proxy hosts's port
+     *  - "proxy_login: The proxy auth username
+     *  - "proxy_password: The proxy auth password
+     *  - "local_cert":
+     *  - "passphrase"
+     *
      * @param string $wsdl
      * @param array $options
      */
@@ -397,7 +452,7 @@ class Connection implements ConnectionInterface
      */
     public function getLastRequest()
     {
-        if(true !== $this->getOption('trace', self::DEFAULT_OPTION_TRACE))
+        if( ! $this->getOption('trace', self::DEFAULT_OPTION_TRACE))
         {
             throw new MissingOptionException('getLastRequest() only works when "trace" option is set to true.');
         }
@@ -413,7 +468,7 @@ class Connection implements ConnectionInterface
      */
     public function getLastResponse()
     {
-        if(true !== $this->getOption('trace', self::DEFAULT_OPTION_TRACE))
+        if( ! $this->getOption('trace', self::DEFAULT_OPTION_TRACE))
         {
             throw new MissingOptionException('getLastResponse() only works when "trace" option is set to true.');
         }
@@ -429,7 +484,7 @@ class Connection implements ConnectionInterface
      */
     public function getLastRequestHeaders()
     {
-        if(true !== $this->getOption('trace'))
+        if( ! $this->getOption('trace'))
         {
             throw new MissingOptionException('getLastRequestHeaders() only works when "trace" option is set to true.');
         }
@@ -445,7 +500,7 @@ class Connection implements ConnectionInterface
      */
     public function getLastResponseHeaders()
     {
-        if(true !== $this->getOption('trace'))
+        if( ! $this->getOption('trace'))
         {
             throw new MissingOptionException('getLastResponseHeaders() only works when "trace" option is set to true.');
         }

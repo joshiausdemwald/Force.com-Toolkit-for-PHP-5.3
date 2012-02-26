@@ -13,8 +13,13 @@ use Codemitte\Sfdc\Soap\Mapping\Base\SessionHeader;
  *
  * @abstract
  */
-abstract class BaseClient implements SoapClientInterface, Serializable
+abstract class BaseClient implements ClientInterface
 {
+    /**
+     * @var string
+     */
+    const API_VERSION = '23.0';
+
     /**
      * @var SfdcConnectionInterface
      */
@@ -64,6 +69,17 @@ abstract class BaseClient implements SoapClientInterface, Serializable
     public function getConnection()
     {
         return $this->connection;
+    }
+
+    /**
+     * Returns the API version the client implementation
+     * fits to.
+     *
+     * @return string
+     */
+    public function getAPIVersion()
+    {
+        return self::API_VERSION;
     }
 
     /**
