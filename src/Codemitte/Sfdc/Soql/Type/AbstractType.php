@@ -20,74 +20,50 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-namespace Codemitte\Soap\Client\Connection;
-
-use \SoapFault AS GenericSoapFault;
+namespace Codemitte\Sfdc\Soql\Type;
 
 /**
- * SoapFault
+ * AbstractType
  *
  * @author Johannes Heinen <johannes.heinen@code-mitte.de>
  * @copyright 2012 code mitte GmbH, Cologne, Germany
- * @package Soap
+ * @package Sfdc
+ * @subpackage Soql
  */
-class SoapFault extends GenericSoapFault
+abstract class AbstractType implements TypeInterface
 {
-    private $faultcode;
-
-    private $faultstring;
-
-    private $faultactor;
-
-    private $faultdetail;
-
-    private $faultname;
-
-    private $headerfault;
+    /**
+     * @var mixed
+     */
+    protected $value;
 
     /**
-     * @param GenericSoapFault $fault
+     * Constructor.
+     *
+     * @param mixed $value
      */
-    public function __construct(GenericSoapFault $fault)
+    public function __construct($value)
     {
-        $this->faultcode = $fault->faultcode;
-        $this->faultstring = $fault->faultstring;
-        $this->faultactor = @$fault->faultactor;
-        $this->faultdetail  = @$fault->detail;
-        $this->faultname = @$fault->_name;
-        $this->headerfault = @$fault->headerfault;
-
-        parent::__construct($this->faultcode, $this->faultstring, $this->faultactor, $this->faultdetail, $this->faultname, $this->headerfault);
+        $this->value = $value;
     }
 
-    public function getFaultactor()
+    /**
+     * getPHPValue()
+     *
+     * @return mixed
+     */
+    public function getPHPValue()
     {
-        return $this->faultactor;
+        return $this->value;
     }
 
-    public function getFaultcode()
+    /**
+     * __toString()
+     *
+     * @return string
+     */
+    public function __toString()
     {
-        return $this->faultcode;
+        return (string) $this->value;
     }
-
-    public function getFaultdetail()
-    {
-        return $this->faultdetail;
-    }
-
-    public function getFaultname()
-    {
-        return $this->faultname;
-    }
-
-    public function getFaultstring()
-    {
-        return $this->faultstring;
-    }
-
-    public function getHeaderfault()
-    {
-        return $this->headerfault;
-    }
-
 }

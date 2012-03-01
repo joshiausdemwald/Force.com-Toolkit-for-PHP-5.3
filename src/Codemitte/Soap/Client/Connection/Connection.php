@@ -658,6 +658,8 @@ class Connection implements ConnectionInterface
      */
     public function soapCall($name, $arguments)
     {
+        $args = func_get_args();
+
         $soapClient = $this->getSoapClient();
 
         $headers = array_merge($this->permanentSoapInputHeaders, $this->soapInputHeaders);

@@ -71,7 +71,7 @@ abstract class API extends BaseClient
      */
     public function describeLayout($sObjectType, array $recordTypeIds = null)
     {
-        return $this->getConnection()->__call(
+        return $this->getConnection()->soapCall(
             'describeLayout',
             array(
                  array(
@@ -93,12 +93,38 @@ abstract class API extends BaseClient
      */
     public function describeSobject($sObjectType)
     {
-        return $this->getConnection()->__call(
+        return $this->getConnection()->soapCall(
             'describeSobject',
             array(
                  array(
                      'sObjectType' => $sObjectType
                  )
+            )
+        );
+    }
+
+    /**
+     * query()
+     *
+     * Performs an arbitrary soql query against
+     * the database.
+     *
+     * <soap:header use="literal" message="tns:Header" part="SessionHeader"/>
+     * <soap:header use="literal" message="tns:Header" part="CallOptions"/>
+     * <soap:header use="literal" message="tns:Header" part="QueryOptions"/>
+     * <soap:header use="literal" message="tns:Header" part="MruHeader"/>
+     * <soap:header use="literal" message="tns:Header" part="PackageVersionHeader"/>
+     * <soap:body parts="parameters" use="literal"/>
+     *
+     * @param string $queryString
+     * @return mixed $result
+     */
+    public function query($queryString, array $params = array())
+    {
+        return $this->getConnection()->soapCall(
+            'query',
+            array(
+                array('queryString' => $queryString),
             )
         );
     }

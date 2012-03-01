@@ -20,74 +20,59 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-namespace Codemitte\Soap\Client\Connection;
+namespace Codemitte\Sfdc\Soql\Type;
 
-use \SoapFault AS GenericSoapFault;
+use \DateTime as PHPDateTime;
+use \DateTimeZone;
 
 /**
- * SoapFault
+ * Date
  *
  * @author Johannes Heinen <johannes.heinen@code-mitte.de>
  * @copyright 2012 code mitte GmbH, Cologne, Germany
- * @package Soap
+ * @package Sfdc
+ * @subpackage Soql
+ *
+ * @var \DateTime $value
  */
-class SoapFault extends GenericSoapFault
+class Date extends PHPDateTime implements TypeInterface
 {
-    private $faultcode;
-
-    private $faultstring;
-
-    private $faultactor;
-
-    private $faultdetail;
-
-    private $faultname;
-
-    private $headerfault;
+    /**
+     * Constructor.
+     *
+     * @param $time
+     * @param DateTimeZone $timezone
+     */
+    public function __construct($time = "now", DateTimeZone $timezone = null)
+    {
+        parent::__construct($time, $timezone);
+    }
 
     /**
-     * @param GenericSoapFault $fault
+     * toSoql()
+     *
+     * Formats:
+     *   Date only	YYYY-MM-DD	1999-01-01
+     *   Date, time, and time zone offset
+     *   YYYY-MM-DDThh:mm:ss+hh:mm
+     *   YYYY-MM-DDThh:mm:ss-hh:mm
+     *   YYYY-MM-DDThh:mm:ssZ
+     *   1999-01-01T23:01:01+01:00
+     *   1999-01-01T23:01:01-08:00
+     *   1999-01-01T23:01:01Z
      */
-    public function __construct(GenericSoapFault $fault)
+    public function toSOQL()
     {
-        $this->faultcode = $fault->faultcode;
-        $this->faultstring = $fault->faultstring;
-        $this->faultactor = @$fault->faultactor;
-        $this->faultdetail  = @$fault->detail;
-        $this->faultname = @$fault->_name;
-        $this->headerfault = @$fault->headerfault;
-
-        parent::__construct($this->faultcode, $this->faultstring, $this->faultactor, $this->faultdetail, $this->faultname, $this->headerfault);
+        return $this->format('Y-m-d');
     }
 
-    public function getFaultactor()
+    public function getPHPValue()
     {
-        return $this->faultactor;
+        return $this;
     }
 
-    public function getFaultcode()
+    public function __toString()
     {
-        return $this->faultcode;
+        return (string)$this;
     }
-
-    public function getFaultdetail()
-    {
-        return $this->faultdetail;
-    }
-
-    public function getFaultname()
-    {
-        return $this->faultname;
-    }
-
-    public function getFaultstring()
-    {
-        return $this->faultstring;
-    }
-
-    public function getHeaderfault()
-    {
-        return $this->headerfault;
-    }
-
 }

@@ -20,74 +20,48 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-namespace Codemitte\Soap\Client\Connection;
-
-use \SoapFault AS GenericSoapFault;
+namespace Codemitte\Sfdc\Soql\Type;
 
 /**
- * SoapFault
+ * DateTime
  *
  * @author Johannes Heinen <johannes.heinen@code-mitte.de>
  * @copyright 2012 code mitte GmbH, Cologne, Germany
- * @package Soap
+ * @package Sfdc
+ * @subpackage Soql
  */
-class SoapFault extends GenericSoapFault
+class DateTime extends Date
 {
-    private $faultcode;
-
-    private $faultstring;
-
-    private $faultactor;
-
-    private $faultdetail;
-
-    private $faultname;
-
-    private $headerfault;
+    /**
+     * Date only	YYYY-MM-DD	1999-01-01
+     * Date, time, and time zone offset
+     * YYYY-MM-DDThh:mm:ss+hh:mm
+     * YYYY-MM-DDThh:mm:ss-hh:mm
+     * YYYY-MM-DDThh:mm:ssZ
+     * 1999-01-01T23:01:01+01:00
+     * 1999-01-01T23:01:01-08:00
+     *
+     * @return string
+     */
+    public function toSOQL()
+    {
+        return $this->format('Y-m-d\TH:m:s') . $this->getOffsetString($this->getOffset());
+    }
 
     /**
-     * @param GenericSoapFault $fault
+     * getOffsetString()
+     *
+     * @param param integer $offset : In seconds (Result of getOffset())
+     * @return string
      */
-    public function __construct(GenericSoapFault $fault)
+    public function getOffsetString($offset)
     {
-        $this->faultcode = $fault->faultcode;
-        $this->faultstring = $fault->faultstring;
-        $this->faultactor = @$fault->faultactor;
-        $this->faultdetail  = @$fault->detail;
-        $this->faultname = @$fault->_name;
-        $this->headerfault = @$fault->headerfault;
+        $oAbs = abs($offset);
 
-        parent::__construct($this->faultcode, $this->faultstring, $this->faultactor, $this->faultdetail, $this->faultname, $this->headerfault);
+        $oh = (int)$oAbs / 3600;
+
+        $om = (int)(($oAbs - $oh * 3600) / 60);
+
+        return ($offset < 0 ? '-' : '+') . ($oh > 10 ? '' : '0') . $oh . ':' . ($om > 10 ? '' : '0') . $om;
     }
-
-    public function getFaultactor()
-    {
-        return $this->faultactor;
-    }
-
-    public function getFaultcode()
-    {
-        return $this->faultcode;
-    }
-
-    public function getFaultdetail()
-    {
-        return $this->faultdetail;
-    }
-
-    public function getFaultname()
-    {
-        return $this->faultname;
-    }
-
-    public function getFaultstring()
-    {
-        return $this->faultstring;
-    }
-
-    public function getHeaderfault()
-    {
-        return $this->headerfault;
-    }
-
 }

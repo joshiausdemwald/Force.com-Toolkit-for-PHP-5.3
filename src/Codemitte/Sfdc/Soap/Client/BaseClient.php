@@ -79,7 +79,8 @@ abstract class BaseClient implements ClientInterface
      *
      * @param SfdcConnectionInterface $connection
      */
-    protected function configure(SfdcConnectionInterface $connection) {
+    protected function configure(SfdcConnectionInterface $connection)
+    {
 
     }
 

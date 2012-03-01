@@ -20,74 +20,59 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-namespace Codemitte\Soap\Client\Connection;
-
-use \SoapFault AS GenericSoapFault;
+namespace Codemitte\Sfdc\Soql\Parser;
 
 /**
- * SoapFault
+ * Token POPO
  *
  * @author Johannes Heinen <johannes.heinen@code-mitte.de>
  * @copyright 2012 code mitte GmbH, Cologne, Germany
- * @package Soap
+ * @package Sfdc
+ * @subpackage Soql
  */
-class SoapFault extends GenericSoapFault
+class Token
 {
-    private $faultcode;
-
-    private $faultstring;
-
-    private $faultactor;
-
-    private $faultdetail;
-
-    private $faultname;
-
-    private $headerfault;
+    /**
+     * The token type, one of
+     * the QueryParserInterface::* constants.
+     *
+     * @var string
+     */
+    private $type;
 
     /**
-     * @param GenericSoapFault $fault
+     * The name, e.g. of a variable
+     * @var string
      */
-    public function __construct(GenericSoapFault $fault)
-    {
-        $this->faultcode = $fault->faultcode;
-        $this->faultstring = $fault->faultstring;
-        $this->faultactor = @$fault->faultactor;
-        $this->faultdetail  = @$fault->detail;
-        $this->faultname = @$fault->_name;
-        $this->headerfault = @$fault->headerfault;
+    private $value;
 
-        parent::__construct($this->faultcode, $this->faultstring, $this->faultactor, $this->faultdetail, $this->faultname, $this->headerfault);
+    /**
+     * Constructor.
+     *
+     * @param string $type
+     * @param string $prefix
+     * @param string $value
+     * @param string $rest
+     */
+    public function __construct($type, $value)
+    {
+        $this->type     = $type;
+        $this->value    = $value;
     }
 
-    public function getFaultactor()
+    /**
+     * @return string
+     */
+    public function getValue()
     {
-        return $this->faultactor;
+        return $this->value;
     }
 
-    public function getFaultcode()
+    /**
+     * @return string
+     */
+    public function getType()
     {
-        return $this->faultcode;
+        return $this->type;
     }
-
-    public function getFaultdetail()
-    {
-        return $this->faultdetail;
-    }
-
-    public function getFaultname()
-    {
-        return $this->faultname;
-    }
-
-    public function getFaultstring()
-    {
-        return $this->faultstring;
-    }
-
-    public function getHeaderfault()
-    {
-        return $this->headerfault;
-    }
-
 }
