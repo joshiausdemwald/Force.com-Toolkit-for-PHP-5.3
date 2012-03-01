@@ -34,7 +34,7 @@ interface TokenizerInterface
 {
     const TOKEN_ANON_VARIABLE = 'ANON_VARIABLE';
 
-    const TOKEN_NAMED_VARIABLE = 'NAMED_VARIABLE';
+    const TOKEN_EXPRESSION = 'EXPRESSION';
 
     const TOKEN_SOQL_PART = 'SOQL_PART';
 

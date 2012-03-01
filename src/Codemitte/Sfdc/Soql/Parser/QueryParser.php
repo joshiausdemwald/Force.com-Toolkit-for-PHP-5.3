@@ -107,11 +107,11 @@ class QueryParser implements QueryParserInterface
 
                     $var_counter++;
                     break;
-                case TokenizerInterface::TOKEN_NAMED_VARIABLE:
+                case TokenizerInterface::TOKEN_EXPRESSION:
 
                     if($var_counter > 0)
                     {
-                        throw new ParseException(sprintf('It is not allowed to mix named and anonymous varables in SOQL-queries in col %s.', $soql, $t_col));
+                        throw new ParseException(sprintf('It is not allowed to expressions and anonymous variables in SOQL-queries in col %s.', $soql, $t_col));
                     }
 
                     $param = $this->getParameter($t_value, $parameters);
@@ -150,6 +150,7 @@ class QueryParser implements QueryParserInterface
     {
         if( ! array_key_exists($name, $params))
         {
+            // "COMPLEX" Expression, @TODO: Check if it is a variable
             return new Expression($name);
         }
 

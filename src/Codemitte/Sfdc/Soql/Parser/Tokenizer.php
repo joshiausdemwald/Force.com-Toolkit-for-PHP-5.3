@@ -112,14 +112,8 @@ class Tokenizer implements TokenizerInterface
                         $expression .= ')';
                     }
                     elseif(
-                        ! preg_match('#^[a-zA-Z0-9_\)\(\.]$#', $char) ||
-                        $klCnt === 0 && $char === ')'
+                        preg_match('#^[\ \),\r\n]$#', $char) && $klCnt === 0
                     ) {
-                        if($char === ')' && $prevChar === '.')
-                        {
-                            throw new TokenException(sprintf('Illegal expression at %s', $pos));
-                        }
-
                         $pos --;
                         $valid = true;
                         break;
@@ -141,23 +135,8 @@ class Tokenizer implements TokenizerInterface
                     throw new TokenException(sprintf('Error parsing SOQL-Query "%s": Illegal expression at %s.', $stream, $orig_pos));
                 }
 
-                /*$rest = substr($stream, $pos + 1);
-
-                if(preg_match('#^\w+?\b#', $rest, $result))
-                {
-                    $name = $result[0];
-
-                    $tokens[] = array(
-                        TokenizerInterface::TOKEN_NAMED_VARIABLE,
-                        $name,
-                        $pos
-                    );
-
-                    $pos += strlen($name);
-                }*/
-
                 $tokens[] = array(
-                    TokenizerInterface::TOKEN_NAMED_VARIABLE,
+                    TokenizerInterface::TOKEN_EXPRESSION,
                     $expression,
                     $pos
                 );
