@@ -22,55 +22,19 @@
 
 namespace Codemitte\Sfdc\Soql\Type;
 
-use \Traversable;
-
 /**
+ * Boolean
+ *
  * @author Johannes Heinen <johannes.heinen@code-mitte.de>
  * @copyright 2012 code mitte GmbH, Cologne, Germany
  * @package Sfdc
  * @subpackage Soql
+ *
  */
-class TypeFactory
+class Boolean extends AbstractType
 {
-    /**
-     * Takes skalar params and/or arrays and converts
-     * it into salesforce types.
-     *
-     * @param mixed $param
-     *
-     * @return TypeInterface $salesforceType
-     */
-    public function create($param)
+    public function toSOQL()
     {
-        if(is_bool($param))
-        {
-            return new Boolean($param);
-        }
-        if(is_string($param))
-        {
-            if(preg_match('#^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$#', $param))
-            {
-                return new Date($param);
-            }
-            if(false !== ($time = strtotime($param)))
-            {
-                return new DateTime($time);
-            }
-            return new String($param);
-        }
-        if(is_array($param) || $param instanceof Traversable)
-        {
-            $retVal = array();
-
-            foreach($param AS $key => $value)
-            {
-                $retVal[$key] = $this->create($value);
-            }
-            return new ArrayType($retVal);
-        }
-        if(is_numeric($param))
-        {
-            return new Number($param);
-        }
+        return $this->value ? 'true' : 'false';
     }
 }

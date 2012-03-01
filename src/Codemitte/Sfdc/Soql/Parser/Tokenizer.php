@@ -86,7 +86,62 @@ class Tokenizer implements TokenizerInterface
             },
             ':' => function($stream, $pos, $buf, $tokens)
             {
-                $rest = substr($stream, $pos + 1);
+                $orig_pos = $pos;
+
+                $expression = '';
+
+                $valid = false;
+
+                $klCnt = 0;
+
+                // BEGIN AT SECOND CHAR, FIRST IS A "'"
+                for($pos++; $len = strlen($stream), $pos < $len; $pos ++)
+                {
+                    $char = $stream[$pos];
+
+                    $prevChar = $stream[$pos-1];
+
+                    if('(' === $char)
+                    {
+                        $klCnt ++;
+                        $expression .= '(';
+                    }
+                    elseif($klCnt > 0  && ')' === $char)
+                    {
+                        $klCnt --;
+                        $expression .= ')';
+                    }
+                    elseif(
+                        ! preg_match('#^[a-zA-Z0-9_\)\(\.]$#', $char) ||
+                        $klCnt === 0 && $char === ')'
+                    ) {
+                        if($char === ')' && $prevChar === '.')
+                        {
+                            throw new TokenException(sprintf('Illegal expression at %s', $pos));
+                        }
+
+                        $pos --;
+                        $valid = true;
+                        break;
+                    }
+                    else
+                    {
+                        $expression .= $char;
+                    }
+                }
+
+                // END OF LINE
+                if($pos === $len -1)
+                {
+                    $valid = true;
+                }
+
+                if( ! $valid)
+                {
+                    throw new TokenException(sprintf('Error parsing SOQL-Query "%s": Illegal expression at %s.', $stream, $orig_pos));
+                }
+
+                /*$rest = substr($stream, $pos + 1);
 
                 if(preg_match('#^\w+?\b#', $rest, $result))
                 {
@@ -99,7 +154,13 @@ class Tokenizer implements TokenizerInterface
                     );
 
                     $pos += strlen($name);
-                }
+                }*/
+
+                $tokens[] = array(
+                    TokenizerInterface::TOKEN_NAMED_VARIABLE,
+                    $expression,
+                    $pos
+                );
             },
             '?' => function($stream, $pos, $buf, $tokens)
             {

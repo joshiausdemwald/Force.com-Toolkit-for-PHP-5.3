@@ -26,9 +26,7 @@ use \Traversable;
 
 use Codemitte\Sfdc\Soql\Type\TypeFactory;
 use Codemitte\Sfdc\Soql\Type\TypeInterface;
-use Codemitte\Sfdc\Soql\Type\String;
-use Codemitte\Sfdc\Soql\Type\Number;
-use Codemitte\Sfdc\Soql\Type\ArrayType;
+use Codemitte\Sfdc\Soql\Type\Expression;
 
 /**
  * QueryParser
@@ -150,9 +148,9 @@ class QueryParser implements QueryParserInterface
      */
     private function getParameter($name, array $params)
     {
-        if(! array_key_exists($name, $params))
+        if( ! array_key_exists($name, $params))
         {
-            throw new ParseException(sprintf('Parameter with index "%s" does not exist.', $name));
+            return new Expression($name);
         }
 
         $param = $params[$name];
