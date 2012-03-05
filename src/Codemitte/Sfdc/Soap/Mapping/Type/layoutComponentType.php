@@ -8,8 +8,5 @@ class layoutComponentType extends GenericType
   const SControl = 'SControl';
   const EmptySpace = 'EmptySpace';
 
-  public static function getName()
-  {
-      return 'layoutComponentType';
-  }
+
 }

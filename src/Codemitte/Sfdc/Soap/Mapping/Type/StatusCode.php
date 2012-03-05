@@ -174,8 +174,5 @@ class StatusCode extends GenericType
     const WEBLINK_SIZE_LIMIT_EXCEEDED = 'WEBLINK_SIZE_LIMIT_EXCEEDED';
     const WRONG_CONTROLLER_TYPE = 'WRONG_CONTROLLER_TYPE';
     
-    static function getName()
-    {
-        return 'StatusCode';
-    }
+
 }

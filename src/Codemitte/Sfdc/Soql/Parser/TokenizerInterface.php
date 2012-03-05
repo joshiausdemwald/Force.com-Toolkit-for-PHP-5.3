@@ -53,4 +53,35 @@ interface TokenizerInterface
      * @return array $tokens
      */
     public function getTokens($input);
+
+    /**
+     * Adds a mark at the specified position of the
+     * input stream.
+     *
+     * @abstract
+     *
+     * @param string $stream
+     * @param int $position
+     * @param string $markerl
+     * @param string $markerr
+     */
+    public function addMark($stream, $position, $markerl = '--->', $markerr = '<---');
+
+    /**
+     * Registers a token definition.
+     *
+     * @abstract
+     *
+     * @param string $token
+     * @param callable$definition
+     */
+    public function registerTokenDefinition($token, $definition);
+
+    /**
+     * Registers a bunch of token definitions.
+     *
+     * @abstract
+     * @param array $definitions
+     */
+    public function registerTokenDefinitions(array $definitions);
 }

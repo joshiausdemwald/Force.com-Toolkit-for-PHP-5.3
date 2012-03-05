@@ -13,9 +13,4 @@ class soapType extends GenericType
     const xsddateTime = 'xsd:dateTime';
     const xsdtime = 'xsd:time';
     const xsdanyType = 'xsd:anyType';
-
-    public static function getName()
-    {
-        return 'soapType';
-    }
 }

@@ -8,10 +8,4 @@ class EmailPriority extends GenericType
   const Normal = 'Normal';
   const Low = 'Low';
   const Lowest = 'Lowest';
-
-    public static function getName()
-    {
-        return 'GenericType';
-    }
-
 }

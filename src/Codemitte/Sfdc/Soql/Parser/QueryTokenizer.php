@@ -22,6 +22,8 @@
 
 namespace Codemitte\Sfdc\Soql\Parser;
 
+use InvalidArgumentException;
+
 /**
  * Tokenizer
  *
@@ -33,7 +35,7 @@ namespace Codemitte\Sfdc\Soql\Parser;
 class QueryTokenizer implements TokenizerInterface
 {
     /**
-     * @var array
+     * @var array<Callable>
      */
     private $tokenDefinitions;
 
@@ -43,107 +45,39 @@ class QueryTokenizer implements TokenizerInterface
      */
     public function __construct()
     {
-        $this->tokenDefinitions = array
+        $this->registerTokenDefinitions(array
         (
             // STRING LITERAL
-            '\'' => function($stream, $pos, $tokens, $tokenizer)
-            {
-                $literal = '';
-
-                $valid = false;
-
-                $orig_pos = $pos;
-
-                // BEGIN AT SECOND CHAR, FIRST IS A "'"
-                for($pos++; $len = strlen($stream), $pos < $len; $pos ++)
-                {
-                    $char = $stream[$pos];
-
-                    $prevChar = $stream[$pos-1];
-
-                    if(
-                        TokenizerInterface::LITERAL_TERMINATOR === $char &&
-                        TokenizerInterface::ESCAPE_CHAR !== $prevChar)
-                    {
-                        $valid = true;
-                        break;
-                    }
-                    else
-                    {
-                        $literal .= $char;
-                    }
-                }
-
-                if( ! $valid)
-                {
-                    throw new TokenException(sprintf('Error parsing SOQL-Query "%s": Unterminated string literal at column %s: "%s".', $tokenizer->addMark($pos,$stream), $pos, $literal));
-                }
-
-                $tokens[] = array(
-                    TokenizerInterface::TOKEN_LITERAL,
-                    $literal,
-                    $orig_pos
-                );
-            },
+            '\'' => array($this, 'parseLiteral'),
 
             // EXPRESSION/VARIABLE
-            ':' => function($stream, $pos, $tokens, array $tokenDefinitions, QueryTokenizer $tokenizer)
-            {
-                $orig_pos = $pos;
+            ':' => array($this, 'parseExpression')
+        ));
+    }
 
-                $valid = false;
+    /**
+     * Registers a token definition.
+     *
+     * @param callable $definition
+     * @param string $token
+     */
+    public function registerTokenDefinition($definition, $token)
+    {
+        if( ! is_callable($definition))
+        {
+            throw new InvalidArgumentException('registerTokenDefinition(): $definition must be a valid PHP-callable.');
+        }
+        $this->tokenDefinitions[$token] = $definition;
+    }
 
-                $expression = '';
-
-                // BEGIN AT SECOND CHAR, FIRST IS A "'"
-                for($pos++; $len = strlen($stream), $pos < $len; $pos ++)
-                {
-                    $char = $stream[$pos];
-
-                    // END OF EXPRESSION
-                    if(preg_match('#[\W]#', $char))
-                    {
-                        if(0 === strlen($expression))
-                        {
-                            throw new TokenException(sprintf('Error parsing SOQL-Query "%s": Empty expression at column %s', $tokenizer->addMark($stream, $pos), $pos));
-                        }
-                        $pos --;
-
-                        $valid = true;
-
-                        $tokens[] = array(
-                            TokenizerInterface::TOKEN_EXPRESSION,
-                            $expression,
-                            $pos
-                        );
-
-                        $expression = '';
-
-                        break;
-                    }
-                    else
-                    {
-                        $expression .= $char;
-                    }
-                }
-
-                // END OF LINE
-                if(strlen($expression) > 0)
-                {
-                    $valid = true;
-                    $tokens[] = array(
-                        TokenizerInterface::TOKEN_EXPRESSION,
-                        $char,
-                        $pos
-                    );
-                }
-
-                if( ! $valid)
-                {
-                    throw new TokenException(sprintf('Error parsing SOQL-Query "%s": Illegal expression at %s.', $stream, $orig_pos));
-                }
-            }
-        );
+    /**
+     * Registers a bunch of token definitions.
+     *
+     * @param array <callable> $definitions
+     */
+    public function registerTokenDefinitions(array $definitions)
+    {
+        array_walk($definitions, array($this, 'registerTokenDefinition'));
     }
 
     /**
@@ -183,11 +117,10 @@ class QueryTokenizer implements TokenizerInterface
                 }
 
                 call_user_func_array($this->tokenDefinitions[$currentChar], array(
-                    & $input,
-                    & $i,
-                    & $tokens,
-                    $this->tokenDefinitions,
-                    $this
+                    & $input,  // stream
+                    & $i,      // pos
+                    & $tokens, // array tokens
+                    $this      // tokenizerInterface
                 ));
 
                 $buf = '';
@@ -223,7 +156,119 @@ class QueryTokenizer implements TokenizerInterface
     {
         return substr($stream, 0, $position - 1) . $markerl . $stream[$position - 1] . $markerr . substr($stream, $position);
     }
+
+    /**
+     * TokenParser 1: Literals
+     * @static
+     * @param $stream
+     * @param $pos
+     * @param $tokens
+     * @param $tokenizer
+     * @throws TokenException
+     */
+    public function parseLiteral($stream, $pos, array $tokens, TokenizerInterface $tokenizer)
+    {
+        $literal = '';
+
+        $valid = false;
+
+        $orig_pos = $pos;
+
+        // BEGIN AT SECOND CHAR, FIRST IS A "'"
+        for($pos++; $len = strlen($stream), $pos < $len; $pos ++)
+        {
+            $char = $stream[$pos];
+
+            $prevChar = $stream[$pos-1];
+
+            if(
+                TokenizerInterface::LITERAL_TERMINATOR === $char &&
+                TokenizerInterface::ESCAPE_CHAR !== $prevChar
+            ) {
+                $valid = true;
+                break;
+            }
+            else
+            {
+                $literal .= $char;
+            }
+        }
+
+        if( ! $valid)
+        {
+            throw new TokenException(sprintf('Error parsing SOQL-Query "%s": Unterminated string literal at column %s: "%s".', $tokenizer->addMark($pos,$stream), $pos, $literal));
+        }
+
+        $tokens[] = array(
+            TokenizerInterface::TOKEN_LITERAL,
+            $literal,
+            $orig_pos
+        );
+    }
+
+    /**
+     * TokenParser 2: Parses expressions.
+     *
+     * @param string $stream
+     * @param int $pos
+     * @param array $tokens
+     * @param QueryTokenizer $tokenizer
+     * @throws TokenException
+     */
+    public function parseExpression($stream, $pos, array $tokens, TokenizerInterface $tokenizer)
+    {
+        $orig_pos = $pos;
+
+        $valid = false;
+
+        $expression = '';
+
+        // BEGIN AT SECOND CHAR, FIRST IS A "'"
+        for($pos++; $len = strlen($stream), $pos < $len; $pos ++)
+        {
+            $char = $stream[$pos];
+
+            // END OF EXPRESSION
+            if(preg_match('#[\W]#', $char))
+            {
+                if(0 === strlen($expression))
+                {
+                    throw new TokenException(sprintf('Error parsing SOQL-Query "%s": Empty expression at column %s', $tokenizer->addMark($stream, $pos), $pos));
+                }
+                $pos --;
+
+                $valid = true;
+
+                $tokens[] = array(
+                    TokenizerInterface::TOKEN_EXPRESSION,
+                    $expression,
+                    $pos
+                );
+
+                $expression = '';
+
+                break;
+            }
+            else
+            {
+                $expression .= $char;
+            }
+        }
+
+        // END OF LINE
+        if(strlen($expression) > 0)
+        {
+            $valid = true;
+            $tokens[] = array(
+                TokenizerInterface::TOKEN_EXPRESSION,
+                $char,
+                $pos
+            );
+        }
+
+        if( ! $valid)
+        {
+            throw new TokenException(sprintf('Error parsing SOQL-Query "%s": Illegal expression at %s.', $stream, $orig_pos));
+        }
+    }
 }
-
-
-

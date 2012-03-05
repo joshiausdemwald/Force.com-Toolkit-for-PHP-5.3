@@ -610,7 +610,7 @@ class Connection implements ConnectionInterface
 
             array(
                  'classmap' => $this->classMap,
-                 'typemap' => $this->typeMap
+                 'typemap' => array_values($this->typeMap)
             )
         );
 
@@ -751,6 +751,7 @@ class Connection implements ConnectionInterface
      *
      * @throws RuntimeException
      *
+     * @param string $namespaceUri
      * @param string $typename
      * @param $classname
      * @param string $namespace

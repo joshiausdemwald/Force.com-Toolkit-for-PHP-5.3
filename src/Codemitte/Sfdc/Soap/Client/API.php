@@ -23,6 +23,8 @@
 namespace Codemitte\Sfdc\Soap\Client;
 
 use Codemitte\Sfdc\Soap\Client\Connection\SfdcConnectionInterface;
+use Codemitte\Sfdc\Soql\Parser\QueryParserInterface;
+use Codemitte\Sfdc\Soql\Parser\QueryParser;
 
 /**
  * API. Abstract parent class for partner
@@ -37,9 +39,27 @@ use Codemitte\Sfdc\Soap\Client\Connection\SfdcConnectionInterface;
  */
 abstract class API extends BaseClient
 {
-    public function __construct(SfdcConnectionInterface $connection)
+    /**
+     * @var QueryParser|null
+     */
+    protected $queryParser;
+
+    /**
+     * Constructor.
+     *
+     * @param Connection\SfdcConnectionInterface $connection
+     * @param QueryParser|null $queryParser
+     */
+    public function __construct(SfdcConnectionInterface $connection, QueryParserInterface $queryParser = null)
     {
         parent::__construct($connection);
+
+        if(null === $queryParser)
+        {
+            $queryParser = new QueryParser();
+        }
+
+        $this->queryParser = $queryParser;
 
         $connection->registerClass('DescribeLayout', 'Codemitte\\Sfdc\\Soap\\Mapping\\DescribeLayout');
         $connection->registerClass('DescribeLayoutButton', 'Codemitte\\Sfdc\\Soap\\Mapping\\DescribeLayoutButton');
@@ -50,16 +70,17 @@ abstract class API extends BaseClient
         $connection->registerClass('DescribeLayoutResult', 'Codemitte\\Sfdc\\Soap\\Mapping\\DescribeLayoutResult');
         $connection->registerClass('DescribeLayoutRow', 'Codemitte\\Sfdc\\Soap\\Mapping\\DescribeLayoutRow');
         $connection->registerClass('DescribeLayoutSection', 'Codemitte\\Sfdc\\Soap\\Mapping\\DescribeLayoutSection');
+        $connection->registerClass('QueryResult', 'Codemitte\\Sfdc\\Soap\\Mapping\\QueryResult');
 
-        $connection->registerType('ID', 'Codemitte\\Sfdc\\Soap\\Mapping\\Type\\ID');
-        $connection->registerType('QueryLocator', 'Codemitte\\Sfdc\\Soap\\Mapping\\Type\\QueryLocator');
-        $connection->registerType('StatusCode', 'Codemitte\\Sfdc\\Soap\\Mapping\\Type\\StatusCode');
-        $connection->registerType('fieldType', 'Codemitte\\Sfdc\\Soap\\Mapping\\Type\\fieldType');
-        $connection->registerType('soapType', 'Codemitte\\Sfdc\\Soap\\Mapping\\Type\\soapType');
-        $connection->registerType('layoutComponentType', 'Codemitte\\Sfdc\\Soap\\Mapping\\Type\\layoutComponentType');
-        $connection->registerType('EmailPriority', 'Codemitte\\Sfdc\\Soap\\Mapping\\Type\\EmailPriority');
-        $connection->registerType('DebugLevel', 'Codemitte\\Sfdc\\Soap\\Mapping\\Type\\DebugLevel');
-        $connection->registerType('ExceptionCode', 'Codemitte\\Sfdc\\Soap\\Mapping\\Type\\ExceptionCode');
+        $connection->registerType('ID', 'Codemitte\\Sfdc\\Soap\\Mapping\\Type\\ID', $this->getUri());
+        $connection->registerType('QueryLocator', 'Codemitte\\Sfdc\\Soap\\Mapping\\Type\\QueryLocator', $this->getUri());
+        $connection->registerType('StatusCode', 'Codemitte\\Sfdc\\Soap\\Mapping\\Type\\StatusCode', $this->getUri());
+        $connection->registerType('fieldType', 'Codemitte\\Sfdc\\Soap\\Mapping\\Type\\fieldType', $this->getUri());
+        $connection->registerType('soapType', 'Codemitte\\Sfdc\\Soap\\Mapping\\Type\\soapType', $this->getUri());
+        $connection->registerType('layoutComponentType', 'Codemitte\\Sfdc\\Soap\\Mapping\\Type\\layoutComponentType', $this->getUri());
+        $connection->registerType('EmailPriority', 'Codemitte\\Sfdc\\Soap\\Mapping\\Type\\EmailPriority', $this->getUri());
+        $connection->registerType('DebugLevel', 'Codemitte\\Sfdc\\Soap\\Mapping\\Type\\DebugLevel', $this->getUri());
+        $connection->registerType('ExceptionCode', 'Codemitte\\Sfdc\\Soap\\Mapping\\Type\\ExceptionCode', $this->getUri());
     }
 
     /**
@@ -122,10 +143,42 @@ abstract class API extends BaseClient
     public function query($queryString, array $params = array())
     {
         return $this->getConnection()->soapCall(
-            'query',
-            array(
-                array('queryString' => $queryString),
-            )
+            'query', array(array(
+                    'queryString' => $this->queryParser->parse($queryString, $params)
+            ))
         );
+    }
+
+    /**
+     * (PHP 5 &gt;= 5.1.0)<br/>
+     * String representation of object
+     *
+     * @link http://php.net/manual/en/serializable.serialize.php
+     * @return string the string representation of the object or &null;
+     */
+    public function serialize()
+    {
+        return serialize(array('queryParser' => $this->queryParser, '__parentData' => parent::serialize()));
+    }
+
+    /**
+     * (PHP 5 &gt;= 5.1.0)<br/>
+     * Constructs the object
+     *
+     * @link http://php.net/manual/en/serializable.unserialize.php
+     *
+     * @param string $serialized <p>
+     * The string representation of the object.
+     * </p>
+     *
+     * @return mixed the original value unserialized.
+     */
+    public function unserialize($serialized)
+    {
+        $data = unserialize($serialized);
+
+        parent::unserialize($data['__parentData']);
+
+        $this->queryParser= $data['queryParser'];
     }
 }

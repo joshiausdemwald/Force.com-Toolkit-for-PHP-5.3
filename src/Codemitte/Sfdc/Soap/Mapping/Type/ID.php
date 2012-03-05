@@ -6,11 +6,6 @@ namespace Codemitte\Sfdc\Soap\Mapping\Type;
  */
 class ID extends GenericType
 {
-    static function getName()
-    {
-        return 'ID';
-    }
-
     /**
      * Create the 18 char ID from a 15 char ID
      *

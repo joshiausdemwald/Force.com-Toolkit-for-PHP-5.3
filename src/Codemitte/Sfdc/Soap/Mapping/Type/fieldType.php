@@ -28,9 +28,4 @@ class fieldType extends GenericType
     const encryptedstring = 'encryptedstring';
     const datacategorygroupreference = 'datacategorygroupreference';
     const anyType = 'anyType';
-
-    static function getName()
-    {
-        return 'fieldType';
-    }
 }

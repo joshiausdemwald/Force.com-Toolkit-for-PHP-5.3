@@ -10,4 +10,14 @@ class QueryLocator extends GenericType
     {
         return 'QueryLocator';
     }
+
+    public static function toXml($value)
+    {
+        // TODO: Implement toXml() method.
+    }
+
+    public static function fromXml($value)
+    {
+        // TODO: Implement fromXml() method.
+    }
 }

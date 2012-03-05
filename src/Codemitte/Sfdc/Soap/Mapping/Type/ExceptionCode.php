@@ -210,9 +210,4 @@ class ExceptionCode extends GenericType
     const UNSUPPORTED_MEDIA_TYPE = 'UNSUPPORTED_MEDIA_TYPE';
 
     const XML_PARSER_ERROR = 'XML_PARSER_ERROR';
-
-    public static function getName()
-    {
-        return 'ExceptionCode';
-    }
 }

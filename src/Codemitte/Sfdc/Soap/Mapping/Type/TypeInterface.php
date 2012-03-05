@@ -35,11 +35,9 @@ namespace Codemitte\Sfdc\Soap\Mapping\Type;
  */
 interface TypeInterface
 {
-    public static function getName();
+    public function __toString();
 
     public static function toXml($value);
 
     public static function fromXml($value);
-
-    public function __toString();
 }
