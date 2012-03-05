@@ -57,7 +57,7 @@ class QueryParser implements QueryParserInterface
     {
         if(null === $tokenizer)
         {
-            $tokenizer = new Tokenizer();
+            $tokenizer = new QueryTokenizer();
         }
         $this->tokenizer = $tokenizer;
 
@@ -80,9 +80,9 @@ class QueryParser implements QueryParserInterface
 
         $output = '';
 
-        $var_counter = 0;
+        $previous_token = null;
 
-        foreach($tokens AS $token)
+        foreach($tokens AS $i => $token)
         {
             $t_type  = $token[0];
             $t_value = $token[1];
@@ -91,39 +91,15 @@ class QueryParser implements QueryParserInterface
             switch($t_type)
             {
                 case TokenizerInterface::TOKEN_SOQL_PART:
+                case TokenizerInterface::TOKEN_WHITESPACE:
                     $output .= $t_value;
                     break;
-
-                case TokenizerInterface::TOKEN_ANON_VARIABLE:
-
-                    if($var_counter < 0)
-                    {
-                        throw new ParseException(sprintf('Error in query "%s": It is not allowed to mix named and anonymous varables in SOQL-queries in col %s.', $soql, $t_col));
-                    }
-
-                    $param = $this->getParameter($var_counter, $parameters);
-
-                    $output .= $param->toSOQL();
-
-                    $var_counter++;
+                case TokenizerInterface::TOKEN_EXPRESSION;
+                    $output .= $this->getParameter($t_value, $parameters)->toSOQL();
                     break;
-                case TokenizerInterface::TOKEN_EXPRESSION:
 
-                    if($var_counter > 0)
-                    {
-                        throw new ParseException(sprintf('It is not allowed to expressions and anonymous variables in SOQL-queries in col %s.', $soql, $t_col));
-                    }
-
-                    $param = $this->getParameter($t_value, $parameters);
-
-                    $output .= $param->toSoql();
-
-                    $var_counter = -1;
-                    break;
                 case TokenizerInterface::TOKEN_LITERAL:
-
                     $output .= '\'' . $t_value . '\'';
-
                     break;
                 case TokenizerInterface::TOKEN_SOQL_PART:
 
@@ -131,8 +107,8 @@ class QueryParser implements QueryParserInterface
 
                     break;
             }
+            $previous_token = $token;
         }
-
         return $output;
     }
 

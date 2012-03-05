@@ -32,17 +32,17 @@ namespace Codemitte\Sfdc\Soql\Parser;
  */
 interface TokenizerInterface
 {
-    const TOKEN_ANON_VARIABLE = 'ANON_VARIABLE';
+    const TOKEN_EXPRESSION                   = 'EXPRESSION';
 
-    const TOKEN_EXPRESSION = 'EXPRESSION';
+    const TOKEN_SOQL_PART                    = 'SOQL_PART';
 
-    const TOKEN_SOQL_PART = 'SOQL_PART';
+    const TOKEN_LITERAL                      = 'LITERAL';
 
-    const TOKEN_LITERAL = 'LITERAL';
+    const TOKEN_WHITESPACE                   = 'WHITESPACE';
 
-    const ESCAPE_CHAR = '\\';
+    const ESCAPE_CHAR                        = '\\';
 
-    const LITERAL_TERMINATOR = '\'';
+    const LITERAL_TERMINATOR                 = '\'';
 
     /**
      * Returns a list of tokens for a "raw" soql query

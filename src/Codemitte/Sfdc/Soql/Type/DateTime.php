@@ -45,23 +45,6 @@ class DateTime extends Date
      */
     public function toSOQL()
     {
-        return $this->format('Y-m-d\TH:m:s') . $this->getOffsetString($this->getOffset());
-    }
-
-    /**
-     * getOffsetString()
-     *
-     * @param param integer $offset : In seconds (Result of getOffset())
-     * @return string
-     */
-    public function getOffsetString($offset)
-    {
-        $oAbs = abs($offset);
-
-        $oh = (int)$oAbs / 3600;
-
-        $om = (int)(($oAbs - $oh * 3600) / 60);
-
-        return ($offset < 0 ? '-' : '+') . ($oh > 10 ? '' : '0') . $oh . ':' . ($om > 10 ? '' : '0') . $om;
+        return $this->format(self::W3C);
     }
 }

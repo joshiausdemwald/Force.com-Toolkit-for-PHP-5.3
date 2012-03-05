@@ -35,6 +35,6 @@ class Expression extends AbstractType
 {
     public function toSOQL()
     {
-        return ':' . $this->value;
+        return $this->value;
     }
 }

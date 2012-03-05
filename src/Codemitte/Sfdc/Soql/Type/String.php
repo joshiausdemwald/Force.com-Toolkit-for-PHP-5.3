@@ -38,6 +38,6 @@ class String extends AbstractType
      */
     public function toSOQL()
     {
-        return '\'' . $this->value . '\'';
+        return '\'' . addslashes($this->value) . '\'';
     }
 }

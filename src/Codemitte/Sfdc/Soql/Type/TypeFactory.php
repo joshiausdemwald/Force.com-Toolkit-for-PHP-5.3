@@ -46,19 +46,29 @@ class TypeFactory
         {
             return new Boolean($param);
         }
-        if(is_string($param))
+        elseif(is_string($param))
         {
-            if(preg_match('#^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$#', $param))
+            if(preg_match('#^[0-9][0-9][0-9][0-9]\-[0-9][0-9]\-[0-9][0-9]#', $param))
             {
-                return new Date($param);
-            }
-            if(false !== ($time = strtotime($param)))
-            {
-                return new DateTime($time);
+                try
+                {
+                    if(10 === strlen($param))
+                    {
+                        return new Date($param);
+                    }
+                    else
+                    {
+                        return new DateTime($param);
+                    }
+                }
+                catch(\Exception $e)
+                {
+                     // DO NOTHING
+                }
             }
             return new String($param);
         }
-        if(is_array($param) || $param instanceof Traversable)
+        elseif(is_array($param) || $param instanceof Traversable)
         {
             $retVal = array();
 
@@ -68,7 +78,7 @@ class TypeFactory
             }
             return new ArrayType($retVal);
         }
-        if(is_numeric($param))
+        elseif(is_int($param) || is_float($param))
         {
             return new Number($param);
         }

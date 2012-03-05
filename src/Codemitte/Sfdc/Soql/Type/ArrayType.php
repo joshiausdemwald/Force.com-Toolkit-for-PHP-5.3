@@ -22,6 +22,9 @@
 
 namespace Codemitte\Sfdc\Soql\Type;
 
+use \IteratorAggregate;
+use \ArrayIterator;
+
 /**
  * ArrayType
  *
@@ -30,7 +33,7 @@ namespace Codemitte\Sfdc\Soql\Type;
  * @package Sfdc
  * @subpackage Soql
  */
-class ArrayType extends AbstractType
+class ArrayType extends AbstractType implements IteratorAggregate
 {
     public function toSOQL()
     {
@@ -41,5 +44,18 @@ class ArrayType extends AbstractType
             $soql[] = $v->toSOQL();
         }
         return '(' . implode(', ', $soql) . ')';
+    }
+
+    /**
+     * (PHP 5 &gt;= 5.1.0)<br/>
+     * Retrieve an external iterator
+     *
+     * @link http://php.net/manual/en/iteratoraggregate.getiterator.php
+     * @return Traversable An instance of an object implementing Iterator or
+     * Traversable
+     */
+    public function getIterator()
+    {
+        return new ArrayIterator($this->value);
     }
 }
