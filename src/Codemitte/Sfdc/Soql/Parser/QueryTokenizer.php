@@ -46,7 +46,7 @@ class QueryTokenizer implements TokenizerInterface
         $this->tokenDefinitions = array
         (
             // STRING LITERAL
-            '\'' => function($stream, $pos, $tokens)
+            '\'' => function($stream, $pos, $tokens, $tokenizer)
             {
                 $literal = '';
 
@@ -76,7 +76,7 @@ class QueryTokenizer implements TokenizerInterface
 
                 if( ! $valid)
                 {
-                    throw new TokenException(sprintf('Error parsing SOQL-Query "%s": Unterminated string literal at col %s: "%s".', $stream, $pos, $literal));
+                    throw new TokenException(sprintf('Error parsing SOQL-Query "%s": Unterminated string literal at column %s: "%s".', $tokenizer->addMark($pos,$stream), $pos, $literal));
                 }
 
                 $tokens[] = array(
@@ -87,7 +87,7 @@ class QueryTokenizer implements TokenizerInterface
             },
 
             // EXPRESSION/VARIABLE
-            ':' => function($stream, $pos, $tokens, array $tokenDefinitions)
+            ':' => function($stream, $pos, $tokens, array $tokenDefinitions, QueryTokenizer $tokenizer)
             {
                 $orig_pos = $pos;
 
@@ -101,8 +101,12 @@ class QueryTokenizer implements TokenizerInterface
                     $char = $stream[$pos];
 
                     // END OF EXPRESSION
-                    if(in_array($char, array(')', ' ', ',', "\r", "\n", "\t", "\f")) && strlen($expression) > 0)
+                    if(preg_match('#[\W]#', $char))
                     {
+                        if(0 === strlen($expression))
+                        {
+                            throw new TokenException(sprintf('Error parsing SOQL-Query "%s": Empty expression at column %s', $tokenizer->addMark($stream, $pos), $pos));
+                        }
                         $pos --;
 
                         $valid = true;
@@ -163,9 +167,9 @@ class QueryTokenizer implements TokenizerInterface
             $currentChar = $input[$i];
 
             if(
-                // NON-WORD CHARACTER
+                // MUST BE PRECEDED BY ANY NON-WORD CHARACTER
                 preg_match('#[\W]#', $previousChar) &&
-                $previousChar !== TokenizerInterface::ESCAPE_CHAR && 
+                $previousChar !== TokenizerInterface::ESCAPE_CHAR &&
                 array_key_exists($currentChar, $this->tokenDefinitions)
             ) {
 
@@ -182,7 +186,8 @@ class QueryTokenizer implements TokenizerInterface
                     & $input,
                     & $i,
                     & $tokens,
-                    $this->tokenDefinitions
+                    $this->tokenDefinitions,
+                    $this
                 ));
 
                 $buf = '';
@@ -205,5 +210,20 @@ class QueryTokenizer implements TokenizerInterface
 
         return $tokens;
     }
+
+    /**
+     * Adds a mark at the specified position of the
+     * input stream.
+     *
+     * @param string $stream
+     * @param integer $position
+     * @param string $marker
+     */
+    public function addMark($stream, $position, $markerl = '--->', $markerr = '<---')
+    {
+        return substr($stream, 0, $position - 1) . $markerl . $stream[$position - 1] . $markerr . substr($stream, $position);
+    }
 }
+
+
 
