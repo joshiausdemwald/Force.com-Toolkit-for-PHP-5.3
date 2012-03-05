@@ -38,8 +38,6 @@ interface TokenizerInterface
 
     const TOKEN_LITERAL                      = 'LITERAL';
 
-    const TOKEN_WHITESPACE                   = 'WHITESPACE';
-
     const ESCAPE_CHAR                        = '\\';
 
     const LITERAL_TERMINATOR                 = '\'';

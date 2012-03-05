@@ -163,7 +163,9 @@ class QueryTokenizer implements TokenizerInterface
             $currentChar = $input[$i];
 
             if(
-                TokenizerInterface::ESCAPE_CHAR !== $previousChar &&
+                // NON-WORD CHARACTER
+                preg_match('#[\W]#', $previousChar) &&
+                $previousChar !== TokenizerInterface::ESCAPE_CHAR && 
                 array_key_exists($currentChar, $this->tokenDefinitions)
             ) {
 
@@ -191,6 +193,16 @@ class QueryTokenizer implements TokenizerInterface
             }
             $previousChar = $currentChar;
         }
+
+        if(strlen($buf) > 0)
+        {
+            $tokens[] = array(
+                TokenizerInterface::TOKEN_SOQL_PART,
+                $buf,
+                $i - strlen($buf)
+            );
+        }
+
         return $tokens;
     }
 }

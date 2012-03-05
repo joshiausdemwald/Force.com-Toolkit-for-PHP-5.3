@@ -91,9 +91,6 @@ class QueryParser implements QueryParserInterface
             switch($t_type)
             {
                 case TokenizerInterface::TOKEN_SOQL_PART:
-                case TokenizerInterface::TOKEN_WHITESPACE:
-                    $output .= $t_value;
-                    break;
                 case TokenizerInterface::TOKEN_EXPRESSION;
                     $output .= $this->getParameter($t_value, $parameters)->toSOQL();
                     break;
