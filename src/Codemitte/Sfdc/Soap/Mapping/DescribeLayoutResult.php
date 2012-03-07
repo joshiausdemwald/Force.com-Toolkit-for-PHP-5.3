@@ -1,7 +1,7 @@
 <?php
 namespace Codemitte\Sfdc\Soap\Mapping;
 
-use Codemitte\Sfdc\Soap\Mapping\ClassInterface;
+use Codemitte\Soap\Mapping\ClassInterface;
 
 class DescribeLayoutResult implements ClassInterface
 {

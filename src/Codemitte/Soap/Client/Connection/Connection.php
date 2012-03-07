@@ -29,6 +29,8 @@ use \RuntimeException;
 use \SoapHeader;
 use \SoapFault AS GenericSoapFault;
 
+use Codemitte\Soap\Mapping\GenericResult;
+
 /**
  * Connection: Generic SOAP Client connection class.
  *
@@ -102,11 +104,17 @@ use \SoapFault AS GenericSoapFault;
  */
 class Connection implements ConnectionInterface
 {
-    const CLASS_MAP_INTERFACE = 'Codemitte\\Sfdc\\Soap\\Mapping\\ClassInterface';
+    const CLASS_MAP_INTERFACE = 'Codemitte\\Soap\\Mapping\\ClassInterface';
 
     const TYPE_MAP_INTERFACE = 'Codemitte\\Sfdc\\Soap\\Mapping\\Type\\TypeInterface';
 
-    const DEFAULT_OPTION_DESERIALIZE_AS_ARRAY = true;
+    const OPTION_DESERIALIZE_AS_ARRAY = 1;
+
+    const OPTION_DESERIALIZE_AS_STDCLASS = 2;
+
+    const OPTION_DESERIALIZE_AS_RESULT = 4;
+
+    const DEFAULT_OPTION_DESERIALIZATION = self::OPTION_DESERIALIZE_AS_RESULT;
 
     const DEFAULT_OPTION_ENCODING = 'utf-8';
 
@@ -225,7 +233,7 @@ class Connection implements ConnectionInterface
     {
         $this->wsdl = $wsdl;
 
-        $this->setOption('deserialize_as_array', self::DEFAULT_OPTION_DESERIALIZE_AS_ARRAY);
+        $this->setOption('deserialization_mode', self::DEFAULT_OPTION_DESERIALIZATION);
 
         $this->setOptions($options);
 
@@ -898,13 +906,72 @@ class Connection implements ConnectionInterface
      */
     public function postProcessResult($result)
     {
-        if(
-            is_object($result) &&
-            $result instanceof \stdClass &&
-            $this->getOption('deserialize_as_array', self::DEFAULT_OPTION_DESERIALIZE_AS_ARRAY))
+        static $propertyCache = array();
+
+        $mode = $this->getOption('deserialization_mode');
+
+        // DEFAULT BEHAVIOUR
+        if($mode === self::OPTION_DESERIALIZE_AS_STDCLASS)
         {
-            return (array)$result;
+            return $result;
         }
+
+        // FOR EACH ENTRY IN RESULT
+        if(is_array($result))
+        {
+            $retVal = array();
+
+            foreach($result AS $key => $r)
+            {
+                $retVal[$key] = $this->postProcessResult($r);
+            }
+
+            return $retVal;
+        }
+
+        if($result instanceof \stdClass)
+        {
+            switch($mode)
+            {
+                case self::OPTION_DESERIALIZE_AS_ARRAY:
+                    return $this->postProcessResult((array)$result);
+
+                case self::OPTION_DESERIALIZE_AS_RESULT:
+                    return new GenericResult($this->postProcessResult((array)$result));
+                    break;
+            }
+        }
+
+        if(is_object($result))
+        {
+            $r = new \ReflectionClass($result);
+
+            $classname = $r->getName();
+
+            if( ! array_key_exists($classname, $propertyCache))
+            {
+                $props = $r->getProperties();
+
+                foreach($props AS $p)
+                {
+                    if($p->isPrivate() || $p->isProtected())
+                    {
+                        $p->setAccessible(true);
+                    }
+                }
+                $propertyCache[$classname] = $props;
+            }
+
+            $properties = $propertyCache[$classname];
+
+            /* @var $p \ReflectionProperty */
+            foreach($properties AS $p)
+            {
+                $p->setValue($result, $this->postProcessResult($p->getValue($result)));
+            }
+        }
+
+        // SCALAR VALUES, TOO
         return $result;
     }
 
@@ -970,9 +1037,9 @@ class Connection implements ConnectionInterface
     {
         switch ($key)
         {
-            case 'deserializeAsArray':
-            case 'deserialize_as_array':
-                return 'deserialize_as_array';
+            case 'deserialization_mode':
+            case 'deserializationMode':
+                return 'serialization_mode';
             case 'keepAlive':
             case 'keepalive':
             case 'keep_alive':

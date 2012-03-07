@@ -1,6 +1,8 @@
 <?php
 namespace Codemitte\Sfdc\Soap\Mapping;
 
+use Codemitte\Soap\Mapping\ClassInterface;
+
 class QueryResult implements ClassInterface
 {
     /**

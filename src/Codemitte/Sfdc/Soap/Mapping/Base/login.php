@@ -1,7 +1,7 @@
 <?php
 namespace Codemitte\Sfdc\Soap\Mapping\Base;
 
-use Codemitte\Sfdc\Soap\Mapping\ClassInterface;
+use Codemitte\Soap\Mapping\ClassInterface;
 
 class login implements ClassInterface
 {
