@@ -211,7 +211,16 @@ interface ConnectionInterface extends Serializable
      * @param string $type
      * @param string $classname
      */
-    public function registerClass($type, $classname);
+    public function registerClass($complexType, $classname);
+
+    /**
+     * Adds a bunch of classes mapped by their filenames
+     * to the classmap option.
+     *
+     * @abstract
+     * @param $dirname
+     */
+    public function registerClassDir($dirname);
 
     /**
      * Adds types to the connection's soap typemap.
@@ -220,7 +229,7 @@ interface ConnectionInterface extends Serializable
      * @param string $class
      * @param string $targetNamespace
      */
-    public function registerType($typename, $class, $targetNamespace = null);
+    public function registerType($simpleType, $class, $targetNamespace = null);
 
     /**
      * setOption()

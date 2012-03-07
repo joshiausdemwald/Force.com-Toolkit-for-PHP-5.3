@@ -29,6 +29,7 @@ use \BadMethodCallException;
 use Codemitte\Sfdc\Soap\Client\Connection\SfdcConnectionInterface;
 
 use Codemitte\Sfdc\Soap\Header\SessionHeader;
+
 /**
  * BaseClient
  *

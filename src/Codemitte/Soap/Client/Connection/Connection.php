@@ -24,6 +24,7 @@ namespace Codemitte\Soap\Client\Connection;
 
 use \BadMethodCallException;
 use \InvalidArgumentException;
+use \RuntimeException;
 
 use \SoapHeader;
 use \SoapFault AS GenericSoapFault;
@@ -726,24 +727,49 @@ class Connection implements ConnectionInterface
     /**
      * Adds classes to the connection's soap classmap.
      *
-     * @param string $type
+     * @param string $complexType
      * @param string $classname
      */
-    public function registerClass($type, $classname)
+    public function registerClass($complexType, $class)
     {
         $this->soapClient = null;
 
-        if( ! class_exists($classname))
+        if( ! class_exists($class))
         {
-            throw new MappingException(sprintf('Complex type mapping class "%s" does not exist. (Tried to map soap class "%s".)', $classname, $this->getOption('uri') . '.' . $type));
+            if('\\' === $class[0])
+            {
+                $class = substr($class, 1);
+            }
+
+            $className = null;
+            $classPath = null;
+
+            // HAS NAMESPACE
+            if (false !== $pos = strrpos($class, '\\'))
+            {
+                $classPath = DIRECTORY_SEPARATOR . str_replace('\\', DIRECTORY_SEPARATOR, substr($class, 0, $pos));
+                $className = substr($class, $pos + 1);
+            }
+            else
+            {
+                $classPath = null;
+                $className = $class;
+            }
+
+            if(! class_exists($class))
+            {
+                throw new MappingException(sprintf('Complex type mapping class "%s" does not exist. (Tried to map soap class "%s".)', $class, $this->getOption('uri') . '.' . $complexType));
+            }
         }
 
-        if( ! in_array(self::CLASS_MAP_INTERFACE, class_implements($classname)))
+
+
+        if( ! in_array(self::CLASS_MAP_INTERFACE, class_implements($class)))
         {
-            throw new MappingException(sprintf('Complex type class "%s" must implement interface "%s"! (Tried to map soap class "%s".)', $classname, self::CLASS_MAP_INTERFACE, $this->getOption('uri') . '.' . $type));
+            throw new MappingException(sprintf('Complex type class "%s" must implement interface "%s"! (Tried to map soap class "%s".)', $class, self::CLASS_MAP_INTERFACE, $this->getOption('uri') . '.' . $complexType));
         }
 
-        $this->classMap[$type] = $classname;
+        $this->classMap[$complexType] = $class;
     }
 
     /**
@@ -1021,6 +1047,36 @@ class Connection implements ConnectionInterface
 
             default:
                 throw new UnknownOptionException(sprintf('Unknown SOAP client option "%s"', $key));
+        }
+    }
+
+    /**
+     * Adds a bunch of classes mapped by their filenames
+     * to the classmap option.
+     *
+     * @todo implement me!
+     * @param $dirname
+     */
+    public function registerClassDir($dirname)
+    {
+        throw new \RuntimeException('Not implemented!');
+
+        if( ! is_dir($dirname))
+        {
+            throw new ClassMapRegistrationException(sprintf('Directory "%" could not be found.'));
+        }
+
+        if( ! is_readable($dirname))
+        {
+            throw new ClassMapRegistrationException(sprintf('Directory "%" cannot be read.'));
+        }
+
+        foreach(new \RecursiveIteratorIterator(\RecursiveDirectoryIterator($dirname)) AS $file)
+        {
+            if( ! $file->isFile() && ! $file->isDot())
+            {
+                // DO STUFF
+            }
         }
     }
 }

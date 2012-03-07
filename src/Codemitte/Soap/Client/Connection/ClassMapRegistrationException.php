@@ -20,28 +20,14 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-namespace Codemitte\Sfdc\Soap\Client;
-
-use Codemitte\Sfdc\Soap\Client\Connection\SfdcConnectionInterface;
+namespace Codemitte\Soap\Client\Connection;
 
 /**
- * EnterpriseClient
- *
  * @author Johannes Heinen <johannes.heinen@code-mitte.de>
  * @copyright 2012 code mitte GmbH, Cologne, Germany
- * @package Sfdc
- * @subpackage Soap
+ * @package Soap
  */
-class EnterpriseClient extends API
+class ClassMapRegistrationException extends ConnectionException
 {
-    /**
-     * Returns the TargetNamespace as a valid uri string.
-     *
-     * @return string $uri
-     */
-    public function getUri()
-    {
-        return 'urn:enterprise.soap.sforce.com';
-    }
-}
 
+}
