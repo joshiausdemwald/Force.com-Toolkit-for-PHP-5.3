@@ -36,4 +36,25 @@ class GenericResult extends \ArrayObject implements ClassInterface
     {
         parent::__construct($properties, \ArrayObject::STD_PROP_LIST | \ArrayObject::ARRAY_AS_PROPS, '\\Codemitte\\Soap\\Mapping\\GenericResultIterator');
     }
+
+    /**
+     * Returns the keys of the resultset.
+     *
+     * @return array $key
+     */
+    public function getKeys()
+    {
+        return array_keys($this->getArrayCopy());
+    }
+
+    /**
+     * Envoke magic method.
+     *
+     * @param $key
+     * @return mixed
+     */
+    public function __invoke($key)
+    {
+        return $this->offsetGet($key);
+    }
 }
