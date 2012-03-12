@@ -186,7 +186,6 @@ class SfdcConnection extends Connection implements SfdcConnectionInterface
             'encoding' => 'utf-8',
             'trace' => true,
             'exceptions' => true,
-            'features' => SOAP_SINGLE_ELEMENT_ARRAYS,
             'compression' => SOAP_COMPRESSION_ACCEPT | SOAP_COMPRESSION_GZIP
         )));
 

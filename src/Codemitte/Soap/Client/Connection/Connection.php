@@ -29,7 +29,8 @@ use \RuntimeException;
 use \SoapHeader;
 use \SoapFault AS GenericSoapFault;
 
-use Codemitte\Soap\Mapping\GenericResult;
+use Codemitte\Soap\Hydrator\HydratorInterface;
+use Codemitte\Soap\Hydrator\ResultHydrator;
 
 /**
  * Connection: Generic SOAP Client connection class.
@@ -42,7 +43,6 @@ use Codemitte\Soap\Mapping\GenericResult;
  * The "style" and "use" options only work in non-WSDL mode. In WSDL mode, they come from the WSDL file.
  *
  * Available options:
- *  - "deserialize_as_array": Deserializes SOAP-Responses as native arrays rather as instances of \stdClass
  *  - "trace": Trace soap requests and responses so that methods like "getLastResponse()" are enabled to be used and
  *             faults may be backtraced.
  *  - "encoding": The encoding option defines internal character encoding. This option does not change the encoding of
@@ -108,14 +108,6 @@ class Connection implements ConnectionInterface
 
     const TYPE_MAP_INTERFACE = 'Codemitte\\Sfdc\\Soap\\Mapping\\Type\\TypeInterface';
 
-    const OPTION_DESERIALIZE_AS_ARRAY = 1;
-
-    const OPTION_DESERIALIZE_AS_STDCLASS = 2;
-
-    const OPTION_DESERIALIZE_AS_RESULT = 4;
-
-    const DEFAULT_OPTION_DESERIALIZATION = self::OPTION_DESERIALIZE_AS_RESULT;
-
     const DEFAULT_OPTION_ENCODING = 'utf-8';
 
     const DEFAULT_OPTION_TRACE = true;
@@ -169,6 +161,11 @@ class Connection implements ConnectionInterface
     private $soapOutputHeaders           = array();
 
     /**
+     * @var Codemitte\Soap\Hydrator\HydratorInterface
+     */
+    private $hydrator;
+
+    /**
      * Constructor.
      *
      * Options:
@@ -179,7 +176,6 @@ class Connection implements ConnectionInterface
      * The "style" and "use" options only work in non-WSDL mode. In WSDL mode, they come from the WSDL file.
      *
      * Available options:
-     *  - "deserialize_as_array": Deserializes SOAP-Responses as native arrays rather as instances of \stdClass
      *  - "trace": Trace soap requests and responses so that methods like "getLastResponse()" are enabled to be used and
      *             faults may be backtraced.
      *  - "encoding": The encoding option defines internal character encoding. This option does not change the encoding of
@@ -228,14 +224,20 @@ class Connection implements ConnectionInterface
      *
      * @param string $wsdl
      * @param array $options
+     * @param HydratorInterface $hydrator
      */
-    public function __construct($wsdl = null, array $options = array())
+    public function __construct($wsdl = null, array $options = array(), HydratorInterface $hydrator = null)
     {
         $this->wsdl = $wsdl;
 
-        $this->setOption('deserialization_mode', self::DEFAULT_OPTION_DESERIALIZATION);
-
         $this->setOptions($options);
+
+        if(null === $hydrator)
+        {
+            $hydrator = new ResultHydrator();
+        }
+
+        $this->hydrator = $hydrator;
 
         $this->configure($options);
     }
@@ -900,78 +902,71 @@ class Connection implements ConnectionInterface
     /**
      * @internal
      *
-     * @param $result
+     * @param mixed $result
      *
      * @return mixed
      */
     public function postProcessResult($result)
     {
-        static $propertyCache = array();
-
-        $mode = $this->getOption('deserialization_mode');
-
-        // DEFAULT BEHAVIOUR
-        if($mode === self::OPTION_DESERIALIZE_AS_STDCLASS)
+        // stdClass: TRANSFORM IT!
+        if($result instanceof \stdClass)
         {
+            $res = $this->hydrator->hydrate($result);
+
+            // AVOID RECURSIONS
+            if($res instanceof \stdClass)
+            {
+                return $res;
+            }
+            return $this->postProcessResult($res);
+        }
+
+        // LIST RESULTS
+        if(is_array($result) || ($result instanceof \Traversable && $result instanceof \ArrayAccess))
+        {
+            foreach($result AS $key => $r)
+            {
+                $result[$key] = $this->postProcessResult($r);
+            }
             return $result;
         }
 
-        // FOR EACH ENTRY IN RESULT
-        if(is_array($result))
-        {
-            $retVal = array();
-
-            foreach($result AS $key => $r)
-            {
-                $retVal[$key] = $this->postProcessResult($r);
-            }
-
-            return $retVal;
-        }
-
-        if($result instanceof \stdClass)
-        {
-            switch($mode)
-            {
-                case self::OPTION_DESERIALIZE_AS_ARRAY:
-                    return $this->postProcessResult((array)$result);
-
-                case self::OPTION_DESERIALIZE_AS_RESULT:
-                    return new GenericResult($this->postProcessResult((array)$result));
-                    break;
-            }
-        }
-
+        // PLAIN OBJECTS
         if(is_object($result))
         {
             $r = new \ReflectionClass($result);
 
-            $classname = $r->getName();
-
-            if( ! array_key_exists($classname, $propertyCache))
+            // TRAVERSABLE || PUBLIC PROPERTIES
+            foreach($r->getProperties(~ \ReflectionProperty::IS_STATIC) AS $p)
             {
-                $props = $r->getProperties();
+                $pname = $p->getName();
+                $ucfname = ucfirst($pname);
+                $sname = 'set' . $ucfname;
+                $gname = 'get' . $ucfname;
 
-                foreach($props AS $p)
+                /* @var $p \ReflectionProperty */
+                if( ! $p->isDefault() || $p->isPublic())
                 {
-                    if($p->isPrivate() || $p->isProtected())
-                    {
-                        $p->setAccessible(true);
-                    }
+                    $result->$pname = $this->postProcessResult($result->$pname);
                 }
-                $propertyCache[$classname] = $props;
-            }
 
-            $properties = $propertyCache[$classname];
+                // GEHT NICHT :(
+                elseif($r->hasMethod($sname) && $r->hasMethod($gname))
+                {
+                    $result->$sname($this->postProcessResult($result->$gname()));
+                }
 
-            /* @var $p \ReflectionProperty */
-            foreach($properties AS $p)
-            {
-                $p->setValue($result, $this->postProcessResult($p->getValue($result)));
+                // THE HARD WAY
+                else
+                {
+                    $p->setAccessible(true);
+                    $p->setValue($result, $this->postProcessResult($p->getValue($result)));
+                    $p->setAccessible(false);
+                }
             }
         }
 
-        // SCALAR VALUES, TOO
+        // ALL OTHER SCALAR VALUES, RESOURCES ETC...
         return $result;
     }
 
@@ -1037,9 +1032,6 @@ class Connection implements ConnectionInterface
     {
         switch ($key)
         {
-            case 'deserialization_mode':
-            case 'deserializationMode':
-                return 'serialization_mode';
             case 'keepAlive':
             case 'keepalive':
             case 'keep_alive':

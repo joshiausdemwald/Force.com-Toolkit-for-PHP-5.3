@@ -20,20 +20,24 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-namespace Codemitte\Soap\Mapping;
+namespace Codemitte\Soap\Hydrator;
 
 /**
- * GenericResult
+ * @author Johannes Heinen <johannes.heinen@code-mitte.de>
+ * @copyright 2012 code mitte GmbH, Cologne, Germany
+ * @package Soap
+ * @subpackage Hydrator
  */
-class GenericResult extends \ArrayObject implements ClassInterface
+class ObjectHydrator implements HydratorInterface
 {
     /**
-     * Constructor.
+     * hydrate()
      *
-     * @param array|object $properties
+     * @param \stdClass $result
+     * @return mixed $hydratedResult
      */
-    public function __construct($properties)
+    public function hydrate(\stdClass $result)
     {
-        parent::__construct($properties, \ArrayObject::STD_PROP_LIST | \ArrayObject::ARRAY_AS_PROPS, '\\Codemitte\\Soap\\Mapping\\GenericResultIterator');
+        return $result;
     }
 }
