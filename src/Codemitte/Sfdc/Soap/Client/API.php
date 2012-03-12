@@ -22,6 +22,8 @@
 
 namespace Codemitte\Sfdc\Soap\Client;
 
+use \InvalidArgumentException;
+
 use Codemitte\Sfdc\Soap\Client\Connection\SfdcConnectionInterface;
 use Codemitte\Sfdc\Soql\Parser\QueryParserInterface;
 use Codemitte\Sfdc\Soql\Parser\QueryParser;
@@ -71,6 +73,7 @@ abstract class API extends BaseClient
         $connection->registerClass('DescribeLayoutRow', 'Codemitte\\Sfdc\\Soap\\Mapping\\DescribeLayoutRow');
         $connection->registerClass('DescribeLayoutSection', 'Codemitte\\Sfdc\\Soap\\Mapping\\DescribeLayoutSection');
         $connection->registerClass('QueryResult', 'Codemitte\\Sfdc\\Soap\\Mapping\\QueryResult');
+        $connection->registerClass('createResponse', 'Codemitte\\Sfdc\\Soap\\Mapping\\createResponse');
 
         $connection->registerType('ID', 'Codemitte\\Sfdc\\Soap\\Mapping\\Type\\ID', $this->getUri());
         $connection->registerType('QueryLocator', 'Codemitte\\Sfdc\\Soap\\Mapping\\Type\\QueryLocator', $this->getUri());
@@ -150,6 +153,67 @@ abstract class API extends BaseClient
     }
 
     /**
+     * create() persists new rows to the database.
+     *
+     * <soap:header use="literal" message="tns:Header" part="SessionHeader"/>
+     * <soap:header use="literal" message="tns:Header" part="AssignmentRuleHeader"/>
+     * <soap:header use="literal" message="tns:Header" part="MruHeader"/>
+     * <soap:header use="literal" message="tns:Header" part="AllowFieldTruncationHeader"/>
+     * <soap:header use="literal" message="tns:Header" part="DisableFeedTrackingHeader"/>
+     * <soap:header use="literal" message="tns:Header" part="StreamingEnabledHeader"/>
+     * <soap:header use="literal" message="tns:Header" part="AllOrNoneHeader"/>
+     * <soap:header use="literal" message="tns:Header" part="DebuggingHeader"/>
+     * <soap:header use="literal" message="tns:Header" part="PackageVersionHeader"/>
+     * <soap:header use="literal" message="tns:Header" part="EmailHeader"/>
+     *
+     * @param \Codemitte\Sfdc\Soap\Mapping\Sobject|array|\Traversable $data: List of sobjects
+     * @return \Codemitte\Sfdc\Soap\Mapping\createResponse $response
+     */
+    public function create($d)
+    {
+        $data = is_array($d) ? $d : array($d);
+
+        $params = array();
+
+        foreach($data AS $key => $sobject)
+        {
+            if( ! $sobject instanceof \Codemitte\Sfdc\Soap\Mapping\sObject)
+            {
+                throw new InvalidArgumentException('$data must be an instance or a list of sObject(s).');
+            }
+
+            $param = new \stdClass();
+
+            $param->Id =  $sobject->getId();
+
+            foreach($sobject AS $k => $v)
+            {
+                if(null !== $v)
+                {
+                    $param->$k = $v;
+                }
+            }
+
+            // CONVERT TO "GENERIC" SOAP VAR
+            $soapVar = new \SoapVar(
+                $param,
+                SOAP_ENC_OBJECT,
+                $sobject->getSobjectType(),
+                $this->getUri()
+            );
+
+            // FIX FIELDS TO NULL
+            $this->fixNullableFieldsVar($soapVar, $sobject->getFieldsToNull());
+
+            $params[$key] = $soapVar;
+        }
+
+        return $this->getConnection()->soapCall('create', array(array(
+            'sObjects' => $params
+        )));
+    }
+
+    /**
      * (PHP 5 &gt;= 5.1.0)<br/>
      * String representation of object
      *
@@ -180,5 +244,33 @@ abstract class API extends BaseClient
         parent::unserialize($data['__parentData']);
 
         $this->queryParser= $data['queryParser'];
+    }
+
+    /**
+     * getNullableFieldsVar()
+     * Used in CRU(D)-Methods to fix and add the fieldsToNull property in a Salesforce-way.
+     *
+     * @param \SoapVar $object
+     * @param array $nullableFields
+     *
+     * @return void
+     */
+    protected function fixNullableFieldsVar(\SoapVar $object, array $nullableFields)
+    {
+        if(count($nullableFields) > 0)
+        {
+            $var = new \SoapVar(
+                new \SoapVar('<fieldsToNull>' . implode('</fieldsToNull><fieldsToNull>', $nullableFields) . '</fieldsToNull>', XSD_ANYXML), SOAP_ENC_ARRAY
+            );
+
+            if(is_array($object->enc_value))
+            {
+                $object->enc_value['fieldsToNull'] = $var;
+            }
+            else
+            {
+                $object->enc_value->fieldsToNull = $var;
+            }
+        }
     }
 }
