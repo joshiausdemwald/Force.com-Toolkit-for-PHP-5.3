@@ -16,7 +16,7 @@ class QueryResult implements ClassInterface
     private $queryLocator;
 
     /**
-     * @var sObject $records
+     * @var array $records
      */
     private $records;
 
@@ -29,7 +29,7 @@ class QueryResult implements ClassInterface
      *
      * @param boolean $done
      * @param QueryLocator $queryLocator
-     * @param sObject $records
+     * @param array $records
      * @param int $size
      *
      * @access public
@@ -59,7 +59,7 @@ class QueryResult implements ClassInterface
     }
 
     /**
-     * @return \Codemitte\Sfdc\Soap\Mapping\sObject
+     * @return array
      */
     public function getRecords()
     {

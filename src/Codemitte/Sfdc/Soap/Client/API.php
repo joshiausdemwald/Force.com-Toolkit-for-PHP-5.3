@@ -28,6 +28,8 @@ use Codemitte\Sfdc\Soap\Client\Connection\SfdcConnectionInterface;
 use Codemitte\Sfdc\Soql\Parser\QueryParserInterface;
 use Codemitte\Sfdc\Soql\Parser\QueryParser;
 
+use Codemitte\Soap\Hydrator\HydratorInterface;
+
 /**
  * API. Abstract parent class for partner
  * and Enterprise wsdl.
@@ -42,7 +44,7 @@ use Codemitte\Sfdc\Soql\Parser\QueryParser;
 abstract class API extends BaseClient
 {
     /**
-     * @var QueryParser|null
+     * @var QueryParser|QueryParserInterface|null
      */
     protected $queryParser;
 
@@ -74,6 +76,7 @@ abstract class API extends BaseClient
         $connection->registerClass('DescribeLayoutSection', 'Codemitte\\Sfdc\\Soap\\Mapping\\DescribeLayoutSection');
         $connection->registerClass('QueryResult', 'Codemitte\\Sfdc\\Soap\\Mapping\\QueryResult');
         $connection->registerClass('createResponse', 'Codemitte\\Sfdc\\Soap\\Mapping\\createResponse');
+        $connection->registerClass('sObject', 'Codemitte\\Sfdc\\Soap\\Mapping\\Sobject');
 
         $connection->registerType('ID', 'Codemitte\\Sfdc\\Soap\\Mapping\\Type\\ID', $this->getUri());
         $connection->registerType('QueryLocator', 'Codemitte\\Sfdc\\Soap\\Mapping\\Type\\QueryLocator', $this->getUri());
@@ -146,8 +149,9 @@ abstract class API extends BaseClient
     public function query($queryString, array $params = array())
     {
         return $this->getConnection()->soapCall(
-            'query', array(array(
-                    'queryString' => $this->queryParser->parse($queryString, $params)
+            'query',
+            array(array(
+                'queryString' => $this->queryParser->parse($queryString, $params)
             ))
         );
     }
@@ -177,7 +181,7 @@ abstract class API extends BaseClient
 
         foreach($data AS $key => $sobject)
         {
-            if( ! $sobject instanceof \Codemitte\Sfdc\Soap\Mapping\sObject)
+            if( ! $sobject instanceof \Codemitte\Sfdc\Soap\Mapping\Sobject)
             {
                 throw new InvalidArgumentException('$data must be an instance or a list of sObject(s).');
             }

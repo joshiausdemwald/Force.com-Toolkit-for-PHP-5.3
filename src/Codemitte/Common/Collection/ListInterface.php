@@ -19,27 +19,59 @@
  * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
+namespace Codemitte\Common\Collection;
 
-namespace Codemitte\Soap\Hydrator;
-
+use \ArrayAccess, \Iterator, \Serializable, \Countable;
 
 /**
  * @author Johannes Heinen <johannes.heinen@code-mitte.de>
  * @copyright 2012 code mitte GmbH, Cologne, Germany
- * @package Soap
- * @subpackage Hydrator
- *
- * @abstract
- * @interface
+ * @package Common
+ * @subpackage Collection
  */
-interface HydratorInterface
+
+interface ListInterface extends Iterator, Serializable, Countable, ArrayAccess
 {
     /**
-     * hydrate()
-     *
      * @abstract
-     * @param mixed $result
-     * @return mixed $hydratedResult
+     *
+     * @param int $key
+     *
+     * @return mixed
      */
-    public function hydrate($result);
+    public function get($key);
+
+    /**
+     * @abstract
+     *
+     * @param mixed $value
+     *
+     * @return void
+     */
+    public function add($value);
+
+    /**
+     * @abstract
+     *
+     * @param array|\Traversable $values
+     *
+     * @return void
+     */
+    public function addAll($values);
+
+    /**
+     * @abstract
+     * @param int $key
+     *
+     * @return bool
+     */
+    public function has($key);
+
+    /**
+     * @abstract
+     * @param int $key
+     *
+     * @return mixed
+     */
+    public function remove($key);
 }

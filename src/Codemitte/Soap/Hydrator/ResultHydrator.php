@@ -22,7 +22,10 @@
 
 namespace Codemitte\Soap\Hydrator;
 
+use \stdClass;
+
 use Codemitte\Soap\Mapping\GenericResult;
+use Codemitte\Soap\Mapping\GenericResultCollection;
 
 /**
  * @author Johannes Heinen <johannes.heinen@code-mitte.de>
@@ -30,16 +33,28 @@ use Codemitte\Soap\Mapping\GenericResult;
  * @package Soap
  * @subpackage Hydrator
  */
-class ResultHydrator implements HydratorInterface
+class ResultHydrator extends AbstractHydrator
 {
-    /**
-     * hydrate()
-     *
-     * @param \stdClass $result
-     * @return mixed $hydratedResult
-     */
-    public function hydrate(\stdClass $result)
+    public function doHydrateList($list)
     {
-        return new GenericResult($result);
+        $l = new GenericResultCollection($list);
+
+        foreach($l AS $key => $value)
+        {
+            $l->replace($key, $this->hydrate($value));
+        }
+
+        return $l;
+    }
+
+    public function doHydrate($result)
+    {
+        $retVal = new GenericResult($result);
+
+        foreach($retVal AS $name => $prop)
+        {
+            $retVal[$name] = $this->hydrate($prop);
+        }
+        return $retVal;
     }
 }

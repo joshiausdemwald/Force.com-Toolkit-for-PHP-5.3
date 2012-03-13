@@ -23,7 +23,7 @@
 namespace Codemitte\Soap\Mapping;
 
 /**
- * GenericResultIterator
+ * GenericResultCollection
  */
 class GenericResultIterator extends \ArrayIterator
 {

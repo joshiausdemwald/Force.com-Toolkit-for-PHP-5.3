@@ -24,6 +24,8 @@ namespace Codemitte\Soap\Mapping;
 
 /**
  * GenericResult
+ *
+ * @author Johannes Heinen <johannes.heinen@code-mitte.de>
  */
 class GenericResult extends \ArrayObject implements ClassInterface
 {

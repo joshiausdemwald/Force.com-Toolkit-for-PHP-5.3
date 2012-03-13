@@ -31,6 +31,7 @@ use \SoapFault AS GenericSoapFault;
 
 use Codemitte\Soap\Hydrator\HydratorInterface;
 use Codemitte\Soap\Hydrator\ResultHydrator;
+use Codemitte\Soap\Mapping\GenericResultCollection;
 
 /**
  * Connection: Generic SOAP Client connection class.
@@ -663,14 +664,15 @@ class Connection implements ConnectionInterface
      * pairs or a popo (plain old php object).
      *
      * @abstract
+     *
      * @param $name
-     * @param mixed $args
+     * @param $arguments
+     * @param \Codemitte\Soap\Hydrator\HydratorInterface|null $hydrator
+     *
      * @return mixed
      */
-    public function soapCall($name, $arguments)
+    public function soapCall($name, $arguments, HydratorInterface $hydrator = null)
     {
-        $args = func_get_args();
-
         $soapClient = $this->getSoapClient();
 
         $headers = array_merge($this->permanentSoapInputHeaders, $this->soapInputHeaders);
@@ -719,7 +721,7 @@ class Connection implements ConnectionInterface
             }
         }
 
-        return $this->postProcessResult($this->preProcessResult($result));
+        return $this->postProcessResult($this->preProcessResult($result), $hydrator);
     }
 
     /**
@@ -838,7 +840,7 @@ class Connection implements ConnectionInterface
 
         $this->soapInputHeaders = array();
 
-        $retVal = array();
+        $retVal = array('hydrator' => $this->hydrator);
 
         foreach($this AS $key => $value)
         {
@@ -906,68 +908,14 @@ class Connection implements ConnectionInterface
      *
      * @return mixed
      */
-    public function postProcessResult($result)
+    public function postProcessResult($result, HydratorInterface $hydrator = null)
     {
-        // stdClass: TRANSFORM IT!
-        if($result instanceof \stdClass)
+        if(null == $hydrator)
         {
-            $res = $this->hydrator->hydrate($result);
-
-            // AVOID RECURSIONS
-            if($res instanceof \stdClass)
-            {
-                return $res;
-            }
-            return $this->postProcessResult($res);
+            $hydrator = $this->hydrator;
         }
 
-        // LIST RESULTS
-        if(is_array($result) || ($result instanceof \Traversable && $result instanceof \ArrayAccess))
-        {
-            foreach($result AS $key => $r)
-            {
-                $result[$key] = $this->postProcessResult($r);
-            }
-            return $result;
-        }
-
-        // PLAIN OBJECTS
-        if(is_object($result))
-        {
-            $r = new \ReflectionClass($result);
-
-            // TRAVERSABLE || PUBLIC PROPERTIES
-            foreach($r->getProperties(~ \ReflectionProperty::IS_STATIC) AS $p)
-            {
-                $pname = $p->getName();
-                $ucfname = ucfirst($pname);
-                $sname = 'set' . $ucfname;
-                $gname = 'get' . $ucfname;
-
-                /* @var $p \ReflectionProperty */
-                if( ! $p->isDefault() || $p->isPublic())
-                {
-                    $result->$pname = $this->postProcessResult($result->$pname);
-                }
-
-                // GEHT NICHT :(
-                elseif($r->hasMethod($sname) && $r->hasMethod($gname))
-                {
-                    $result->$sname($this->postProcessResult($result->$gname()));
-                }
-
-                // THE HARD WAY
-                else
-                {
-                    $p->setAccessible(true);
-                    $p->setValue($result, $this->postProcessResult($p->getValue($result)));
-                    $p->setAccessible(false);
-                }
-            }
-        }
-
-        // ALL OTHER SCALAR VALUES, RESOURCES ETC...
-        return $result;
+        return $hydrator->hydrate($result);
     }
 
     /**
@@ -1137,5 +1085,16 @@ class Connection implements ConnectionInterface
                 // DO STUFF
             }
         }
+    }
+
+    /**
+     * Returns the connection's default hydrator.
+     *
+     *
+     * @return HydratorInterface
+     */
+    public function getHydrator()
+    {
+        return $this->hydrator;
     }
 }

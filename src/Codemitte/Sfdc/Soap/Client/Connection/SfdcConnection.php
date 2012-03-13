@@ -26,6 +26,8 @@ use Codemitte\Soap\Client\Connection\Connection;
 
 use Codemitte\Sfdc\Soap\Mapping\Base\login;
 
+use Codemitte\Soap\Hydrator\HydratorInterface;
+
 /**
  * SfdcConnection: Sfdc soap connector.
  *
@@ -170,9 +172,10 @@ class SfdcConnection extends Connection implements SfdcConnectionInterface
      *                                 in wsdl.
      * @param array $options
      */
-    public function __construct($wsdl, $serviceLocation = null, array $options = array())
+    public function __construct($wsdl, $serviceLocation = null, array $options = array(), HydratorInterface $hydrator = null)
     {
-        parent::__construct($wsdl);
+        // $wsdl = null, array $options = array(), HydratorInterface $hydrator = null
+        parent::__construct($wsdl, array(), $hydrator);
 
         if(null !== $serviceLocation)
         {
@@ -198,6 +201,8 @@ class SfdcConnection extends Connection implements SfdcConnectionInterface
     }
 
     /**
+     * login()
+     *
      * Registers the given username to the specified organisation.
      *
      * @param login $credentials

@@ -25,6 +25,8 @@ namespace Codemitte\Soap\Client\Connection;
 use \Serializable;
 use \SoapHeader;
 
+use Codemitte\Soap\Hydrator\HydratorInterface;
+
 /**
  * ConnectionInterface
  *
@@ -46,7 +48,7 @@ interface ConnectionInterface extends Serializable
      * @param mixed $args
      * @return mixed
      */
-    public function soapCall($name, $args);
+    public function soapCall($name, $args, HydratorInterface $hydrator = null);
 
     /**
      * getWsdl()
@@ -265,4 +267,13 @@ interface ConnectionInterface extends Serializable
      * @param array $options
      */
     public function setOptions(array $options);
+    
+    /**
+     * Returns the connection's default hydrator.
+     *
+     * @abstract
+     *
+     * @return HydratorInterface
+     */
+    public function getHydrator();
 }
