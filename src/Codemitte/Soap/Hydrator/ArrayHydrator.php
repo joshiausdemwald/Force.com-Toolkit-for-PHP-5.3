@@ -28,16 +28,25 @@ namespace Codemitte\Soap\Hydrator;
  * @package Soap
  * @subpackage Hydrator
  */
-class ArrayHydrator implements HydratorInterface
+class ArrayHydrator extends  AbstractHydrator
 {
-    /**
-     * hydrate()
-     *
-     * @param \stdClass $result
-     * @return mixed $hydratedResult
-     */
-    public function hydrate(\stdClass $result)
+    public function doHydrateList($list)
     {
-        return (array)$result;
+        foreach($list AS $key => $value)
+        {
+            $list[$key] = $this->hydrate($value);
+        }
+        return $list;
+    }
+
+    public function doHydrate($result)
+    {
+        $retVal = array();
+
+        foreach($result AS $key => $value)
+        {
+            $retVal[$key] = $this->hydrate($value);
+        }
+        return $retVal;
     }
 }
