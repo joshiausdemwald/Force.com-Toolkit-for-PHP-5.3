@@ -19,9 +19,10 @@
  * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
+
 namespace Codemitte\Common\Collection;
 
-use \ArrayAccess, \Iterator, \Serializable, \Countable;
+use \ArrayAccess, \Serializable, \IteratorAggregate;
 
 /**
  * @author Johannes Heinen <johannes.heinen@code-mitte.de>
@@ -29,12 +30,12 @@ use \ArrayAccess, \Iterator, \Serializable, \Countable;
  * @package Common
  * @subpackage Collection
  */
-interface ListInterface extends Iterator, Serializable, Countable, ArrayAccess
+interface MapInterface extends IteratorAggregate, Serializable, ArrayAccess
 {
     /**
      * @abstract
      *
-     * @param int $key
+     * @param scalar $key
      *
      * @return mixed
      */
@@ -43,45 +44,85 @@ interface ListInterface extends Iterator, Serializable, Countable, ArrayAccess
     /**
      * @abstract
      *
+     *
+     * @param scalar $key
      * @param mixed $value
      *
      * @return void
      */
-    public function add($value);
+    public function put($key, $value);
+
+    /**
+     * __get() magic.
+     * Alias for get().
+     *
+     * @abstract
+     *
+     * @param $key
+     *
+     * @return mixed
+     */
+    public function __get($key);
+
+    /**
+     * __set() magic.
+     * Alias for set().
+     *
+     * @abstract
+     *
+     * @param $key
+     *
+     * @param $value
+     */
+    public function __set($key, $value);
+
+    /**
+     * __call() magic.
+     * Used to map getXY() and setXY() non-existent methods
+     * to call get() and set().
+     *
+     * @abstract
+     *
+     * @param $name
+     * @param array $args
+     *
+     * @return mixed.
+     */
+    public function __call($name, array $args = array());
 
     /**
      * @abstract
      *
-     * @param array|\Traversable $values
+     * @param array|MapInterface $values
      *
      * @return void
      */
-    public function addAll($values);
+    public function putAll($values);
 
     /**
      * @abstract
-     * @param int $key
+     * @param scalar $key
      *
      * @return bool
      */
-    public function has($key);
+    public function contains($key);
 
     /**
      * @abstract
-     * @param int $key
+     * @param scalar $key
      *
      * @return mixed
      */
     public function remove($key);
 
     /**
-     * @abstract
-     * @param $key
-     * @param $value
+     * getValues()
      *
-     * @return mixed
+     * @abstract
+     *
+     * @return ListInterface
      */
-    public function replace($key, $value);
+    public function getValues();
 
     /**
      * toArray()
@@ -91,4 +132,11 @@ interface ListInterface extends Iterator, Serializable, Countable, ArrayAccess
      * @return array
      */
     public function toArray();
+
+    /**
+     * @abstract
+     *
+     * @return ListInterface
+     */
+    public function getKeys();
 }

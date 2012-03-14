@@ -11,6 +11,22 @@ class Sobject extends GenericResult implements SobjectInterface
     private $Id;
 
     /**
+     * Constructor.
+     *
+     * @override
+     *
+     * @param array $values
+     *
+     * @internal param $sobjectType
+     */
+    public function __construct($values = array())
+    {
+        parent::__construct($values);
+    }
+
+    /**
+     * Returns the NULL fields to (re-)set to NULL
+     *
      * <element name="fieldsToNull"
      * type="xsd:string"
      * nillable="true"
@@ -28,28 +44,22 @@ class Sobject extends GenericResult implements SobjectInterface
      * picklist value to none when creating a record, but the picklist has a default value,
      * you can specify the field in fieldsToNull.
      *
-     * @var array|null
-     */
-    private $fieldsToNull;
-
-    /**
-     * Returns the NULL fields to (re-)set to NULL
-     *
-     * @return array $fieldsToNull
+     * @return array|null $fieldsToNull
      */
     public function getFieldsToNull()
     {
         $retVal = array();
 
-        foreach($this AS $key => $value)
+        foreach($this->getKeys() AS $key)
         {
+            $value = $this[$key];
+
             if(null === $value || '' === $value)
             {
                 $retVal[] = $key;
             }
         }
-
-        return $retVal;
+        return count($retVal) > 0 ? $retVal : null;
     }
 
     /**
@@ -60,10 +70,5 @@ class Sobject extends GenericResult implements SobjectInterface
     public function getId()
     {
         return $this->Id;
-    }
-
-    public function offsetSet($index, $newVal)
-    {
-        var_dump($index); exit;
     }
 }

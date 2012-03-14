@@ -774,8 +774,6 @@ class Connection implements ConnectionInterface
             }
         }
 
-
-
         if( ! in_array(self::CLASS_MAP_INTERFACE, class_implements($class)))
         {
             throw new MappingException(sprintf('Complex type class "%s" must implement interface "%s"! (Tried to map soap class "%s".)', $class, self::CLASS_MAP_INTERFACE, $this->getOption('uri') . '.' . $complexType));
@@ -789,10 +787,11 @@ class Connection implements ConnectionInterface
      *
      * @throws RuntimeException
      *
-     * @param string $namespaceUri
      * @param string $typename
      * @param $classname
      * @param string $namespace
+     *
+     * @internal param string $namespaceUri
      */
     public function registerType($typename, $classname, $namespace = null)
     {
@@ -819,7 +818,7 @@ class Connection implements ConnectionInterface
         }
 
         // Avoid duplicates
-        $this->typeMap[$namespace.$typename] = array (
+        $this->typeMap[$namespace.$typename] = array(
             'type_ns' => $namespace,
             'type_name' => $typename,
             'from_xml' => array($classname, 'fromXml'),

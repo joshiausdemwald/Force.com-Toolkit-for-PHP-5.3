@@ -22,41 +22,40 @@
 
 namespace Codemitte\Soap\Mapping;
 
+use Codemitte\Common\Collection\GenericMap;
+
 /**
  * GenericResult
  *
  * @author Johannes Heinen <johannes.heinen@code-mitte.de>
  */
-class GenericResult extends \ArrayObject implements ClassInterface
+class GenericResult extends GenericMap implements ClassInterface
 {
     /**
      * Constructor.
      *
-     * @param array|object $properties
+     * @param \stdClass|array $values
      */
-    public function __construct($properties)
+    public function __construct($values = array())
     {
-        parent::__construct($properties, \ArrayObject::STD_PROP_LIST | \ArrayObject::ARRAY_AS_PROPS, '\\Codemitte\\Soap\\Mapping\\GenericResultIterator');
+        parent::__construct((array)$values);
     }
 
     /**
-     * Returns the keys of the resultset.
+     * Gracefully returns NULL if key does not exist.
      *
-     * @return array $key
-     */
-    public function getKeys()
-    {
-        return array_keys($this->getArrayCopy());
-    }
-
-    /**
-     * Envoke magic method.
+     * @override
      *
-     * @param $key
-     * @return mixed
+     * @param scalar $key
+     *
+     * @return mixed|null
      */
-    public function __invoke($key)
+    public function get($key)
     {
-        return $this->offsetGet($key);
+        if(parent::contains($key))
+        {
+            return parent::contains($key);
+        }
+        return null;
     }
 }

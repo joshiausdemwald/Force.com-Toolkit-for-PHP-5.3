@@ -49,6 +49,6 @@ class ID extends GenericType
                 $suffix .= substr('012345', $flags - 26, 1);
             }
         }
-        return $shortId . $suffix;
+        return new self($shortId . $suffix);
     }
 }

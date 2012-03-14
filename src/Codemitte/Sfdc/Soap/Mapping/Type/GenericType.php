@@ -67,11 +67,17 @@ abstract class GenericType implements TypeInterface
      */
     public static function toXml($value)
     {
-        throw new \BadMethodCallException('Not implemented!');
+        $name = $pathname = get_called_class();
+
+        if(false !== ($pos = strpos($pathname, '\\')))
+        {
+            $name = substr($pathname, $pos + 1);
+        }
+        return '<' . $name . '>' . $value . '</' . $name . '>';
     }
 
     public function __toString()
     {
-        return (string) $this->value;
+        return $this->toXml($this->value);
     }
 }

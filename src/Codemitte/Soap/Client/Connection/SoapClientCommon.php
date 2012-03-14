@@ -94,7 +94,7 @@ class SoapClientCommon extends SoapClient
      * @param null $input_headers
      * @param null $output_headers
      */
-    public function __soapCall($function, $arguments, $options = array(), $input_headers = null, & $output_headers = null)
+    public function __soapCall($function, $arguments, $options = null, $input_headers = null, & $output_headers = null)
     {
         $retVal = parent::__soapCall($function, $arguments, $options, $input_headers, $output_headers);
 
