@@ -38,7 +38,7 @@ class GenericResult extends GenericMap implements ClassInterface
      */
     public function __construct($values = array())
     {
-        parent::__construct((array)$values);
+        parent::__construct($values);
     }
 
     /**

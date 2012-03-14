@@ -202,7 +202,7 @@ abstract class API extends BaseClient
             $soapVar = new \SoapVar(
                 $param,
                 SOAP_ENC_OBJECT,
-                $sobject->getSobjectType(),
+                'EPS_Loyalty__c',
                 $this->getUri()
             );
 
@@ -259,9 +259,9 @@ abstract class API extends BaseClient
      *
      * @return void
      */
-    protected function fixNullableFieldsVar(\SoapVar $object, array $nullableFields)
+    protected function fixNullableFieldsVar(\SoapVar $object, array $nullableFields = null)
     {
-        if(count($nullableFields) > 0)
+        if(null !== $nullableFields && count($nullableFields) > 0)
         {
             $var = new \SoapVar(
                 new \SoapVar('<fieldsToNull>' . implode('</fieldsToNull><fieldsToNull>', $nullableFields) . '</fieldsToNull>', XSD_ANYXML), SOAP_ENC_ARRAY

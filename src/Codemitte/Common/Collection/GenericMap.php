@@ -22,8 +22,10 @@
 
 namespace Codemitte\Common\Collection;
 
+use \stdClass;
 use \Traversable;
 use \InvalidArgumentException;
+use \ArrayIterator;
 
 /**
  * @author Johannes Heinen <johannes.heinen@code-mitte.de>
@@ -33,17 +35,10 @@ use \InvalidArgumentException;
  */
 class GenericMap extends AbstractMap
 {
-    const DEFAULT_ITERATOR_CLASS = '\\Codemitte\\Common\\Collection\\GenericList';
-
     /**
      * @var array
      */
     private $container = array();
-
-    /**
-     * @var String
-     */
-    private $iteratorClass;
 
     /**
      * Constructor.
@@ -51,10 +46,8 @@ class GenericMap extends AbstractMap
      * @param array|MapInterface|Traversable $container
      * @param string $iteratorClass
      */
-    public function __construct($container = array(), $iteratorClass = null)
+    public function __construct($container = array())
     {
-        $this->iteratorClass = $iteratorClass;
-
         $this->putAll($container);
     }
 
@@ -122,6 +115,10 @@ class GenericMap extends AbstractMap
         if(is_array($values))
         {
             $toMerge = $values;
+        }
+        elseif($values instanceof stdClass)
+        {
+            $toMerge = (array)$values;
         }
         elseif($values instanceof MapInterface)
         {
@@ -193,11 +190,7 @@ class GenericMap extends AbstractMap
      */
     public function getValues()
     {
-        if(null === $this->iteratorClass)
-        {
-            $this->iteratorClass = self::DEFAULT_ITERATOR_CLASS;
-        }
-        return new $this->iteratorClass(array_values($this->toArray()));
+        return new GenericList(array_values($this->toArray()));
     }
 
     /**
@@ -210,6 +203,6 @@ class GenericMap extends AbstractMap
      */
     public function getIterator()
     {
-        return $this->getValues();
+        return new \ArrayIterator($this->container);
     }
 }
