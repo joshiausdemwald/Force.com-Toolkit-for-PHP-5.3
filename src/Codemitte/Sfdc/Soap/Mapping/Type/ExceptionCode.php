@@ -1,6 +1,8 @@
 <?php
 namespace Codemitte\Sfdc\Soap\Mapping\Type;
 
+use Codemitte\Soap\Mapping\Type\GenericType;
+
 class ExceptionCode extends GenericType
 {
     const API_CURRENTLY_DISABLED = 'API_CURRENTLY_DISABLED';

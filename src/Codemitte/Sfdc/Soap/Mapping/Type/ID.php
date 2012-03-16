@@ -1,6 +1,8 @@
 <?php
 namespace Codemitte\Sfdc\Soap\Mapping\Type;
 
+use Codemitte\Soap\Mapping\Type\GenericType;
+
 /**
  * ID
  */
@@ -49,6 +51,7 @@ class ID extends GenericType
                 $suffix .= substr('012345', $flags - 26, 1);
             }
         }
+
         return new self($shortId . $suffix);
     }
 }

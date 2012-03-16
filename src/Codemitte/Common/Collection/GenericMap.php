@@ -44,7 +44,6 @@ class GenericMap extends AbstractMap
      * Constructor.
      *
      * @param array|MapInterface|Traversable $container
-     * @param string $iteratorClass
      */
     public function __construct($container = array())
     {
@@ -89,7 +88,7 @@ class GenericMap extends AbstractMap
     }
 
     /**
-     *
+     * put()
      *
      * @param scalar $key
      * @param mixed $value

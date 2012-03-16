@@ -20,46 +20,49 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-namespace Codemitte\Soap\Mapping;
-
-
-use \SoapVar;
-use Codemitte\Common\Collection\GenericMap;
-use Codemitte\Soap\Mapping\Type\TypeInterface;
-use Codemitte\Soap\Mapping\ClassInterface;
+namespace Codemitte\Soap\Mapping\Type;
 
 /**
- * GenericResult
+ * TypeInterface
  *
  * @author Johannes Heinen <johannes.heinen@code-mitte.de>
+ * @copyright 2012 code mitte GmbH, Cologne, Germany
+ * @package Soap
+ * @subpackage Mapping
+ *
+ * @interface
+ * @abstract
  */
-class GenericResult extends GenericMap implements ClassInterface
+interface TypeInterface
 {
     /**
-     * Constructor.
+     * toXml() callback.
      *
-     * @param \stdClass|array $values
+     * @static
+     * @abstract
+     * @param $value
+     *
+     * @return string
      */
-    public function __construct($values = array())
-    {
-        parent::__construct($values);
-    }
+    public static function toXml($value);
 
     /**
-     * Gracefully returns NULL if key does not exist.
+     * fromXml() callback.
      *
-     * @override
+     * @static
+     * @abstract
+     * @param $value
      *
-     * @param scalar $key
-     *
-     * @return mixed|null
+     * @return object
      */
-    public function get($key)
-    {
-        if(parent::contains($key))
-        {
-            return parent::contains($key);
-        }
-        return null;
-    }
+    public static function fromXml($value);
+
+    /**
+     * __toString()
+     *
+     * @abstract
+     *
+     * @return string
+     */
+    public function __toString();
 }

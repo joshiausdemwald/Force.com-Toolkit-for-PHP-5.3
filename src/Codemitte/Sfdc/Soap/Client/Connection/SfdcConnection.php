@@ -190,6 +190,11 @@ class SfdcConnection extends Connection implements SfdcConnectionInterface
             'trace' => true,
             'exceptions' => true,
             'compression' => SOAP_COMPRESSION_ACCEPT | SOAP_COMPRESSION_GZIP
+
+            /*,
+
+          // DEBUG
+          'cache_wsdl' => WSDL_CACHE_NONE*/
         )));
 
         $this->registerClass('GetUserInfoResult', 'Codemitte\\Sfdc\\Soap\\Mapping\\Base\\GetUserInfoResult');

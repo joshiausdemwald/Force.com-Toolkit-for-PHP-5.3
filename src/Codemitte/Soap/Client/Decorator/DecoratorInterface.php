@@ -20,64 +20,38 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-namespace Codemitte\Sfdc\Soap\Mapping\Type;
-
-use \BadMethodCallException;
+namespace Codemitte\Soap\Client\Decorator;
 
 /**
- * GenericType
+ * DecoratorInterface
  *
  * @author Johannes Heinen <johannes.heinen@code-mitte.de>
  * @copyright 2012 code mitte GmbH, Cologne, Germany
- * @package Sfdc
- * @subpackage Soap
+ * @package Soap
+ * @subpackage Decorator
  */
-abstract class GenericType implements TypeInterface
+interface DecoratorInterface
 {
-    protected $value;
-
     /**
-     * Constructor.
+     * Returns the target namespace to put into SoapVar
+     * instances.
      *
-     * @param mixed $value
-     */
-    public function __construct($value)
-    {
-        $this->value = $value;
-    }
-
-    /**
-     * @var string $xml
-     */
-    public static function fromXml($xml_string)
-    {
-        $xml = simplexml_load_string($xml_string);
-
-        $name = get_called_class();
-
-        return new $name((string)$xml[0]);
-    }
-
-    /**
-     * <sf:Id xmlns:sf="urn:sobject.enterprise.soap.sforce.com">a03R0000001fiE8IAI</sf:Id>
+     * @abstract
      *
-     * @static
-     * @param $value
      * @return string
      */
-    public static function toXml($value)
-    {
-        $name = $pathname = get_called_class();
+    public function getUri();
 
-        if(false !== ($pos = strpos($pathname, '\\')))
-        {
-            $name = substr($pathname, $pos + 1);
-        }
-        return '<' . $name . '>' . $value . '</' . $name . '>';
-    }
-
-    public function __toString()
-    {
-        return $this->toXml($this->value);
-    }
+    /**
+     * Decorates a type/object (part of a soap request) to fit
+     * soap "specialities". Mainly it is used to transform simple
+     * types into SoapVar instances.
+     *
+     * @abstract
+     *
+     * @param object|array $type
+     *
+     * @return object|array $type
+     */
+    public function decorate($type);
 }

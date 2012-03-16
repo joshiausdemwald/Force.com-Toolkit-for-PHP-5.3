@@ -20,24 +20,69 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-namespace Codemitte\Sfdc\Soap\Mapping\Type;
+namespace Codemitte\Soap\Mapping\Type;
+
+use \BadMethodCallException;
 
 /**
- * TypeInterface
+ * GenericType
  *
  * @author Johannes Heinen <johannes.heinen@code-mitte.de>
  * @copyright 2012 code mitte GmbH, Cologne, Germany
- * @package Sfdc
- * @subpackage Soap
- *
- * @interface
- * @abstract
+ * @package Soap
+ * @subpackage Mapping
  */
-interface TypeInterface
+class GenericType implements TypeInterface
 {
-    public function __toString();
+    protected $value;
 
-    public static function toXml($value);
+    /**
+     * Constructor.
+     *
+     * @param mixed $value
+     */
+    public function __construct($value)
+    {
+        $this->value = $value;
+    }
 
-    public static function fromXml($value);
+    /**
+     * @var string $xml
+     */
+    public static function fromXml($xml_string)
+    {
+        $xml = simplexml_load_string($xml_string);
+
+        $name = get_called_class();
+
+        return new $name((string)$xml[0]);
+    }
+
+    /**
+     * <sf:Id xmlns:sf="urn:sobject.enterprise.soap.sforce.com">a03R0000001fiE8IAI</sf:Id>
+     *
+     * @static
+     * @param $value
+     * @return string
+     */
+    public static function toXml($value)
+    {
+        $name = $pathname = get_called_class();
+
+        if(false !== ($pos = strpos($pathname, '\\')))
+        {
+            $name = substr($pathname, $pos + 1);
+        }
+        return '<' . $name . '>' . $value . '</' . $name . '>';
+    }
+
+    /**
+     * __toString()
+     *
+     * @return string
+     */
+    public function __toString()
+    {
+        return $this->value;
+    }
 }

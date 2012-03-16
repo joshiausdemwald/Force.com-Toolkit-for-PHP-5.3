@@ -32,6 +32,8 @@ use \SoapFault AS GenericSoapFault;
 use Codemitte\Soap\Hydrator\HydratorInterface;
 use Codemitte\Soap\Hydrator\ResultHydrator;
 use Codemitte\Soap\Mapping\GenericResultCollection;
+use Codemitte\Soap\Client\Decorator\DecoratorInterface;
+use Codemitte\Soap\Client\Decorator\SoapParamDecorator;
 
 /**
  * Connection: Generic SOAP Client connection class.
@@ -107,7 +109,7 @@ class Connection implements ConnectionInterface
 {
     const CLASS_MAP_INTERFACE = 'Codemitte\\Soap\\Mapping\\ClassInterface';
 
-    const TYPE_MAP_INTERFACE = 'Codemitte\\Sfdc\\Soap\\Mapping\\Type\\TypeInterface';
+    const TYPE_MAP_INTERFACE = 'Codemitte\\Soap\\Mapping\\Type\\TypeInterface';
 
     const DEFAULT_OPTION_ENCODING = 'utf-8';
 
@@ -165,6 +167,11 @@ class Connection implements ConnectionInterface
      * @var Codemitte\Soap\Hydrator\HydratorInterface
      */
     private $hydrator;
+    
+    /**
+     * @var DecoratorInterface
+     */
+    private $decorator;
 
     /**
      * Constructor.
@@ -226,8 +233,9 @@ class Connection implements ConnectionInterface
      * @param string $wsdl
      * @param array $options
      * @param HydratorInterface $hydrator
+     * @param \Codemitte\Sfdc\Soap\Decorator\DecoratorInterface|null $decorator
      */
-    public function __construct($wsdl = null, array $options = array(), HydratorInterface $hydrator = null)
+    public function __construct($wsdl = null, array $options = array(), HydratorInterface $hydrator = null, DecoratorInterface $decorator = null)
     {
         $this->wsdl = $wsdl;
 
@@ -238,7 +246,14 @@ class Connection implements ConnectionInterface
             $hydrator = new ResultHydrator();
         }
 
+        if(null === $decorator)
+        {
+            $decorator = new SoapParamDecorator($this);
+        }
+
         $this->hydrator = $hydrator;
+
+        $this->decorator = $decorator;
 
         $this->configure($options);
     }
@@ -622,7 +637,7 @@ class Connection implements ConnectionInterface
 
             array(
                  'classmap' => $this->classMap,
-                 'typemap' => array_values($this->typeMap)
+                 'typemap' => $this->typeMap
             )
         );
 
@@ -818,12 +833,14 @@ class Connection implements ConnectionInterface
         }
 
         // Avoid duplicates
-        $this->typeMap[$namespace.$typename] = array(
-            'type_ns' => $namespace,
-            'type_name' => $typename,
-            'from_xml' => array($classname, 'fromXml'),
-            'to_xml' => array($classname, 'toXml')
-        );
+        $this->typeMap = array_merge($this->typeMap, array(
+            array(
+                'type_ns' => $namespace,
+                'type_name' => $typename,
+                'from_xml' => array($classname, 'fromXml'),
+                'to_xml' => array($classname, 'toXml')
+            )
+        ));
     }
 
     /**
@@ -839,12 +856,18 @@ class Connection implements ConnectionInterface
 
         $this->soapInputHeaders = array();
 
-        $retVal = array('hydrator' => $this->hydrator);
+        $retVal = array(
+            'hydrator' => $this->hydrator,
+        );
+
+        // @TODO: WORKAROUND. TODO: AVOID CIRCULAR REFERENCE.
+        $this->decorator = null;
 
         foreach($this AS $key => $value)
         {
             $retVal[$key] = $value;
         }
+
         return serialize($retVal);
     }
 
@@ -866,6 +889,11 @@ class Connection implements ConnectionInterface
             $this->$key = $value;
         }
 
+        if(null === $this->decorator)
+        {
+            $this->decorator = new SoapParamDecorator($this);
+        }
+
         if(count($this->permanentSoapInputHeaders) > 0)
         {
             $this->setSoapInputHeaders($this->permanentSoapInputHeaders, true);
@@ -881,9 +909,13 @@ class Connection implements ConnectionInterface
      *
      * @return array
      */
-    public function preProcessArguments(array $arguments)
+    public function preProcessArguments(array $arguments, DecoratorInterface $decorator = null)
     {
-        return $arguments;
+        if(null === $decorator)
+        {
+            $decorator = $this->decorator;
+        }
+        return $decorator->decorate($arguments);
     }
 
     /**
@@ -979,6 +1011,8 @@ class Connection implements ConnectionInterface
     {
         switch ($key)
         {
+            case 'actor':
+                return 'actor';
             case 'keepAlive':
             case 'keepalive':
             case 'keep_alive':

@@ -52,7 +52,7 @@ abstract class API extends BaseClient
      * Constructor.
      *
      * @param Connection\SfdcConnectionInterface $connection
-     * @param QueryParser|null $queryParser
+     * @param \Codemitte\Sfdc\Soql\Parser\QueryParser|\Codemitte\Sfdc\Soql\Parser\QueryParserInterface|null $queryParser
      */
     public function __construct(SfdcConnectionInterface $connection, QueryParserInterface $queryParser = null)
     {
@@ -64,6 +64,8 @@ abstract class API extends BaseClient
         }
 
         $this->queryParser = $queryParser;
+
+        $connection->setOption('actor', $this->getUri());
 
         $connection->registerClass('DescribeLayout', 'Codemitte\\Sfdc\\Soap\\Mapping\\DescribeLayout');
         $connection->registerClass('DescribeLayoutButton', 'Codemitte\\Sfdc\\Soap\\Mapping\\DescribeLayoutButton');
@@ -79,6 +81,7 @@ abstract class API extends BaseClient
         $connection->registerClass('sObject', 'Codemitte\\Sfdc\\Soap\\Mapping\\Sobject');
 
         $connection->registerType('ID', 'Codemitte\\Sfdc\\Soap\\Mapping\\Type\\ID', $this->getUri());
+        /*
         $connection->registerType('QueryLocator', 'Codemitte\\Sfdc\\Soap\\Mapping\\Type\\QueryLocator', $this->getUri());
         $connection->registerType('StatusCode', 'Codemitte\\Sfdc\\Soap\\Mapping\\Type\\StatusCode', $this->getUri());
         $connection->registerType('fieldType', 'Codemitte\\Sfdc\\Soap\\Mapping\\Type\\fieldType', $this->getUri());
@@ -86,7 +89,7 @@ abstract class API extends BaseClient
         $connection->registerType('layoutComponentType', 'Codemitte\\Sfdc\\Soap\\Mapping\\Type\\layoutComponentType', $this->getUri());
         $connection->registerType('EmailPriority', 'Codemitte\\Sfdc\\Soap\\Mapping\\Type\\EmailPriority', $this->getUri());
         $connection->registerType('DebugLevel', 'Codemitte\\Sfdc\\Soap\\Mapping\\Type\\DebugLevel', $this->getUri());
-        $connection->registerType('ExceptionCode', 'Codemitte\\Sfdc\\Soap\\Mapping\\Type\\ExceptionCode', $this->getUri());
+        $connection->registerType('ExceptionCode', 'Codemitte\\Sfdc\\Soap\\Mapping\\Type\\ExceptionCode', $this->getUri());*/
     }
 
     /**
@@ -179,7 +182,7 @@ abstract class API extends BaseClient
 
         $params = array();
 
-        foreach($data AS $key => $sobject)
+        foreach($data AS $sobject)
         {
             if( ! $sobject instanceof \Codemitte\Sfdc\Soap\Mapping\Sobject)
             {
@@ -209,7 +212,7 @@ abstract class API extends BaseClient
             // FIX FIELDS TO NULL
             $this->fixNullableFieldsVar($soapVar, $sobject->getFieldsToNull());
 
-            $params[$key] = $soapVar;
+            $params[] = $soapVar;
         }
 
         return $this->getConnection()->soapCall('create', array(array(

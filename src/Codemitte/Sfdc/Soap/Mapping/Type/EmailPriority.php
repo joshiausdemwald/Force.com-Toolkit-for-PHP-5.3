@@ -1,6 +1,8 @@
 <?php
 namespace Codemitte\Sfdc\Soap\Mapping\Type;
 
+use Codemitte\Soap\Mapping\Type\GenericType;
+
 class EmailPriority extends GenericType
 {
   const Highest = 'Highest';

@@ -1,6 +1,8 @@
 <?php
 namespace Codemitte\Sfdc\Soap\Mapping\Type;
 
+use Codemitte\Soap\Mapping\Type\GenericType;
+
 /**
  * QueryLocator
  */
