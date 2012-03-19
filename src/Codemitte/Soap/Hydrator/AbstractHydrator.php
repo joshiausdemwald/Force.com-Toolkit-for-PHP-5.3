@@ -23,7 +23,7 @@
 namespace Codemitte\Soap\Hydrator;
 
 use \stdClass;
-use \ReflectionClass;
+use \ReflectionObject;
 use \ReflectionProperty;
 
 abstract class AbstractHydrator implements HydratorInterface
@@ -49,7 +49,7 @@ abstract class AbstractHydrator implements HydratorInterface
         // OBJECTS MAPPED BY SOAP CLIENT
         if(is_object($result))
         {
-            $r = new ReflectionClass($result);
+            $r = new ReflectionObject($result);
 
             // TRAVERSABLE || PUBLIC PROPERTIES
             foreach($r->getProperties(~ ReflectionProperty::IS_STATIC) AS $p)

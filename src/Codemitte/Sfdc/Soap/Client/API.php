@@ -24,11 +24,12 @@ namespace Codemitte\Sfdc\Soap\Client;
 
 use \InvalidArgumentException;
 
+use Codemitte\Soap\Hydrator\HydratorInterface;
+
 use Codemitte\Sfdc\Soap\Client\Connection\SfdcConnectionInterface;
 use Codemitte\Sfdc\Soql\Parser\QueryParserInterface;
 use Codemitte\Sfdc\Soql\Parser\QueryParser;
-
-use Codemitte\Soap\Hydrator\HydratorInterface;
+use Codemitte\Sfdc\Soap\Mapping\Sobject;
 
 /**
  * API. Abstract parent class for partner
@@ -81,7 +82,6 @@ abstract class API extends BaseClient
         $connection->registerClass('sObject', 'Codemitte\\Sfdc\\Soap\\Mapping\\Sobject');
 
         $connection->registerType('ID', 'Codemitte\\Sfdc\\Soap\\Mapping\\Type\\ID', $this->getUri());
-        /*
         $connection->registerType('QueryLocator', 'Codemitte\\Sfdc\\Soap\\Mapping\\Type\\QueryLocator', $this->getUri());
         $connection->registerType('StatusCode', 'Codemitte\\Sfdc\\Soap\\Mapping\\Type\\StatusCode', $this->getUri());
         $connection->registerType('fieldType', 'Codemitte\\Sfdc\\Soap\\Mapping\\Type\\fieldType', $this->getUri());
@@ -89,7 +89,7 @@ abstract class API extends BaseClient
         $connection->registerType('layoutComponentType', 'Codemitte\\Sfdc\\Soap\\Mapping\\Type\\layoutComponentType', $this->getUri());
         $connection->registerType('EmailPriority', 'Codemitte\\Sfdc\\Soap\\Mapping\\Type\\EmailPriority', $this->getUri());
         $connection->registerType('DebugLevel', 'Codemitte\\Sfdc\\Soap\\Mapping\\Type\\DebugLevel', $this->getUri());
-        $connection->registerType('ExceptionCode', 'Codemitte\\Sfdc\\Soap\\Mapping\\Type\\ExceptionCode', $this->getUri());*/
+        $connection->registerType('ExceptionCode', 'Codemitte\\Sfdc\\Soap\\Mapping\\Type\\ExceptionCode', $this->getUri());
     }
 
     /**
@@ -184,7 +184,7 @@ abstract class API extends BaseClient
 
         foreach($data AS $sobject)
         {
-            if( ! $sobject instanceof \Codemitte\Sfdc\Soap\Mapping\Sobject)
+            if( ! $sobject instanceof Sobject)
             {
                 throw new InvalidArgumentException('$data must be an instance or a list of sObject(s).');
             }

@@ -23,7 +23,7 @@
 namespace Codemitte\Soap\Client\Decorator;
 
 use \SoapVar;
-use \ReflectionClass;
+use \ReflectionObject;
 use \ReflectionProperty;
 
 use Codemitte\Soap\Client\Connection\ConnectionInterface;
@@ -61,6 +61,7 @@ final class SoapParamDecorator implements DecoratorInterface
      * soap "specialities". Mainly it is used to transform simple
      * types into SoapVar instances.
      *
+     * @todo Generate Proxy classes instead of using reflection.
      *
      * @param object|array $type
      *
@@ -88,7 +89,7 @@ final class SoapParamDecorator implements DecoratorInterface
         }
         elseif(is_object($type))
         {
-            $r = new ReflectionClass($type);
+            $r = new ReflectionObject($type);
 
             // @TODO: REFACTOR CODE-DUPLICATION, @SEE AbstractHydrator
             foreach($r->getProperties(~ ReflectionProperty::IS_STATIC) AS $p)
