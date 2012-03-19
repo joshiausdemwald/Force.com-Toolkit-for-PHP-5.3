@@ -45,4 +45,13 @@ interface SobjectInterface
      * @return \Codemitte\Sfdc\Soap\Mapping\Type\ID $id
      */
     public function getId();
+
+    /**
+     * Returns the sobject type.
+     *
+     * @abstract
+     *
+     * @return string
+     */
+    public function getSobjectType();
 }

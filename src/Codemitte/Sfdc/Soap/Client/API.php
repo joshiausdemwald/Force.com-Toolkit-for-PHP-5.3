@@ -26,10 +26,14 @@ use \InvalidArgumentException;
 
 use Codemitte\Soap\Hydrator\HydratorInterface;
 
-use Codemitte\Sfdc\Soap\Client\Connection\SfdcConnectionInterface;
 use Codemitte\Sfdc\Soql\Parser\QueryParserInterface;
 use Codemitte\Sfdc\Soql\Parser\QueryParser;
-use Codemitte\Sfdc\Soap\Mapping\Sobject;
+
+use Codemitte\Sfdc\Soap\Mapping\SobjectInterface;
+use Codemitte\Sfdc\Soap\Client\Connection\SfdcConnectionInterface;
+
+use Codemitte\Sfdc\Soap\Header;
+
 
 /**
  * API. Abstract parent class for partner
@@ -66,7 +70,11 @@ abstract class API extends BaseClient
 
         $this->queryParser = $queryParser;
 
+        // OPTIONAL. SEEN THAT IN SOME REFERENCE IMPL.
         $connection->setOption('actor', $this->getUri());
+
+        // GENERIC SOBJECT
+        $connection->registerClass('sObject', 'Codemitte\\Sfdc\\Soap\\Mapping\\Sobject');
 
         $connection->registerClass('DescribeLayout', 'Codemitte\\Sfdc\\Soap\\Mapping\\DescribeLayout');
         $connection->registerClass('DescribeLayoutButton', 'Codemitte\\Sfdc\\Soap\\Mapping\\DescribeLayoutButton');
@@ -77,9 +85,6 @@ abstract class API extends BaseClient
         $connection->registerClass('DescribeLayoutResult', 'Codemitte\\Sfdc\\Soap\\Mapping\\DescribeLayoutResult');
         $connection->registerClass('DescribeLayoutRow', 'Codemitte\\Sfdc\\Soap\\Mapping\\DescribeLayoutRow');
         $connection->registerClass('DescribeLayoutSection', 'Codemitte\\Sfdc\\Soap\\Mapping\\DescribeLayoutSection');
-        $connection->registerClass('QueryResult', 'Codemitte\\Sfdc\\Soap\\Mapping\\QueryResult');
-        $connection->registerClass('createResponse', 'Codemitte\\Sfdc\\Soap\\Mapping\\createResponse');
-        $connection->registerClass('sObject', 'Codemitte\\Sfdc\\Soap\\Mapping\\Sobject');
 
         $connection->registerType('ID', 'Codemitte\\Sfdc\\Soap\\Mapping\\Type\\ID', $this->getUri());
         $connection->registerType('QueryLocator', 'Codemitte\\Sfdc\\Soap\\Mapping\\Type\\QueryLocator', $this->getUri());
@@ -176,38 +181,52 @@ abstract class API extends BaseClient
      * @param \Codemitte\Sfdc\Soap\Mapping\Sobject|array|\Traversable $data: List of sobjects
      * @return \Codemitte\Sfdc\Soap\Mapping\createResponse $response
      */
-    public function create($d)
-    {
+    public function create(
+        $d,
+        Header\AssignmentRuleHeader $assignmentRuleHeader = null,
+        Header\MruHeader $mruHeader = null,
+        Header\AllowFieldTruncationHeader $allowFieldTruncationHeader = null,
+        Header\DisableFeedTrackingHeader $disableFeedTrackingHeader = null,
+        Header\AllOrNoneHeader $allOrNoneHeader = null,
+        Header\EmailHeader $emailHeader = null
+    ) {
         $data = is_array($d) ? $d : array($d);
 
         $params = array();
 
         foreach($data AS $sobject)
         {
-            if( ! $sobject instanceof Sobject)
+            if($data instanceof \SoapVar)
             {
-                throw new InvalidArgumentException('$data must be an instance or a list of sObject(s).');
+                $soapVar = $data;
             }
-
-            $param = new \stdClass();
-
-            $param->Id =  $sobject->getId();
-
-            foreach($sobject AS $k => $v)
+            else
             {
-                if(null !== $v)
+                if( ! $sobject instanceof SobjectInterface)
                 {
-                    $param->$k = $v;
+                    throw new InvalidArgumentException('$data must be an instance or a list of sObject(s).');
                 }
-            }
 
-            // CONVERT TO "GENERIC" SOAP VAR
-            $soapVar = new \SoapVar(
-                $param,
-                SOAP_ENC_OBJECT,
-                'EPS_Loyalty__c',
-                $this->getUri()
-            );
+                $param = new \stdClass();
+
+                $param->Id =  $sobject->getId();
+
+                foreach($sobject AS $k => $v)
+                {
+                    if(null !== $v)
+                    {
+                        $param->$k = $v;
+                    }
+                }
+
+                // CONVERT TO "GENERIC" SOAP VAR
+                $soapVar = new \SoapVar(
+                    $param,
+                    SOAP_ENC_OBJECT,
+                    $sobject->getSobjectType(),
+                    $this->getUri()
+                );
+            }
 
             // FIX FIELDS TO NULL
             $this->fixNullableFieldsVar($soapVar, $sobject->getFieldsToNull());

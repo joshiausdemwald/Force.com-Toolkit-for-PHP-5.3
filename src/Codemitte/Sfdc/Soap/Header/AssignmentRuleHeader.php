@@ -20,46 +20,31 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-namespace Codemitte\Soap\Mapping;
+namespace Codemitte\Sfdc\Soap\Header;
 
-
-use \SoapVar;
-use Codemitte\Common\Collection\GenericMap;
-use Codemitte\Soap\Mapping\Type\TypeInterface;
-use Codemitte\Soap\Mapping\ClassInterface;
+use \SoapHeader;
 
 /**
- * GenericResult
+ * AssignmentRuleHeader
  *
  * @author Johannes Heinen <johannes.heinen@code-mitte.de>
+ * @copyright 2012 code mitte GmbH, Cologne, Germany
+ * @package Sfdc
+ * @subpackage Soap
  */
-class GenericResult extends GenericMap implements ClassInterface
+class AssignmentRuleHeader extends SoapHeader
 {
+    const HEADER_NAME = 'AssignmentRuleHeader';
+
     /**
      * Constructor.
      *
-     * @param \stdClass|array $values
+     * @param string $namespace: The target namespace
+     * @param string $assignmentRuleId
+     * @param bool $useDefaultRule
      */
-    public function __construct($values = array())
+    public function __construct($namespace, $assignmentRuleId = null, $useDefaultRule = null)
     {
-        parent::__construct($values);
-    }
-
-    /**
-     * Gracefully returns NULL if key does not exist.
-     *
-     * @override
-     *
-     * @param scalar $key
-     *
-     * @return mixed|null
-     */
-    public function get($key)
-    {
-        if(parent::contains($key))
-        {
-            return parent::get($key);
-        }
-        return null;
+        parent::__construct($namespace, self::HEADER_NAME, array('assignmentRuleId' => $assignmentRuleId, 'useDefaultRule' => $useDefaultRule), false);
     }
 }

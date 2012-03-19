@@ -11,6 +11,11 @@ class Sobject extends GenericResult implements SobjectInterface
     private $Id;
 
     /**
+     * @var string
+     */
+    private $sObjectType;
+
+    /**
      * Constructor.
      *
      * @override
@@ -19,9 +24,11 @@ class Sobject extends GenericResult implements SobjectInterface
      *
      * @internal param $sobjectType
      */
-    public function __construct($values = array())
+    public function __construct($sObjectType, $values = array())
     {
         parent::__construct($values);
+
+        $this->sObjectType = $sObjectType;
     }
 
     /**
@@ -70,5 +77,16 @@ class Sobject extends GenericResult implements SobjectInterface
     public function getId()
     {
         return $this->Id;
+    }
+
+    /**
+     * Returns the sobject type.
+     *
+     *
+     * @return string
+     */
+    public function getSobjectType()
+    {
+        return $this->sObjectType;
     }
 }

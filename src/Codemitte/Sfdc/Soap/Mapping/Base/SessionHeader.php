@@ -29,5 +29,4 @@ class SessionHeader implements ClassInterface
     {
         return $this->sessionId;
     }
-
 }

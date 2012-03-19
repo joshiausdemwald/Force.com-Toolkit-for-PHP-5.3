@@ -20,46 +20,30 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-namespace Codemitte\Soap\Mapping;
+namespace Codemitte\Sfdc\Soap\Header;
 
-
-use \SoapVar;
-use Codemitte\Common\Collection\GenericMap;
-use Codemitte\Soap\Mapping\Type\TypeInterface;
-use Codemitte\Soap\Mapping\ClassInterface;
+use \SoapHeader;
 
 /**
- * GenericResult
+ * AllOrNoneHeader
  *
  * @author Johannes Heinen <johannes.heinen@code-mitte.de>
+ * @copyright 2012 code mitte GmbH, Cologne, Germany
+ * @package Sfdc
+ * @subpackage Soap
  */
-class GenericResult extends GenericMap implements ClassInterface
+class AllOrNoneHeader extends SoapHeader
 {
+    const HEADER_NAME = 'AllOrNoneHeader';
+
     /**
      * Constructor.
      *
-     * @param \stdClass|array $values
+     * @param string $namespace: The target namespace
+     * @param boolean $allOrNone, defaults to false.
      */
-    public function __construct($values = array())
+    public function __construct($namespace, $allOrNone = false)
     {
-        parent::__construct($values);
-    }
-
-    /**
-     * Gracefully returns NULL if key does not exist.
-     *
-     * @override
-     *
-     * @param scalar $key
-     *
-     * @return mixed|null
-     */
-    public function get($key)
-    {
-        if(parent::contains($key))
-        {
-            return parent::get($key);
-        }
-        return null;
+        parent::__construct($namespace, self::HEADER_NAME, array('allOrNone' => $allOrNone), false);
     }
 }
