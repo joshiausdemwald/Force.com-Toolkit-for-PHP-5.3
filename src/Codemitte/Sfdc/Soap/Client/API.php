@@ -23,6 +23,7 @@
 namespace Codemitte\Sfdc\Soap\Client;
 
 use \InvalidArgumentException;
+use \SoapVar;
 
 use Codemitte\Soap\Hydrator\HydratorInterface;
 
@@ -196,7 +197,7 @@ abstract class API extends BaseClient
 
         foreach($data AS $sobject)
         {
-            if($data instanceof \SoapVar)
+            if($data instanceof SoapVar)
             {
                 $soapVar = $data;
             }
@@ -220,7 +221,7 @@ abstract class API extends BaseClient
                 }
 
                 // CONVERT TO "GENERIC" SOAP VAR
-                $soapVar = new \SoapVar(
+                $soapVar = new SoapVar(
                     $param,
                     SOAP_ENC_OBJECT,
                     $sobject->getSobjectType(),
@@ -276,17 +277,17 @@ abstract class API extends BaseClient
      * getNullableFieldsVar()
      * Used in CRU(D)-Methods to fix and add the fieldsToNull property in a Salesforce-way.
      *
-     * @param \SoapVar $object
+     * @param SoapVar $object
      * @param array $nullableFields
      *
      * @return void
      */
-    protected function fixNullableFieldsVar(\SoapVar $object, array $nullableFields = null)
+    protected function fixNullableFieldsVar(SoapVar $object, array $nullableFields = null)
     {
         if(null !== $nullableFields && count($nullableFields) > 0)
         {
-            $var = new \SoapVar(
-                new \SoapVar('<fieldsToNull>' . implode('</fieldsToNull><fieldsToNull>', $nullableFields) . '</fieldsToNull>', XSD_ANYXML), SOAP_ENC_ARRAY
+            $var = new SoapVar(
+                new SoapVar('<fieldsToNull>' . implode('</fieldsToNull><fieldsToNull>', $nullableFields) . '</fieldsToNull>', XSD_ANYXML), SOAP_ENC_ARRAY
             );
 
             if(is_array($object->enc_value))

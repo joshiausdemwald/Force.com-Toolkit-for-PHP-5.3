@@ -20,70 +20,17 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-namespace Codemitte\Soap\Mapping\Type;
+namespace Codemitte\Common\Collection;
 
-use \BadMethodCallException;
+use \ArrayIterator;
 
 /**
- * GenericType
- *
  * @author Johannes Heinen <johannes.heinen@code-mitte.de>
  * @copyright 2012 code mitte GmbH, Cologne, Germany
- * @package Soap
- * @subpackage Mapping
+ * @package Common
+ * @subpackage Collection
  */
-class GenericType implements TypeInterface
+class MapIterator extends ArrayIterator
 {
-    protected $value;
 
-    /**
-     * Constructor.
-     *
-     * @param mixed $value
-     */
-    public function __construct($value)
-    {
-        $this->value = $value;
-    }
-
-    /**
-     * @var string $xml
-     */
-    public static function fromXml($xml_string)
-    {
-        $xml = simplexml_load_string($xml_string);
-
-        $name = get_called_class();
-
-        return new $name((string)$xml[0]);
-    }
-
-    /**
-     * <sf:Id xmlns:sf="urn:sobject.enterprise.soap.sforce.com">a03R0000001fiE8IAI</sf:Id>
-     *
-     * @static
-     * @param $value
-     * @return string
-     */
-    public static function toXml($value)
-    {
-        $name = $pathname = get_called_class();
-
-        if(false !== ($pos = strrpos($pathname, '\\')))
-        {
-            $name = substr($pathname, $pos + 1);
-        }
-
-        return '<' . $name . '>' . $value . '</' . $name . '>';
-    }
-
-    /**
-     * __toString()
-     *
-     * @return string
-     */
-    public function __toString()
-    {
-        return $this->value;
-    }
 }

@@ -38,7 +38,7 @@ class GenericMap extends AbstractMap
     /**
      * @var array
      */
-    private $container = array();
+    protected $container = array();
 
     /**
      * Constructor.
@@ -202,6 +202,6 @@ class GenericMap extends AbstractMap
      */
     public function getIterator()
     {
-        return new \ArrayIterator($this->container);
+        return new MapIterator($this->container);
     }
 }

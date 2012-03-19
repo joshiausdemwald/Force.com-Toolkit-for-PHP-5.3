@@ -74,8 +74,6 @@ class SoapClientCommon extends SoapClient
      */
     function __doRequest($request, $location, $action, $version, $one_way = null)
     {
-        var_dump($request);
-
         $params = array(
             $this, $request, $location, $action, $version
         );
