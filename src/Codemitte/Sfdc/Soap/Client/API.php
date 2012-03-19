@@ -82,10 +82,16 @@ abstract class API extends BaseClient
         $connection->registerClass('DescribeLayoutButtonSection', 'Codemitte\\Sfdc\\Soap\\Mapping\\DescribeLayoutButtonSection');
         $connection->registerClass('DescribeLayoutComponent', 'Codemitte\\Sfdc\\Soap\\Mapping\\DescribeLayoutComponent');
         $connection->registerClass('DescribeLayoutItem', 'Codemitte\\Sfdc\\Soap\\Mapping\\DescribeLayoutItem');
-        $connection->registerClass('describeLayoutResponse', 'Codemitte\\Sfdc\\Soap\\Mapping\\describeLayoutResponse');
         $connection->registerClass('DescribeLayoutResult', 'Codemitte\\Sfdc\\Soap\\Mapping\\DescribeLayoutResult');
         $connection->registerClass('DescribeLayoutRow', 'Codemitte\\Sfdc\\Soap\\Mapping\\DescribeLayoutRow');
         $connection->registerClass('DescribeLayoutSection', 'Codemitte\\Sfdc\\Soap\\Mapping\\DescribeLayoutSection');
+
+        $connection->registerClass('DescribeSObjectResult', 'Codemitte\\Sfdc\\Soap\\Mapping\\DescribeSObjectResult');
+        $connection->registerClass('RecordTypeInfo', 'Codemitte\\Sfdc\\Soap\\Mapping\\RecordTypeInfo');
+        $connection->registerClass('RecordType', 'Codemitte\\Sfdc\\Soap\\Mapping\\RecordType');
+        $connection->registerClass('ChildRelationship', 'Codemitte\\Sfdc\\Soap\\Mapping\\ChildRelationship');
+        $connection->registerClass('Field', 'Codemitte\\Sfdc\\Soap\\Mapping\\Field');
+        $connection->registerClass('Field', 'Codemitte\\Sfdc\\Soap\\Mapping\\PicklistEntry');
 
         $connection->registerType('ID', 'Codemitte\\Sfdc\\Soap\\Mapping\\Type\\ID', $this->getUri());
         $connection->registerType('QueryLocator', 'Codemitte\\Sfdc\\Soap\\Mapping\\Type\\QueryLocator', $this->getUri());

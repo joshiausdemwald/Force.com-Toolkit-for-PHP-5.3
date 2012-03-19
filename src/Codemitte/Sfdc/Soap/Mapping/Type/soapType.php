@@ -15,4 +15,14 @@ class soapType extends GenericType
     const xsddateTime = 'xsd:dateTime';
     const xsdtime = 'xsd:time';
     const xsdanyType = 'xsd:anyType';
+
+    /**
+     * The target namespace of the type.
+     *
+     * @return string
+     */
+    public static function getURI()
+    {
+        return 'urn:enterprise.soap.sforce.com';
+    }
 }

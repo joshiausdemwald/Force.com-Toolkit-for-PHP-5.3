@@ -212,4 +212,14 @@ class ExceptionCode extends GenericType
     const UNSUPPORTED_MEDIA_TYPE = 'UNSUPPORTED_MEDIA_TYPE';
 
     const XML_PARSER_ERROR = 'XML_PARSER_ERROR';
+
+    /**
+     * The target namespace of the type.
+     *
+     * @return string
+     */
+    public static function getURI()
+    {
+        return 'urn:enterprise.soap.sforce.com';
+    }
 }

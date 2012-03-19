@@ -30,4 +30,14 @@ class fieldType extends GenericType
     const encryptedstring = 'encryptedstring';
     const datacategorygroupreference = 'datacategorygroupreference';
     const anyType = 'anyType';
+
+    /**
+     * The target namespace of the type.
+     *
+     * @return string
+     */
+    public static function getURI()
+    {
+        return 'urn:enterprise.soap.sforce.com';
+    }
 }

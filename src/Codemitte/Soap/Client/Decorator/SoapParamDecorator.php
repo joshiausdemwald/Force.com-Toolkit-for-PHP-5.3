@@ -121,9 +121,16 @@ final class SoapParamDecorator implements DecoratorInterface
             }
 
             // CONVERT!
-            if($type instanceof TypeInterface || $type instanceof ClassInterface)
+            if($type instanceof TypeInterface)
             {
-                $type = new SoapVar($type, SOAP_ENC_OBJECT, $this->extractClassname($type), $this->getUri());
+                $namespace = $type->getURI();
+
+                if(null === $namespace)
+                {
+                    $namespace = $this->getUri();
+                }
+
+                $type = new SoapVar($type, SOAP_ENC_OBJECT, $this->extractClassname($type), $namespace);
             }
         }
 

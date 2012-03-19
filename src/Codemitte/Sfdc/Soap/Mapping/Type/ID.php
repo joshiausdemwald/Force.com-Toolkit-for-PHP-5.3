@@ -54,4 +54,14 @@ class ID extends GenericType
 
         return new self($shortId . $suffix);
     }
+
+    /**
+     * The target namespace of the type.
+     *
+     * @return string
+     */
+    public static function getURI()
+    {
+        return 'urn:enterprise.soap.sforce.com';
+    }
 }

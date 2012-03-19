@@ -812,16 +812,6 @@ class Connection implements ConnectionInterface
     {
         $this->soapClient = null;
 
-        if(null === $namespace)
-        {
-            $namespace = $this->getOption('uri');
-
-            if(null === $namespace)
-            {
-                throw new InvalidArgumentException('A namespace must be provided, non given and no global URI defined.');
-            }
-        }
-
         if( ! class_exists($classname))
         {
             throw new MappingException(sprintf('Simple type mapping class "%s" does not exist! (Tried to map %s)', $classname, $namespace . '.'. $typename));
@@ -830,6 +820,21 @@ class Connection implements ConnectionInterface
         if( ! in_array(self::TYPE_MAP_INTERFACE, class_implements($classname)))
         {
             throw new MappingException(sprintf('Stimple type mapping class "%s" must implement interface! (Tried to map %s)', $classname, $namespace . '.' . $typename));
+        }
+
+        if(null === $namespace)
+        {
+            $namespace = $classname::getURI();
+
+            if(null === $namespace)
+            {
+                $namespace = $this->getOption('uri');
+
+                if(null === $namespace)
+                {
+                    throw new InvalidArgumentException('A namespace must be provided, non given and no global URI defined.');
+                }
+            }
         }
 
         // Avoid duplicates

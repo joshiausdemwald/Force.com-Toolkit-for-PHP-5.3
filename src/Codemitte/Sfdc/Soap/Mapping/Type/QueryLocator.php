@@ -22,4 +22,14 @@ class QueryLocator extends GenericType
     {
         // TODO: Implement fromXml() method.
     }
+
+    /**
+     * The target namespace of the type.
+     *
+     * @return string
+     */
+    public static function getURI()
+    {
+        return 'urn:enterprise.soap.sforce.com';
+    }
 }

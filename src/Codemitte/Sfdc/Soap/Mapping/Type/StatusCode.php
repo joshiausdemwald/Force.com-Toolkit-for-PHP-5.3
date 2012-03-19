@@ -175,6 +175,14 @@ class StatusCode extends GenericType
     const USER_WITH_APEX_SHARES_EXCEPTION = 'USER_WITH_APEX_SHARES_EXCEPTION';
     const WEBLINK_SIZE_LIMIT_EXCEEDED = 'WEBLINK_SIZE_LIMIT_EXCEEDED';
     const WRONG_CONTROLLER_TYPE = 'WRONG_CONTROLLER_TYPE';
-    
 
+    /**
+     * The target namespace of the type.
+     *
+     * @return string
+     */
+    public static function getURI()
+    {
+        return 'urn:enterprise.soap.sforce.com';
+    }
 }

@@ -32,7 +32,7 @@ use \BadMethodCallException;
  * @package Soap
  * @subpackage Mapping
  */
-class GenericType implements TypeInterface
+abstract class GenericType implements TypeInterface
 {
     protected $value;
 
@@ -85,5 +85,16 @@ class GenericType implements TypeInterface
     public function __toString()
     {
         return $this->value;
+    }
+
+    /**
+     * Convinience method. if left NULL, the "global" target
+     * namespace will be taken as defined for the current connection.
+     *
+     * @return null
+     */
+    public static function getURI()
+    {
+        return null;
     }
 }

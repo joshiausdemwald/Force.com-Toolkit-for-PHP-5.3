@@ -65,4 +65,13 @@ interface TypeInterface
      * @return string
      */
     public function __toString();
+
+    /**
+     * The target namespace of the type.
+     *
+     * @abstract
+     *
+     * @return string
+     */
+    public static function getURI();
 }
