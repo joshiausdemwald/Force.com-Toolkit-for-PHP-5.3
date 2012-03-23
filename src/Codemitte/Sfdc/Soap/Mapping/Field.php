@@ -5,7 +5,6 @@ use Codemitte\Soap\Mapping\ClassInterface;
 
 class Field implements ClassInterface
 {
-
     /**
      *
      * @var boolean $autoNumber
@@ -206,7 +205,7 @@ class Field implements ClassInterface
 
     /**
      *
-     * @var soapType $soapType
+     * @var \Codemitte\Sfdc\Soap\Mapping\Type\soapType $soapType
      */
     private $soapType;
 
@@ -218,7 +217,7 @@ class Field implements ClassInterface
 
     /**
      *
-     * @var fieldType $type
+     * @var \Codemitte\Sfdc\Soap\Mapping\Type\fieldType $type
      */
     private $type;
 
@@ -614,4 +613,35 @@ class Field implements ClassInterface
         return $this->sortable;
     }
 
+    /**
+     * @return \Codemitte\Sfdc\Soap\Mapping\fieldType
+     */
+    public function getType()
+    {
+        return $this->type;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function getUnique()
+    {
+        return $this->unique;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function getUpdateable()
+    {
+        return $this->updateable;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function getWriteRequiresMasterRead()
+    {
+        return $this->writeRequiresMasterRead;
+    }
 }

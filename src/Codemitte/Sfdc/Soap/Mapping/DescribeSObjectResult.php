@@ -163,6 +163,18 @@ class DescribeSObjectResult implements ClassInterface
 
     /**
      *
+     * @var \Codemitte\Sfdc\Soap\Mapping\Type\soapType
+     */
+    private $soapType;
+
+    /**
+     *
+     * @var \Codemitte\Sfdc\Soap\Mapping\Type\fieldType
+     */
+    private $type;
+
+    /**
+     *
      * @param boolean $activateable
      * @param ChildRelationship $childRelationships
      * @param boolean $createable
@@ -433,5 +445,21 @@ class DescribeSObjectResult implements ClassInterface
     public function getUrlNew()
     {
         return $this->urlNew;
+    }
+
+    /**
+     * @return \Codemitte\Sfdc\Soap\Mapping\Type\fieldType
+     */
+    public function getType()
+    {
+        return $this->type;
+    }
+
+    /**
+     * @return \Codemitte\Sfdc\Soap\Mapping\Type\soapType
+     */
+    public function getSoapType()
+    {
+        return $this->soapType;
     }
 }

@@ -85,6 +85,7 @@ class PicklistEntry implements ClassInterface
 
     /**
      * @return \Codemitte\Sfdc\Soap\Mapping\base64Binary
+     * @see http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_describesobjects_describesobjectresult.htm#i1427864
      */
     public function getValidFor()
     {

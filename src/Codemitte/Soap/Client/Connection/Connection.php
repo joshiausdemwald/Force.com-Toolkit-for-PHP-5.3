@@ -128,7 +128,7 @@ class Connection implements ConnectionInterface
      */
     protected $soapClient;
 
-    /**
+	/**
      * @var array
      */
     private $options = array();
@@ -167,7 +167,7 @@ class Connection implements ConnectionInterface
      * @var Codemitte\Soap\Hydrator\HydratorInterface
      */
     private $hydrator;
-    
+
     /**
      * @var DecoratorInterface
      */
@@ -621,16 +621,16 @@ class Connection implements ConnectionInterface
     {
         $wsdl = $this->getWsdl();
 
-        // INJECT DEFAULT OPTIONS
+		// INJECT DEFAULT OPTIONS
         $this->options = array_merge(
             array(
-                 'encoding'      => self::DEFAULT_OPTION_ENCODING,
-                 'soap_version'  => SOAP_1_2,
-                 'features'      => SOAP_SINGLE_ELEMENT_ARRAYS | SOAP_USE_XSI_ARRAY_TYPE,
-                 'trace'         => self::DEFAULT_OPTION_TRACE,
-                 'exceptions'    => self::DEFAULT_OPTION_EXCEPTIONS,
-                 'cache_wsdl'    => WSDL_CACHE_MEMORY,
-                 'useragent'     => self::DEFAULT_OPTION_USER_AGENT
+                 'encoding'        => self::DEFAULT_OPTION_ENCODING,
+                 'soap_version'    => SOAP_1_2,
+                 'features'        => SOAP_SINGLE_ELEMENT_ARRAYS | SOAP_USE_XSI_ARRAY_TYPE,
+                 'trace'           => self::DEFAULT_OPTION_TRACE,
+                 'exceptions'      => self::DEFAULT_OPTION_EXCEPTIONS,
+                 'cache_wsdl'      => WSDL_CACHE_MEMORY,
+                 'useragent'       => self::DEFAULT_OPTION_USER_AGENT
             ),
 
             $this->getOptions(),
@@ -724,10 +724,8 @@ class Connection implements ConnectionInterface
                     $this->getLastRequestHeaders(),
                     $this->getLastResponse(),
                     $this->getLastResponseHeaders(),
-
                     $e
                 );
-
                 if(true === $this->getOption('exceptions'))
                 {
                     throw $ex;
@@ -775,11 +773,13 @@ class Connection implements ConnectionInterface
             if (false !== $pos = strrpos($class, '\\'))
             {
                 $classPath = DIRECTORY_SEPARATOR . str_replace('\\', DIRECTORY_SEPARATOR, substr($class, 0, $pos));
+
                 $className = substr($class, $pos + 1);
             }
             else
             {
                 $classPath = null;
+
                 $className = $class;
             }
 

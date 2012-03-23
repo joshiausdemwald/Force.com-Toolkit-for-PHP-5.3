@@ -91,7 +91,7 @@ abstract class API extends BaseClient
         $connection->registerClass('RecordType', 'Codemitte\\Sfdc\\Soap\\Mapping\\RecordType');
         $connection->registerClass('ChildRelationship', 'Codemitte\\Sfdc\\Soap\\Mapping\\ChildRelationship');
         $connection->registerClass('Field', 'Codemitte\\Sfdc\\Soap\\Mapping\\Field');
-        $connection->registerClass('Field', 'Codemitte\\Sfdc\\Soap\\Mapping\\PicklistEntry');
+        $connection->registerClass('PicklistEntry', 'Codemitte\\Sfdc\\Soap\\Mapping\\PicklistEntry');
 
         $connection->registerType('ID', 'Codemitte\\Sfdc\\Soap\\Mapping\\Type\\ID', $this->getUri());
         $connection->registerType('QueryLocator', 'Codemitte\\Sfdc\\Soap\\Mapping\\Type\\QueryLocator', $this->getUri());

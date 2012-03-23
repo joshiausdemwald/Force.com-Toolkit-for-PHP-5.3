@@ -22,6 +22,8 @@
 
 namespace Codemitte\Sfdc\Soap\Client\Connection;
 
+use Codemitte\Soap\Client\Connection\SoapClientCommon;
+
 use Codemitte\Soap\Client\Connection\Connection;
 
 use Codemitte\Sfdc\Soap\Mapping\Base\login;
@@ -171,6 +173,7 @@ class SfdcConnection extends Connection implements SfdcConnectionInterface
      * @param string $serviceLocation: The location of the webservice, only used when differs from service definition
      *                                 in wsdl.
      * @param array $options
+     * @param \Codemitte\Soap\Hydrator\HydratorInterface|null $hydrator
      */
     public function __construct($wsdl, $serviceLocation = null, array $options = array(), HydratorInterface $hydrator = null)
     {
@@ -182,19 +185,27 @@ class SfdcConnection extends Connection implements SfdcConnectionInterface
             $this->setOption('location', $serviceLocation);
         }
 
-        // FORCE DEFAULT OPTIONS
         $this->setOptions(array_merge($options, array(
             'soap_version' => SOAP_1_1,
             'user_agent' => 'salesforce-toolkit-php53/' . self::VERSION,
             'encoding' => 'utf-8',
             'trace' => true,
             'exceptions' => true,
-            'compression' => SOAP_COMPRESSION_ACCEPT | SOAP_COMPRESSION_GZIP
+            'compression' => SOAP_COMPRESSION_ACCEPT | SOAP_COMPRESSION_GZIP,
 
-            /*,
+            // PREPARE STREAM CONTEXT OPTIONS:
+            // Salesforce.com supports only the Secure Sockets Layer (SSL) protocol SSLv3 and the Transport Layer
+            // Security (TLS) protocol. Ciphers must have a key length of at least 128 bits.
+            // context ssl: http://www.php.net/manual/en/context.ssl.php
+            /*'stream_context'  => stream_context_create(array('ssl' => array(
+                    'ciphers' => 'ALL:!SSLv2:+TLSv1:+SSLv3', 	// DISABLE SSLv2
+            //        'verify_peer' => false,		// TESTING: DO NOT VALIDATE PEER CERT
 
-          // DEBUG
-          'cache_wsdl' => WSDL_CACHE_NONE*/
+                )
+            )),*/
+
+            // IF DEBUG
+            'cache_wsdl' => WSDL_CACHE_NONE
         )));
 
         $this->registerClass('GetUserInfoResult', 'Codemitte\\Sfdc\\Soap\\Mapping\\Base\\GetUserInfoResult');
@@ -279,4 +290,35 @@ class SfdcConnection extends Connection implements SfdcConnectionInterface
         parent::unserialize($data['__parentData']);
     }
 
+    /**
+     * doRequestCallback()
+     *
+     * @internal
+     * @param SoapClientCommon $client
+     * @param $request
+     * @param $location
+     * @param $action
+     * @param $version
+     * @param null $one_way
+     * @return mixed
+     */
+    public function doRequestCallback(SoapClientCommon $client, $request, $location, $action, $version, $one_way = null)
+    {
+        $callable = array($client, '__doRequestFallback');
+
+        $args = array(
+            $request,
+            $location,
+            $action,
+            $version
+        );
+
+        // Perform request as is
+        if (null !== $one_way)
+        {
+            $args[] = $one_way;
+        }
+
+        return call_user_func_array($callable, $args);
+    }
 }

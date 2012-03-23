@@ -23,6 +23,7 @@
 namespace Codemitte\Soap\Client\Connection;
 
 use \SoapClient;
+use \SoapFault;
 
 /**
  * SoapClientCommon.
@@ -62,6 +63,26 @@ class SoapClientCommon extends SoapClient
     }
 
     /**
+     * __SoapCall
+     *
+     * @param $function
+     * @param $arguments
+     * @param array $options
+     * @param null $input_headers
+     * @param null $output_headers
+     *
+     * @return mixed
+     */
+    public function __soapCall($function, $arguments, $options = null, $input_headers = null, & $output_headers = null)
+    {
+        $retVal = parent::__soapCall($function, $arguments, $options, $input_headers, $output_headers);
+
+        $this->outputHeaders = $output_headers;
+
+        return $retVal;
+    }
+
+    /**
      * Performs SOAP request over HTTP.
      * Overridden to implement different transport layers, perform additional XML processing or other purpose.
      *
@@ -86,22 +107,50 @@ class SoapClientCommon extends SoapClient
     }
 
     /**
-     * __SoapCall
+     * __doRequestFallback
      *
-     * @param $function
-     * @param $arguments
-     * @param array $options
-     * @param null $input_headers
-     * @param null $output_headers
-     *
+     * @param $request
+     * @param $location
+     * @param $action
+     * @param $version
+     * @param int $one_way
      * @return mixed
+     * @throws SoapFault
      */
-    public function __soapCall($function, $arguments, $options = null, $input_headers = null, & $output_headers = null)
+    public function __doRequestFallback($request, $location, $action, $version, $one_way = null)
     {
-        $retVal = parent::__soapCall($function, $arguments, $options, $input_headers, $output_headers);
+        $handle = curl_init();
 
-        $this->outputHeaders = $output_headers;
+        curl_setopt($handle, CURLOPT_URL, $location);
+        curl_setopt($handle, CURLOPT_HTTPHEADER, array(
+          'Content-type: text/xml;charset="utf-8"',
+          'Accept: text/xml',
+          'Cache-Control: no-cache',
+          'Pragma: no-cache',
+          'SOAPAction: ' . '"' . $action . '"',
+          'Content-length: ' . mb_strlen($request))
+        );
 
-        return $retVal;
+        curl_setopt($handle, CURLOPT_RETURNTRANSFER,    true);
+        curl_setopt($handle, CURLOPT_POSTFIELDS,        $request);
+        curl_setopt($handle, CURLOPT_SSLVERSION,        3);
+        curl_setopt($handle, CURLOPT_PORT,              443);
+        curl_setopt($handle, CURLOPT_POST,              true);
+        curl_setopt($handle, CURLOPT_SSL_VERIFYHOST,    false);
+        curl_setopt($handle, CURLOPT_SSL_VERIFYPEER,    false);
+
+        $response = curl_exec($handle);
+
+        if(empty($response))
+        {
+            throw new SoapFault('CURL error: ' . curl_error($handle), curl_errno($handle));
+        }
+
+        curl_close($handle);
+
+        if(null === $one_way  || ! $one_way)
+        {
+            return $response;
+        }
     }
 }
