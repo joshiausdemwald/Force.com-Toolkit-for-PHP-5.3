@@ -33,61 +33,48 @@ use \SoapFault AS GenericSoapFault;
  */
 class SoapFault extends GenericSoapFault
 {
-    private $faultcode;
-
-    private $faultstring;
-
-    private $faultactor;
-
-    private $faultdetail;
-
-    private $faultname;
-
-    private $headerfault;
-
     /**
      * @param GenericSoapFault $fault
      */
     public function __construct(GenericSoapFault $fault)
     {
-        $this->faultcode = $fault->faultcode;
-        $this->faultstring = $fault->faultstring;
-        $this->faultactor = @$fault->faultactor;
-        $this->faultdetail  = @$fault->detail;
-        $this->faultname = @$fault->_name;
-        $this->headerfault = @$fault->headerfault;
-
-        parent::__construct($this->faultcode, $this->faultstring, $this->faultactor, $this->faultdetail, $this->faultname, $this->headerfault);
+        parent::__construct(
+            isset($fault->faultcode) ? $fault->faultcode : null,
+            isset($fault->faultstring) ? $fault->faultstring : null,
+            isset($fault->faultactor) ? $fault->faultactor : null,
+            isset($fault->detail) ? $fault->detail : null,
+            isset($fault->_name) ? $fault->_name : null,
+            isset($fault->headerfault) ? $fault->headerfault : null
+        );
     }
 
     public function getFaultactor()
     {
-        return $this->faultactor;
+        return parent::$faultactor;
     }
 
     public function getFaultcode()
     {
-        return $this->faultcode;
+        return parent::$faultcode;
     }
 
     public function getFaultdetail()
     {
-        return $this->faultdetail;
+        return parent::$detail;
     }
 
     public function getFaultname()
     {
-        return $this->faultname;
+        return parent::$_name;
     }
 
     public function getFaultstring()
     {
-        return $this->faultstring;
+        return parent::$faultstring;
     }
 
     public function getHeaderfault()
     {
-        return $this->headerfault;
+        return parent::$headerfault;
     }
-
 }

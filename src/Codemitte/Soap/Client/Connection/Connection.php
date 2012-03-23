@@ -29,6 +29,7 @@ use \RuntimeException;
 use \SoapHeader;
 use \SoapFault AS GenericSoapFault;
 
+use Codemitte\Soap\Client\Connection\SoapFault;
 use Codemitte\Soap\Hydrator\HydratorInterface;
 use Codemitte\Soap\Hydrator\ResultHydrator;
 use Codemitte\Soap\Mapping\GenericResultCollection;
@@ -694,6 +695,8 @@ class Connection implements ConnectionInterface
 
         $this->soapInputHeaders = array();
 
+        $result = null;
+
         try
         {
             $result = $soapClient->__soapCall(
@@ -706,7 +709,7 @@ class Connection implements ConnectionInterface
 
             if($result instanceof GenericSoapFault)
             {
-                return $result;
+                return new SoapFault($result);
             }
         }
         catch(GenericSoapFault $e)

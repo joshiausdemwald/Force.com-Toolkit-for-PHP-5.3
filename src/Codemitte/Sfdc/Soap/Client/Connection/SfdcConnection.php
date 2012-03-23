@@ -23,12 +23,10 @@
 namespace Codemitte\Sfdc\Soap\Client\Connection;
 
 use Codemitte\Soap\Client\Connection\SoapClientCommon;
-
 use Codemitte\Soap\Client\Connection\Connection;
-
 use Codemitte\Sfdc\Soap\Mapping\Base\login;
-
 use Codemitte\Soap\Hydrator\HydratorInterface;
+use Codemitte\Soap\Client\Connection\UnknownOptionException;
 
 /**
  * SfdcConnection: Sfdc soap connector.
@@ -106,6 +104,9 @@ class SfdcConnection extends Connection implements SfdcConnectionInterface
      */
     const VERSION = 'v0.0.1Beta';
 
+    const
+        OPENSSL_VERSION_0 = 1,
+        OPENSSL_VERSION_1 = 2;
     /**
      * @var \Codemitte\Sfdc\Soap\Mapping\Base\LoginResult
      */
@@ -154,7 +155,7 @@ class SfdcConnection extends Connection implements SfdcConnectionInterface
      *                           new SoapClient([...],array('stream_context' => $socket_context));</code>
      * - "features": The features option is a bitmask of SOAP_SINGLE_ELEMENT_ARRAYS, SOAP_USE_XSI_ARRAY_TYPE, SOAP_WAIT_ONE_WAY_CALLS.
      *
-     * For HTTP authentication, the login and password options can be used to supply credentials.
+     * For HTTP authenication, the login and password options can be used to supply credentials.
      *
      * For making an HTTP connection through a proxy server, the options "proxy_host", "proxy_port", "proxy_login" and
      * "proxy_password" are also available. For HTTPS client certificate authentication use "local_cert" and "passphrase"
@@ -168,6 +169,9 @@ class SfdcConnection extends Connection implements SfdcConnectionInterface
      *  - "proxy_password: The proxy auth password
      *  - "local_cert":
      *  - "passphrase"
+     *
+     * - openssl_version: One of the OPENSSL_VERSION_x-constants. If a version >= 0 is chosed, a request workaround
+     *   if performed to exclude SSLv2 from beeing used as cipher.
      *
      * @param string $wsdl: The path to the wsdl file.
      * @param string $serviceLocation: The location of the webservice, only used when differs from service definition
@@ -192,6 +196,7 @@ class SfdcConnection extends Connection implements SfdcConnectionInterface
             'trace' => true,
             'exceptions' => true,
             'compression' => SOAP_COMPRESSION_ACCEPT | SOAP_COMPRESSION_GZIP,
+            'openssl_version' => self::OPENSSL_VERSION_1,
 
             // PREPARE STREAM CONTEXT OPTIONS:
             // Salesforce.com supports only the Secure Sockets Layer (SSL) protocol SSLv3 and the Transport Layer
@@ -304,21 +309,52 @@ class SfdcConnection extends Connection implements SfdcConnectionInterface
      */
     public function doRequestCallback(SoapClientCommon $client, $request, $location, $action, $version, $one_way = null)
     {
-        $callable = array($client, '__doRequestFallback');
-
-        $args = array(
-            $request,
-            $location,
-            $action,
-            $version
-        );
-
-        // Perform request as is
-        if (null !== $one_way)
+        if($this->getOption('openssl_version') === self::OPENSSL_VERSION_1)
         {
-            $args[] = $one_way;
-        }
+            $callable = array($client, '__doRequestFallback');
 
-        return call_user_func_array($callable, $args);
+            $args = array(
+                $request,
+                $location,
+                $action,
+                $version
+            );
+
+            // Perform request as is
+            if (null !== $one_way)
+            {
+                $args[] = $one_way;
+            }
+
+            return call_user_func_array($callable, $args);
+        }
+        return parent::doRequestCallback($client, $request, $location, $action, $version, $one_way);
+    }
+
+    /**
+     * normalizeOption()
+     *
+     * @throws UnknownOptionException
+     * @param string $key
+     * @return string $normalizedKey
+     */
+    protected function normalizeOption($key)
+    {
+        try
+        {
+            return parent::normalizeOption($key);
+        }
+        catch(UnknownOptionException $e)
+        {
+            switch($key)
+            {
+                case 'openssl_version':
+                case 'opensslVersion':
+                    return 'openssl_version';
+                    break;
+                default:
+                    throw $e;
+            }
+        }
     }
 }
