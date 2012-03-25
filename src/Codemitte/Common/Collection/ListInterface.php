@@ -91,4 +91,14 @@ interface ListInterface extends Iterator, Serializable, Countable, ArrayAccess
      * @return array
      */
     public function toArray();
+
+    /**
+     * containsValue() checks if a specified
+     * value exists in the collection.
+     *
+     * @param mixed $value
+     *
+     * @return bool
+     */
+    public function containsValue($value);
 }

@@ -220,7 +220,7 @@ abstract class API extends BaseClient
 
                 foreach($sobject AS $k => $v)
                 {
-                    if(null !== $v)
+                    if(null !== $v && '' !== $v)
                     {
                         $param->$k = $v;
                     }

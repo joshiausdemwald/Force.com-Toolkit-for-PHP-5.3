@@ -40,10 +40,22 @@ abstract class AbstractHydrator implements HydratorInterface
             return $this->doHydrate($result);
         }
 
-        // LIST RESULT, TRANSFORM IT!
-        if(is_array($result))
+        // MAYBE LIST OR HASHMAP :(
+        if(is_array($result) && count($result) > 0)
         {
-            return $this->doHydrateList($result);
+            if(0 === key($result))
+            {
+                return $this->doHydrateList($result);
+            }
+
+            // @TODO: GENERALIZE. THIS IS ONLY A HACK
+            // TO AVOID RE-MAPPINGS OF ALREADY BOUND
+            // SOAP-MAPPINGS (LIKE SOBJECT)!!
+            foreach($result AS $key => $value)
+            {
+                $result[$key] = $this->hydrate($value);
+            }
+            return $result;
         }
 
         // OBJECTS MAPPED BY SOAP CLIENT

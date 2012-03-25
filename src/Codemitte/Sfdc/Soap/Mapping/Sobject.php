@@ -28,7 +28,7 @@ class Sobject extends GenericResult implements SobjectInterface
     {
         parent::__construct($values);
 
-        $this->sObjectType = $sObjectType;
+        $this->setSobjectType($sObjectType);
     }
 
     /**
@@ -88,5 +88,15 @@ class Sobject extends GenericResult implements SobjectInterface
     public function getSobjectType()
     {
         return $this->sObjectType;
+    }
+
+    /**
+     * Sets the sobject type.
+     *
+     * @param string sObjectType
+     */
+    public function setSobjectType($sObjectType)
+    {
+        $this->sObjectType = $sObjectType;
     }
 }

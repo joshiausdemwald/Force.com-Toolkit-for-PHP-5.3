@@ -255,4 +255,16 @@ class GenericList extends AbstractList
     {
         return $this->values;
     }
+
+    /**
+     * Checks if the specified value exists in the current
+     * collection.
+     *
+     * @param $value
+     * @return bool
+     */
+    public function containsValue($value)
+    {
+        return in_array($value, $this->values);
+    }
 }

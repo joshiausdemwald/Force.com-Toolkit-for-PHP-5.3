@@ -54,4 +54,13 @@ interface SobjectInterface
      * @return string
      */
     public function getSobjectType();
+
+    /**
+     * Sets the sobject type.
+     *
+     * @abstract
+     *
+     * @param string sObjectType
+     */
+    public function setSobjectType($sObjectType);
 }
