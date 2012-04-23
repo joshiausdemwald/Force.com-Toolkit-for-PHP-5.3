@@ -185,7 +185,14 @@ abstract class API extends BaseClient
      * <soap:header use="literal" message="tns:Header" part="PackageVersionHeader"/>
      * <soap:header use="literal" message="tns:Header" part="EmailHeader"/>
      *
-     * @param \Codemitte\Sfdc\Soap\Mapping\Sobject|array|\Traversable $data: List of sobjects
+     * @param object|array $d
+     * @param \Codemitte\Sfdc\Soap\Header\AssignmentRuleHeader|null $assignmentRuleHeader
+     * @param \Codemitte\Sfdc\Soap\Header\MruHeader|null $mruHeader
+     * @param \Codemitte\Sfdc\Soap\Header\AllowFieldTruncationHeader|null $allowFieldTruncationHeader
+     * @param \Codemitte\Sfdc\Soap\Header\DisableFeedTrackingHeader|null $disableFeedTrackingHeader
+     * @param \Codemitte\Sfdc\Soap\Header\AllOrNoneHeader|null $allOrNoneHeader
+     * @param \Codemitte\Sfdc\Soap\Header\EmailHeader|null $emailHeader
+     *
      * @return \Codemitte\Sfdc\Soap\Mapping\createResponse $response
      */
     public function create(

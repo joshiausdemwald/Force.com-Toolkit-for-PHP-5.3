@@ -26,8 +26,6 @@ use \SoapVar;
 use \ReflectionObject;
 use \ReflectionProperty;
 
-use Codemitte\Soap\Client\Connection\ConnectionInterface;
-use Codemitte\Soap\Mapping\ClassInterface;
 use Codemitte\Soap\Mapping\Type\TypeInterface;
 
 /**
@@ -41,19 +39,18 @@ use Codemitte\Soap\Mapping\Type\TypeInterface;
 final class SoapParamDecorator implements DecoratorInterface
 {
     /**
-     * @var ConnectionInterface
+     * @var string
      */
-    private $connection;
+    private $uri;
 
     /**
      * Constructor.
      *
-     * @param \Codemitte\Soap\Client\Connection\ConnectionInterface $connection
-     *
+     * @param string $uri
      */
-    public function __construct(ConnectionInterface $connection)
+    public function __construct($uri)
     {
-        $this->connection = $connection;
+        $this->uri = $uri;
     }
 
     /**
@@ -146,7 +143,7 @@ final class SoapParamDecorator implements DecoratorInterface
      */
     public function getUri()
     {
-        return $this->connection->getURI();
+        return $this->uri;
     }
 
     /**

@@ -223,8 +223,12 @@ class QueryTokenizer implements TokenizerInterface
 
         $expression = '';
 
+        $len = strlen($stream);
+
+        $end = $len - 1;
+
         // BEGIN AT SECOND CHAR, FIRST IS A "'"
-        for($pos++; $len = strlen($stream), $pos < $len; $pos ++)
+        for($pos++; $pos < $len; $pos ++)
         {
             $char = $stream[$pos];
 
@@ -259,9 +263,10 @@ class QueryTokenizer implements TokenizerInterface
         if(strlen($expression) > 0)
         {
             $valid = true;
+
             $tokens[] = array(
                 TokenizerInterface::TOKEN_EXPRESSION,
-                $char,
+                $expression,
                 $pos
             );
         }

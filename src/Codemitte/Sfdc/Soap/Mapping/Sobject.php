@@ -20,13 +20,19 @@ class Sobject extends GenericResult implements SobjectInterface
      *
      * @override
      *
-     * @param array $values
-     *
-     * @internal param $sobjectType
+     * @param string $sObjectType
+     * @param array $attributes
      */
-    public function __construct($sObjectType, $values = array())
+    public function __construct($sObjectType, $attributes = array())
     {
-        parent::__construct($values);
+        parent::__construct($attributes);
+
+        if(array_key_exists('Id', $attributes))
+        {
+            $this->Id = $attributes['Id'];
+
+            unset($attributes['Id']);
+        }
 
         $this->setSobjectType($sObjectType);
     }
@@ -82,12 +88,37 @@ class Sobject extends GenericResult implements SobjectInterface
     /**
      * Returns the sobject type.
      *
-     *
      * @return string
      */
     public function getSobjectType()
     {
+        if(null === $this->sObjectType)
+        {
+            $this->guessSobjectType();
+        }
         return $this->sObjectType;
+    }
+
+    /**
+     * Guesses the sobject type out of the
+     * full classname.
+     *
+     * @return string
+     */
+    protected function guessSObjectType()
+    {
+        $classname = get_called_class();
+
+        $pos = strrpos($classname, '\\');
+
+        if(false === $pos)
+        {
+            $this->sObjectType = $classname;
+        }
+        else
+        {
+            $this->sObjectType = substr($classname, $pos + 1);
+        }
     }
 
     /**

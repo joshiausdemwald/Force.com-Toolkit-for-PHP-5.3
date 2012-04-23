@@ -234,10 +234,14 @@ class Connection implements ConnectionInterface
      * @param string $wsdl
      * @param array $options
      * @param HydratorInterface $hydrator
-     * @param \Codemitte\Sfdc\Soap\Decorator\DecoratorInterface|null $decorator
+     * @param \Codemitte\Sfdc\Soap\Decorator\DecoratorInterface|\Codemitte\Soap\Client\Decorator\DecoratorInterface|null $decorator
      */
-    public function __construct($wsdl = null, array $options = array(), HydratorInterface $hydrator = null, DecoratorInterface $decorator = null)
-    {
+    public function __construct(
+        $wsdl = null,
+        array $options = array(),
+        HydratorInterface $hydrator = null,
+        DecoratorInterface $decorator = null
+    ) {
         $this->wsdl = $wsdl;
 
         $this->setOptions($options);
@@ -249,7 +253,7 @@ class Connection implements ConnectionInterface
 
         if(null === $decorator)
         {
-            $decorator = new SoapParamDecorator($this);
+            $decorator = new SoapParamDecorator($this->getURI());
         }
 
         $this->hydrator = $hydrator;
@@ -941,9 +945,12 @@ class Connection implements ConnectionInterface
     }
 
     /**
+     * postProcessResult()
+     *
      * @internal
      *
      * @param mixed $result
+     * @param \Codemitte\Soap\Hydrator\HydratorInterface|null $hydrator
      *
      * @return mixed
      */
@@ -1130,7 +1137,6 @@ class Connection implements ConnectionInterface
 
     /**
      * Returns the connection's default hydrator.
-     *
      *
      * @return HydratorInterface
      */

@@ -25,6 +25,7 @@ namespace Codemitte\Soap\Hydrator;
 use \stdClass;
 use \ReflectionObject;
 use \ReflectionProperty;
+use Codemitte\Soap\Mapping\ClassInterface;
 
 abstract class AbstractHydrator implements HydratorInterface
 {
@@ -47,10 +48,6 @@ abstract class AbstractHydrator implements HydratorInterface
             {
                 return $this->doHydrateList($result);
             }
-
-            // @TODO: GENERALIZE. THIS IS ONLY A HACK
-            // TO AVOID RE-MAPPINGS OF ALREADY BOUND
-            // SOAP-MAPPINGS (LIKE SOBJECT)!!
             foreach($result AS $key => $value)
             {
                 $result[$key] = $this->hydrate($value);
