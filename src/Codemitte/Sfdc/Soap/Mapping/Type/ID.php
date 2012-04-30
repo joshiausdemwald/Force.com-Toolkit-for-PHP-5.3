@@ -3,10 +3,12 @@ namespace Codemitte\Sfdc\Soap\Mapping\Type;
 
 use Codemitte\Soap\Mapping\Type\GenericType;
 
+use Codemitte\Sfdc\Soql\Type\TypeInterface AS SOQLTypeInterface;
+
 /**
  * ID
  */
-class ID extends GenericType
+class ID extends GenericType implements SOQLTypeInterface
 {
     /**
      * Create the 18 char ID from a 15 char ID
@@ -63,5 +65,15 @@ class ID extends GenericType
     public static function getURI()
     {
         return 'urn:enterprise.soap.sforce.com';
+    }
+
+    public function getPHPValue()
+    {
+        return $this->value;
+    }
+
+    public function toSOQL()
+    {
+        return '\'' . addslashes($this->value) . '\'';
     }
 }
