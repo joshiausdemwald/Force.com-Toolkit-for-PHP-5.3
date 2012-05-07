@@ -53,6 +53,7 @@ class ResultHydrator extends AbstractHydrator
 
         foreach($retVal AS $name => $prop)
         {
+            // any => 0 => "<sf:s...>", "Account" => Object { .... }
             $retVal[$name] = $this->hydrate($prop);
         }
         return $retVal;

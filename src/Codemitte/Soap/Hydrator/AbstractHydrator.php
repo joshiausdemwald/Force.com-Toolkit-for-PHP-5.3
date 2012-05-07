@@ -25,7 +25,10 @@ namespace Codemitte\Soap\Hydrator;
 use \stdClass;
 use \ReflectionObject;
 use \ReflectionProperty;
+
 use Codemitte\Soap\Mapping\ClassInterface;
+use Codemitte\Soap\Mapping\GenericResult;
+use Codemitte\Soap\Mapping\GenericResultCollection;
 
 abstract class AbstractHydrator implements HydratorInterface
 {
@@ -41,18 +44,26 @@ abstract class AbstractHydrator implements HydratorInterface
             return $this->doHydrate($result);
         }
 
+        // FINAL NOTE. EXPECTED IS A LIST, EVERYTHING ELSE
+        // WILL BE FILTERED OUT AFTER is_object() SECTION
         // MAYBE LIST OR HASHMAP :(
-        if(is_array($result) && count($result) > 0)
+        // @TODO: REGARD LISTS OF TYPE "<any>"
+        // THIS SUCKS SOOOOOO MUCH
+        // if(is_array($result) && count($result) > 0)
+        if(is_array($result))
         {
-            if(0 === key($result))
-            {
-                return $this->doHydrateList($result);
-            }
+            $retVal = array();
+
+            $is_numeric = true;
+
             foreach($result AS $key => $value)
             {
-                $result[$key] = $this->hydrate($value);
+                ! is_numeric($key) && $is_numeric = false;
+
+                $retVal[$key] = $this->hydrate($value);
             }
-            return $result;
+
+            return true === $is_numeric ? new GenericResultCollection($retVal) : new GenericResult($retVal);
         }
 
         // OBJECTS MAPPED BY SOAP CLIENT

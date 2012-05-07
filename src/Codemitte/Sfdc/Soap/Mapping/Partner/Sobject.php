@@ -20,9 +20,11 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-namespace Codemitte\Sfdc\Soap\Mapping;
+namespace Codemitte\Sfdc\Soap\Mapping\Partner;
 
+use Codemitte\Sfdc\Soap\Mapping\SobjectInterface;
 use Codemitte\Soap\Mapping\GenericResult;
+use Codemitte\Sfdc\Soap\Client\PartnerClient;
 
 /**
  * @author Johannes Heinen <johannes.heinen@code-mitte.de>
@@ -54,14 +56,14 @@ class Sobject extends GenericResult implements SobjectInterface
     {
         parent::__construct($attributes);
 
-        if(array_key_exists('Id', $attributes))
-        {
-            $this->Id = $attributes['Id'];
-
-            unset($attributes['Id']);
-        }
-
         $this->setSobjectType($sObjectType);
+
+        if($this->contains('Id'))
+        {
+            $this->Id = $this->get('Id');
+
+            $this->remove('Id');
+        }
     }
 
     /**

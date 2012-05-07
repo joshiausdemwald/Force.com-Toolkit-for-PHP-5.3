@@ -107,6 +107,7 @@ class SfdcConnection extends Connection implements SfdcConnectionInterface
     const
         OPENSSL_VERSION_0 = 1,
         OPENSSL_VERSION_1 = 2;
+
     /**
      * @var \Codemitte\Sfdc\Soap\Mapping\Base\LoginResult
      */

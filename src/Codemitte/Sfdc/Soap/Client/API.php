@@ -74,9 +74,6 @@ abstract class API extends BaseClient
         // OPTIONAL. SEEN THAT IN SOME REFERENCE IMPL.
         $connection->setOption('actor', $this->getUri());
 
-        // GENERIC SOBJECT
-        $connection->registerClass('sObject', 'Codemitte\\Sfdc\\Soap\\Mapping\\Sobject');
-
         $connection->registerClass('DescribeLayout', 'Codemitte\\Sfdc\\Soap\\Mapping\\DescribeLayout');
         $connection->registerClass('DescribeLayoutButton', 'Codemitte\\Sfdc\\Soap\\Mapping\\DescribeLayoutButton');
         $connection->registerClass('DescribeLayoutButtonSection', 'Codemitte\\Sfdc\\Soap\\Mapping\\DescribeLayoutButtonSection');
@@ -206,50 +203,48 @@ abstract class API extends BaseClient
     ) {
         $data = is_array($d) ? $d : array($d);
 
-        $params = array();
-
-        foreach($data AS $sobject)
-        {
-            if($data instanceof SoapVar)
-            {
-                $soapVar = $data;
-            }
-            else
-            {
-                if( ! $sobject instanceof SobjectInterface)
-                {
-                    throw new InvalidArgumentException('$data must be an instance or a list of sObject(s).');
-                }
-
-                $param = new \stdClass();
-
-                $param->Id =  $sobject->getId();
-
-                foreach($sobject AS $k => $v)
-                {
-                    if(null !== $v && '' !== $v)
-                    {
-                        $param->$k = $v;
-                    }
-                }
-
-                // CONVERT TO "GENERIC" SOAP VAR
-                $soapVar = new SoapVar(
-                    $param,
-                    SOAP_ENC_OBJECT,
-                    $sobject->getSobjectType(),
-                    $this->getUri()
-                );
-            }
-
-            // FIX FIELDS TO NULL
-            $this->fixNullableFieldsVar($soapVar, $sobject->getFieldsToNull());
-
-            $params[] = $soapVar;
-        }
-
         return $this->getConnection()->soapCall('create', array(array(
-            'sObjects' => $params
+            'sObjects' => $data
+        )));
+    }
+
+    /**
+     * update() updates rows in the database.
+     *
+     * <soap:header use="literal" message="tns:Header" part="SessionHeader"/>
+     * <soap:header use="literal" message="tns:Header" part="AssignmentRuleHeader"/>
+     * <soap:header use="literal" message="tns:Header" part="MruHeader"/>
+     * <soap:header use="literal" message="tns:Header" part="AllowFieldTruncationHeader"/>
+     * <soap:header use="literal" message="tns:Header" part="DisableFeedTrackingHeader"/>
+     * <soap:header use="literal" message="tns:Header" part="StreamingEnabledHeader"/>
+     * <soap:header use="literal" message="tns:Header" part="AllOrNoneHeader"/>
+     * <soap:header use="literal" message="tns:Header" part="DebuggingHeader"/>
+     * <soap:header use="literal" message="tns:Header" part="PackageVersionHeader"/>
+     * <soap:header use="literal" message="tns:Header" part="EmailHeader"/>
+     *
+     * @param object|array $d
+     * @param \Codemitte\Sfdc\Soap\Header\AssignmentRuleHeader|null $assignmentRuleHeader
+     * @param \Codemitte\Sfdc\Soap\Header\MruHeader|null $mruHeader
+     * @param \Codemitte\Sfdc\Soap\Header\AllowFieldTruncationHeader|null $allowFieldTruncationHeader
+     * @param \Codemitte\Sfdc\Soap\Header\DisableFeedTrackingHeader|null $disableFeedTrackingHeader
+     * @param \Codemitte\Sfdc\Soap\Header\AllOrNoneHeader|null $allOrNoneHeader
+     * @param \Codemitte\Sfdc\Soap\Header\EmailHeader|null $emailHeader
+     *
+     * @return \Codemitte\Sfdc\Soap\Mapping\createResponse $response
+     */
+    public function update(
+        $d,
+        Header\AssignmentRuleHeader $assignmentRuleHeader = null,
+        Header\MruHeader $mruHeader = null,
+        Header\AllowFieldTruncationHeader $allowFieldTruncationHeader = null,
+        Header\DisableFeedTrackingHeader $disableFeedTrackingHeader = null,
+        Header\AllOrNoneHeader $allOrNoneHeader = null,
+        Header\EmailHeader $emailHeader = null
+    ) {
+        $data = is_array($d) ? $d : array($d);
+
+        return $this->getConnection()->soapCall('update', array(array(
+            'sObjects' => $data
         )));
     }
 
@@ -284,33 +279,5 @@ abstract class API extends BaseClient
         parent::unserialize($data['__parentData']);
 
         $this->queryParser= $data['queryParser'];
-    }
-
-    /**
-     * getNullableFieldsVar()
-     * Used in CRU(D)-Methods to fix and add the fieldsToNull property in a Salesforce-way.
-     *
-     * @param SoapVar $object
-     * @param array $nullableFields
-     *
-     * @return void
-     */
-    protected function fixNullableFieldsVar(SoapVar $object, array $nullableFields = null)
-    {
-        if(null !== $nullableFields && count($nullableFields) > 0)
-        {
-            $var = new SoapVar(
-                new SoapVar('<fieldsToNull>' . implode('</fieldsToNull><fieldsToNull>', $nullableFields) . '</fieldsToNull>', XSD_ANYXML), SOAP_ENC_ARRAY
-            );
-
-            if(is_array($object->enc_value))
-            {
-                $object->enc_value['fieldsToNull'] = $var;
-            }
-            else
-            {
-                $object->enc_value->fieldsToNull = $var;
-            }
-        }
     }
 }
