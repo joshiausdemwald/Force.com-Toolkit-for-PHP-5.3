@@ -254,7 +254,7 @@ EOF;
 
             foreach($any AS $key => $value)
             {
-                $retVal[$key] = $this->cleanupSobject($value);
+                $retVal[$key] = $this->toSobject($value);
             }
         }
         return array_merge($this->fromAny($xmlStr), $retVal);
