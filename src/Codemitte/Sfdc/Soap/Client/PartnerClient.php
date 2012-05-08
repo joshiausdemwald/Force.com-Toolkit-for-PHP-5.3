@@ -28,6 +28,9 @@ use Codemitte\Soap\Mapping\GenericResult;
 use Codemitte\Sfdc\Soap\Mapping\Partner\Sobject;
 use Codemitte\Sfdc\Soap\Header;
 
+use \SoapVar;
+
+
 /**
  * PartnerClient
  *
@@ -163,6 +166,10 @@ class PartnerClient extends API
         {
             $retVal->any = $any;
         }
+
+        // FIX FIELDS TO NULL
+        $this->fixNullableFieldsVar($retVal,  $sobject->getFieldsToNull());
+
         return $retVal;
     }
 
@@ -176,9 +183,12 @@ class PartnerClient extends API
 
         foreach($fields AS $key => $value)
         {
-            $any .= <<<EOF
+            if($value !== null && $value !== '')
+            {
+                $any .= <<<EOF
 <$key>$value</$key>
 EOF;
+            }
         }
         return $any;
     }
@@ -311,23 +321,14 @@ EOF;
      *
      * @return void
      */
-    protected function fixNullableFieldsVar(SoapVar $object, array $nullableFields = null)
+    protected function fixNullableFieldsVar(\stdClass $object, array $nullableFields = null)
     {
         if(null !== $nullableFields && count($nullableFields) > 0)
         {
             $var = new SoapVar(
                 new SoapVar('<fieldsToNull>' . implode('</fieldsToNull><fieldsToNull>', $nullableFields) . '</fieldsToNull>', XSD_ANYXML), SOAP_ENC_ARRAY
             );
-
-            if(is_array($object->enc_value))
-            {
-                $object->enc_value['fieldsToNull'] = $var;
-            }
-            else
-            {
-                $object->enc_value->fieldsToNull = $var;
-            }
+            $object->fieldsToNull = $var;
         }
     }
 }
-
