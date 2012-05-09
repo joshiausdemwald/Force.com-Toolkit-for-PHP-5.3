@@ -158,14 +158,9 @@ class PartnerClient extends API
             $retVal->Id = (string)$sobject->getId();
         }
 
-        $any = $this->toAny($sobject->toArray());
+        $this->toAny($sobject->toArray(), $retVal);
 
         $retVal->type = $sobject->getSobjectType();
-
-        if(strlen($any) > 0)
-        {
-            $retVal->any = $any;
-        }
 
         // FIX FIELDS TO NULL
         $this->fixNullableFieldsVar($retVal,  $sobject->getFieldsToNull());
@@ -175,22 +170,41 @@ class PartnerClient extends API
 
     /**
      * @param $any
-     * @return string
+     * @return void
      */
-    public function toAny(array $fields)
+    public function toAny(array $fields, \stdClass $target)
     {
-        $any = '';
+        $anyStr = '';
 
         foreach($fields AS $key => $value)
         {
             if($value !== null && $value !== '')
             {
-                $any .= <<<EOF
+                if(is_scalar($value))
+                {
+                    $anyStr .= <<<EOF
 <$key>$value</$key>
 EOF;
+                }
+
+
+                elseif($value instanceof Sobject)
+                {
+                    $target->$key = $this->fromSobject($value);
+                }
+
+                // RELATED LIST?
+                else
+                {
+                    throw new \RuntimeException();
+                }
             }
         }
-        return $any;
+
+        if(is_array($anyStr) || strlen($anyStr) > 0)
+        {
+            $target->any = $anyStr;
+        }
     }
 
     /**
