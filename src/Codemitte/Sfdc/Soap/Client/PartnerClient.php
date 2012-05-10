@@ -182,8 +182,9 @@ class PartnerClient extends API
             {
                 if(is_scalar($value))
                 {
+                    $v = $value;
                     $anyStr .= <<<EOF
-<$key>$value</$key>
+<$key><![CDATA[$v]]></$key>
 EOF;
                 }
 
@@ -196,7 +197,7 @@ EOF;
                 // RELATED LIST?
                 else
                 {
-                    throw new \RuntimeException();
+                    throw new \RuntimeException(sprintf('Type "%s" is (currently) not supported in DML calls.', gettype($value)));
                 }
             }
         }
