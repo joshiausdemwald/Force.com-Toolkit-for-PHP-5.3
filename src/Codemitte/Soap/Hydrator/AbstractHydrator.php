@@ -58,48 +58,51 @@ abstract class AbstractHydrator implements HydratorInterface
 
             foreach($result AS $key => $value)
             {
-                ! is_numeric($key) && $is_numeric = false;
+                true === $is_numeric &&
+                false ===  is_numeric($key) &&
+                $is_numeric = false;
 
                 $retVal[$key] = $this->hydrate($value);
             }
 
+            // HACK FOR AVOIDING DUPLICATE ID ATTRIBUTES -.--
             return true === $is_numeric ? new GenericResultCollection($retVal) : new GenericResult($retVal);
         }
 
         // OBJECTS MAPPED BY SOAP CLIENT
-        if(is_object($result))
-        {
-            $r = new ReflectionObject($result);
+        //if(is_object($result))
+        //{
+        //    $r = new ReflectionObject($result);
+        //
+        //    // TRAVERSABLE || PUBLIC PROPERTIES
+        //    foreach($r->getProperties(~ ReflectionProperty::IS_STATIC) AS $p)
+        //    {
+        //        $pname = $p->getName();
+        //        $ucfname = ucfirst($pname);
+        //        $sname = 'set' . $ucfname;
+        //        $gname = 'get' . $ucfname;
 
-            // TRAVERSABLE || PUBLIC PROPERTIES
-            foreach($r->getProperties(~ ReflectionProperty::IS_STATIC) AS $p)
-            {
-                $pname = $p->getName();
-                $ucfname = ucfirst($pname);
-                $sname = 'set' . $ucfname;
-                $gname = 'get' . $ucfname;
-
-                /* @var $p \ReflectionProperty */
-                if( ! $p->isDefault() || $p->isPublic())
-                {
-                    $result->$pname = $this->hydrate($result->$pname);
-                }
+        //        /* @var $p \ReflectionProperty */
+        //        if( ! $p->isDefault() || $p->isPublic())
+        //        {
+        //            $result->$pname = $this->hydrate($result->$pname);
+        //        }
 
                 // GEHT NICHT :(
-                elseif($r->hasMethod($sname) && $r->hasMethod($gname))
-                {
-                    $result->$sname($this->hydrate($result->$gname()));
-                }
+        //        elseif($r->hasMethod($sname) && $r->hasMethod($gname))
+        //        {
+        //            $result->$sname($this->hydrate($result->$gname()));
+        //        }
 
                 // THE HARD WAY
-                else
-                {
-                    $p->setAccessible(true);
-                    $p->setValue($result, $this->hydrate($p->getValue($result)));
-                    $p->setAccessible(false);
-                }
-            }
-        }
+        //        else
+        //        {
+        //            $p->setAccessible(true);
+        //            $p->setValue($result, $this->hydrate($p->getValue($result)));
+        //            $p->setAccessible(false);
+        //        }
+        //    }
+        //}
 
         // ALL OTHER SCALAR VALUES, RESOURCES, TYPES ETC...
         return $result;

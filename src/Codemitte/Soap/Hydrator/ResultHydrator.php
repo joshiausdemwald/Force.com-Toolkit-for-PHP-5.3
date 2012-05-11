@@ -37,25 +37,21 @@ class ResultHydrator extends AbstractHydrator
 {
     public function doHydrateList($list)
     {
-        $l = new GenericResultCollection($list);
-
-        foreach($l AS $key => $value)
+        foreach($list AS $key => $value)
         {
-            $l->replace($key, $this->hydrate($value));
+            $list[$key] = $this->hydrate($value);
         }
-
-        return $l;
+        return new GenericResultCollection($list);
     }
 
     public function doHydrate($result)
     {
-        $retVal = new GenericResult($result);
-
-        foreach($retVal AS $name => $prop)
+        $data = array();
+        foreach($result AS $name => $prop)
         {
             // any => 0 => "<sf:s...>", "Account" => Object { .... }
-            $retVal[$name] = $this->hydrate($prop);
+            $data[$name] = $this->hydrate($prop);
         }
-        return $retVal;
+        return new GenericResult($data);
     }
 }

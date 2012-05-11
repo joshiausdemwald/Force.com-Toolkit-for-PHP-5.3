@@ -27,7 +27,6 @@ use Codemitte\Sfdc\Soap\Client\Connection\SfdcConnectionInterface;
 use Codemitte\Soap\Mapping\GenericResult;
 use Codemitte\Sfdc\Soap\Mapping\Partner\Sobject;
 use Codemitte\Sfdc\Soap\Header;
-
 use \SoapVar;
 
 
@@ -91,7 +90,7 @@ class PartnerClient extends API
             {
                 $decoratedRecords[] = $this->toSobject($record);
             }
-            $queryResult->put('records', $decoratedRecords);
+            $queryResult->put('records', $this->getConnection()->getHydrator()->hydrate($decoratedRecords));
         }
         return $queryResponse;
     }
