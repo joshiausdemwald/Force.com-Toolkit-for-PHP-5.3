@@ -36,13 +36,17 @@ class TypeFactory
      * Takes skalar params and/or arrays and converts
      * it into salesforce types.
      *
-     * @param mixed $param
+     * @param mixed|null $param
      *
      * @return TypeInterface $salesforceType
      */
-    public function create($param)
+    public function create($param = null)
     {
-        if(is_bool($param))
+        if(null === $param)
+        {
+            return new NullValue($param);
+        }
+        elseif(is_bool($param))
         {
             return new Boolean($param);
         }
