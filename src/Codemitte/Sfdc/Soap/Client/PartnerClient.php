@@ -88,7 +88,14 @@ class PartnerClient extends API
 
             foreach ($queryResult->get('records') as $record)
             {
-                $decoratedRecords[] = $this->toSobject($record);
+                try
+                {
+                    $decoratedRecords[] = $this->toSobject($record);
+                }
+                catch(\Exception $e)
+                {
+                    throw $e;
+                }
             }
             $queryResult->put('records', $this->getConnection()->getHydrator()->hydrate($decoratedRecords));
         }
@@ -237,7 +244,14 @@ EOF;
 
         if(isset($record['any']))
         {
-            $data = array_merge($data, $this->cleanupAnyField($record['any']));
+            try
+            {
+                $data = array_merge($data, $this->cleanupAnyField($record['any']));
+            }
+            catch(\Exception $e)
+            {
+                throw $e;
+            }
         }
 
         return new Sobject($type, $data);
@@ -258,20 +272,20 @@ EOF;
 
         if(is_string($any))
         {
-            $xmlStr = $any;
+            $any = array($any);
         }
-        else
+        foreach($any AS $key => $value)
         {
-            $xmlStr = $any[0];
-
-            unset($any[0]);
-
-            foreach($any AS $key => $value)
+            if(is_object($value))
             {
                 $retVal[$key] = $this->toSobject($value);
             }
+            elseif(is_string($value))
+            {
+                $retVal = array_merge($this->fromAny($value), $retVal);
+            }
         }
-        return array_merge($this->fromAny($xmlStr), $retVal);
+        return $retVal;
     }
 
     /**
@@ -283,6 +297,8 @@ EOF;
      */
     public function fromAny($anyXml, $prefix = 'sf', $tns = null)
     {
+        $_anyXml = $anyXml;
+
         if( ! is_string($anyXml))
         {
             return $anyXml;
@@ -299,29 +315,36 @@ EOF;
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xmlns:$prefix="$tns">$anyXml</data>
 EOF;
-        /* @var $xml \SimpleXMLElement */
-        $xml = new \SimpleXMLElement($anyXml);
-
-        // CASTING MAGICK
-        foreach((array)$xml->children($prefix, true) AS $key => $value)
+        try
         {
-            if($value instanceof \SimpleXMLElement)
-            {
-                $atts = $value->attributes('xsi', true);
+            /* @var $xml \SimpleXMLElement */
+            $xml = new \SimpleXMLElement($anyXml);
 
-                if(true === (bool)$atts['nil'])
+            // CASTING MAGICK
+            foreach((array)$xml->children($prefix, true) AS $key => $value)
+            {
+                if($value instanceof \SimpleXMLElement)
                 {
-                    $value = null;
+                    $atts = $value->attributes('xsi', true);
+
+                    if(true === (bool)$atts['nil'])
+                    {
+                        $value = null;
+                    }
+                    else
+                    {
+                        $value = '';
+                    }
                 }
                 else
                 {
-                    $value = '';
+                    $retVal[$key] = $value;
                 }
             }
-            else
-            {
-                $retVal[$key] = $value;
-            }
+        }
+        catch(\Exception $e)
+        {
+            throw $e;
         }
         return $retVal;
     }
