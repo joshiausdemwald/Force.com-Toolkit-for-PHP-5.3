@@ -20,52 +20,16 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-namespace Codemitte\Sfdc\Soap\Client\Connection;
-
-use Codemitte\Soap\Client\Connection\ConnectionInterface;
-use Codemitte\Sfdc\Soap\Mapping\Base\login;
-use Codemitte\Sfdc\Soap\Mapping\Base\LoginResult;
+namespace Codemitte\Soap\Client;
 
 /**
- * SfdcConnectionInterface
+ * ClientException
  *
  * @author Johannes Heinen <johannes.heinen@code-mitte.de>
  * @copyright 2012 code mitte GmbH, Cologne, Germany
- * @package Sfdc
- * @subpackage Soap
+ * @package Soap
  */
-interface SfdcConnectionInterface extends ConnectionInterface
+class ClientException  extends \Exception
 {
-    /**
-     * Registers the given username to the specified organisation.
-     *
-     * @abstract
-     *
-     * @param login $credentials
-     *
-     * @return \Codemitte\Sfdc\Soap\Mapping\Base\loginResponse
-     */
-    public function login(login $credentials);
 
-    /**
-     * Returns the login result. Expected to be null unless
-     * login() has been called.
-     *
-     * @return \Codemitte\Sfdc\Soap\Mapping\LoginResult
-     */
-    public function getLoginResult();
-
-    /**
-     * @abstract
-     * @param \Codemitte\Sfdc\Soap\Mapping\Base\LoginResult $result
-     * @return mixed
-     */
-    public function setLoginResult(LoginResult $result);
-
-    /**
-     * Returns true if a login result exists.
-     *
-     * @return bool
-     */
-    public function isLoggedIn();
 }

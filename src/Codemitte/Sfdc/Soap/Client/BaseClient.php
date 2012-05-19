@@ -61,7 +61,7 @@ abstract class BaseClient implements ClientInterface
     {
         $this->connection = $connection;
 
-        $this->connection->setOption('uri', $this->getUri());
+        $this->connection->setURI($this->getUri());
 
         $connection->registerClass('SessionHeader', 'Codemitte\\Sfdc\\Soap\\Mapping\\Base\\SessionHeader');
 

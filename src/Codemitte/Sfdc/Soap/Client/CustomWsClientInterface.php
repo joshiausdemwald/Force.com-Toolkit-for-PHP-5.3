@@ -20,52 +20,20 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-namespace Codemitte\Sfdc\Soap\Client\Connection;
+namespace Codemitte\Sfdc\Soap\Client;
 
-use Codemitte\Soap\Client\Connection\ConnectionInterface;
-use Codemitte\Sfdc\Soap\Mapping\Base\login;
-use Codemitte\Sfdc\Soap\Mapping\Base\LoginResult;
-
-/**
- * SfdcConnectionInterface
- *
- * @author Johannes Heinen <johannes.heinen@code-mitte.de>
- * @copyright 2012 code mitte GmbH, Cologne, Germany
- * @package Sfdc
- * @subpackage Soap
- */
-interface SfdcConnectionInterface extends ConnectionInterface
+interface CustomWsClientInterface
 {
     /**
-     * Registers the given username to the specified organisation.
+     * Returns the service path suffix. E.g. when myWebservice.wsdl.xml
+     * states
+     *
+     * <soap:address location="https://cs2-api.salesforce.com/services/Soap/class/WSPartnerPortal"/>
+     *
+     * then suffix must return "class/WSPartnerPortal"
      *
      * @abstract
-     *
-     * @param login $credentials
-     *
-     * @return \Codemitte\Sfdc\Soap\Mapping\Base\loginResponse
+     * @return string
      */
-    public function login(login $credentials);
-
-    /**
-     * Returns the login result. Expected to be null unless
-     * login() has been called.
-     *
-     * @return \Codemitte\Sfdc\Soap\Mapping\LoginResult
-     */
-    public function getLoginResult();
-
-    /**
-     * @abstract
-     * @param \Codemitte\Sfdc\Soap\Mapping\Base\LoginResult $result
-     * @return mixed
-     */
-    public function setLoginResult(LoginResult $result);
-
-    /**
-     * Returns true if a login result exists.
-     *
-     * @return bool
-     */
-    public function isLoggedIn();
+    public function getSuffix();
 }

@@ -36,7 +36,7 @@ class GenericList extends AbstractList
     /**
      * @var array
      */
-    private $values = array();
+    protected $values = array();
 
     /**
      * Constructor.
@@ -252,6 +252,16 @@ class GenericList extends AbstractList
      * @return array
      */
     public function toArray()
+    {
+        return $this->values;
+    }
+
+    /**
+     * getAll()
+     *
+     * @return mixed
+     */
+    public function getAll()
     {
         return $this->values;
     }

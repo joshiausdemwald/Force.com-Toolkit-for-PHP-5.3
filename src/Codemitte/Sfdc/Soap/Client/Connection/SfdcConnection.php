@@ -27,6 +27,7 @@ use Codemitte\Soap\Client\Connection\Connection;
 use Codemitte\Sfdc\Soap\Mapping\Base\login;
 use Codemitte\Soap\Hydrator\HydratorInterface;
 use Codemitte\Soap\Client\Connection\UnknownOptionException;
+use Codemitte\Sfdc\Soap\Mapping\Base\LoginResult;
 
 /**
  * SfdcConnection: Sfdc soap connector.
@@ -235,7 +236,7 @@ class SfdcConnection extends Connection implements SfdcConnectionInterface
     {
         $response = $this->soapCall('login', array($credentials));
 
-        $this->loginResult = $response->getResult();
+        $this->setLoginResult($response->getResult());
 
         $this->setOption('location', $this->loginResult->getServerUrl());
 
@@ -357,5 +358,14 @@ class SfdcConnection extends Connection implements SfdcConnectionInterface
                     throw $e;
             }
         }
+    }
+
+    /**
+     * @param \Codemitte\Sfdc\Soap\Mapping\Base\LoginResult $result
+     * @return mixed
+     */
+    public function setLoginResult(LoginResult $loginResult)
+    {
+        $this->loginResult = $loginResult;
     }
 }

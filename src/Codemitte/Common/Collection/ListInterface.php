@@ -59,6 +59,15 @@ interface ListInterface extends Iterator, Serializable, Countable, ArrayAccess
     public function addAll($values);
 
     /**
+     * getAll()
+     *
+     * @abstract
+     *
+     * @return array|\Traversable $values
+     */
+    public function getAll();
+
+    /**
      * @abstract
      * @param int $key
      *

@@ -35,6 +35,8 @@ use Codemitte\Sfdc\Soap\Client\Connection\SfdcConnectionInterface;
 
 use Codemitte\Sfdc\Soap\Header;
 
+use Codemitte\Soap\Client\Connection\TracedSoapFault;
+use Codemitte\Sfdc\Soap\Client\DMLException;
 
 /**
  * API. Abstract parent class for partner
@@ -160,12 +162,14 @@ abstract class API extends BaseClient
      */
     public function query($queryString, array $params = array())
     {
-        return $this->getConnection()->soapCall(
+        $res = $this->getConnection()->soapCall(
             'query',
             array(array(
                 'queryString' => $this->queryParser->parse($queryString, $params)
             ))
         );
+
+        return $res;
     }
 
     /**
@@ -203,9 +207,18 @@ abstract class API extends BaseClient
     ) {
         $data = is_array($d) ? $d : array($d);
 
-        return $this->getConnection()->soapCall('create', array(array(
-            'sObjects' => $data
-        )));
+        try
+        {
+            $res = $this->getConnection()->soapCall('create', array(array(
+                'sObjects' => $data
+            )));
+
+            return $this->throwDMLException($res);
+        }
+        catch(\Exception $e)
+        {
+            throw new DMLException($e->getMessage(), $e->getCode(), $e);
+        }
     }
 
     /**
@@ -243,9 +256,18 @@ abstract class API extends BaseClient
     ) {
         $data = is_array($d) ? $d : array($d);
 
-        return $this->getConnection()->soapCall('update', array(array(
-            'sObjects' => $data
-        )));
+        try
+        {
+            $res = $this->getConnection()->soapCall('update', array(array(
+                'sObjects' => $data
+            )));
+
+            return $this->throwDMLException($res);
+        }
+        catch(\Exception $e)
+        {
+            throw new DMLException($e->getMessage(), $e->getCode(), $e);
+        }
     }
 
     /**
@@ -279,5 +301,44 @@ abstract class API extends BaseClient
         parent::unserialize($data['__parentData']);
 
         $this->queryParser= $data['queryParser'];
+    }
+
+    /**
+     * @throws DMLException
+     * @param $res
+     * @return $res
+     */
+    protected function throwDMLException($res)
+    {
+        if($res->contains('result') && $res->get('result')->count() > 0)
+        {
+            $result = $res->get('result')->get(0);
+
+            if($result->contains('success') && true === $result->get('success'))
+            {
+                return $res;
+            }
+
+            if($result->contains('errors'))
+            {
+                $e    = null;
+
+                foreach($result->get('errors') AS $error)
+                {
+                    $fields = array();
+                    if($error->contains('fields'))
+                    {
+                        foreach($error->get('fields') AS $field)
+                        {
+                            $fields[] = '"' . $field . '"';
+                        }
+                        $fields = implode(', ', $fields);
+                    }
+                    $e = new DMLException('Message: "' . $error->get('message') . '", Code: "' . (string)$error->get('statusCode') . '", Fields: [' . $fields . ']', null, $e);
+                }
+                throw $e;
+            }
+        }
+        throw new DMLException('No result');
     }
 }
