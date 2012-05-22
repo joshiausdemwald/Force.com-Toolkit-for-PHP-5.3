@@ -136,7 +136,7 @@ class QueryParser implements QueryParserInterface
 
         if( ! $param instanceof TypeInterface)
         {
-            throw new ParseException('No Salesforce compatible type given. Param "%s" must implement \Codemitte\Sfdc\Soql\Type\TypeInterface.');
+            throw new ParseException(sprintf('No Salesforce compatible type given. Param "%s" must implement \Codemitte\Sfdc\Soql\Type\TypeInterface.', $name));
         }
         return $param;
     }

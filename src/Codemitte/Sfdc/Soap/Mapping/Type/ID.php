@@ -23,9 +23,11 @@ class ID extends GenericType implements SOQLTypeInterface
      */
     public static function fixSforceId($shortId)
     {
+        $shortId = (string)$shortId;
+
         if (strlen($shortId) !== 15)
         {
-            return $shortId;
+            return new self($shortId);
         }
 
         $suffix = '';

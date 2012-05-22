@@ -86,5 +86,13 @@ class TypeFactory
         {
             return new Number($param);
         }
+        elseif(is_object($param))
+        {
+            /* @var $param  \DateTime */
+            if($param instanceof \DateTime)
+            {
+                return new DateTime($param->format(\DateTime::W3C));
+            }
+        }
     }
 }
