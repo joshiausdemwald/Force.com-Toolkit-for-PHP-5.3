@@ -9,9 +9,11 @@ interface TokenizerInterface
 
     public function readNextToken();
 
-    public function expect($type);
+    public function expect($tokenType);
 
-    public function expectKeyword($keyword);
+    public function is($tokenType);
+
+    public function isValue($value);
 
     public function getTokenValue();
 

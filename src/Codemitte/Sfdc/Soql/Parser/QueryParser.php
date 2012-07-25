@@ -52,6 +52,31 @@ class QueryParser implements QueryParserInterface
     private $typeFactory;
 
     /**
+     * @var string
+     */
+    private $output;
+
+    /**
+     * @var array
+     */
+    private $parameters;
+
+    /**
+     * @var array
+     */
+    private $indexedParameters;
+
+    /**
+     * @var int
+     */
+    private $level;
+
+    /**
+     * @var int
+     */
+    private $varIndex;
+
+    /**
      * Constructor.
      *
      * @param TokenizerInterface|null $tokenizer
@@ -75,103 +100,139 @@ class QueryParser implements QueryParserInterface
     /**
      *
      * @param string $soql
+     * @param string $soql
      * @param array $parameters
-     * @throws \Codemitte\Sfdc\Soql\Tokenizer\TokenizerException
+     *
      * @return string
+     * @return string|void
      */
     public function parse($soql, array $parameters = array())
     {
         $this->tokenizer->setInput($soql);
 
-        $output = '';
+        $this->output               = '';
 
-        $previous_token = null;
+        $this->parameters           = $parameters;
 
-        $indexedParameters = array_values($parameters);
+        $this->indexedParameters    = array_values($this->parameters);
 
-        $anonVarIndex = 0;
+        $this->varIndex             = 0;
 
+        $this->level                = 0;
+
+        return $this->loop();
+    }
+
+    /**
+     * The "Main loop"
+     */
+    private function loop()
+    {
         while(true)
         {
-            $tokenType = $this->tokenizer->getTokenType();
-
-            $tokenValue = $this->tokenizer->getTokenValue();
-
-            switch($tokenType)
+            if($this->tokenizer->is(TokenType::EOF))
             {
-                case TokenType::EOF:
-                    return $output;
-                case TokenType::ANON_VARIABLE:
-                    $output .= $this->getIndexedParameter($anonVarIndex++, $indexedParameters)->toSOQL();
-                    break;
-                case TokenType::NAMED_VARIABLE:
-                    $output .= $this->getNamedParameter($tokenValue, $parameters)->toSOQL();
-                    break;
-                default:
-                    $output .= $tokenValue;
-                    break;
+                return $this->output;
             }
-
-            try
+            elseif($this->tokenizer->is(TokenType::SOQL_FUNCTION))
             {
-                $this->tokenizer->readNextToken();
+                $this->parseSoqlFunction();
             }
-            catch(TokenizerException $e)
+            elseif($this->tokenizer->is(TokenType::ANON_VARIABLE))
             {
-                throw $e;
+                $this->parseAnonVariable();
+            }
+            elseif($this->tokenizer->is(TokenType::NAMED_VARIABLE))
+            {
+                $this->parseNamedVariable();
+            }
+            elseif($this->tokenizer->is(TokenType::RIGHT_PAREN))
+            {
+                $this->parseRightParen();
+            }
+            elseif($this->tokenizer->is(TokenType::LEFT_PAREN))
+            {
+                $this->parseLeftParen();
+            }
+            else
+            {
+                $this->parseArbitrarySoql();
             }
         }
+    }
 
-        return $output;
+    /**
+     * Parse arbitrary soql parts.
+     */
+    private function parseArbitrarySoql()
+    {
+        $this->output .= $this->tokenizer->getTokenValue();
 
-        foreach($tokens AS $i => $token)
+        $this->tokenizer->readNextToken();
+    }
+
+    /**
+     * SELECT ... FROM ... WHERE ... GROUP BY ... HAVING ... OFFSET ... LIMIT ...
+     * @TODO: VALIDATE, SPLIT AND MAP TYPES TO INCOMING VARIABLES (INTROSPECT)
+     */
+    private function parseSelect()
+    {
+        $this->output .= 'SELECT';
+
+        $this->tokenizer->readNextToken();
+    }
+
+    private function parseSoqlFunction()
+    {
+        $this->output .= $this->tokenizer->getTokenValue();
+
+        $this->tokenizer->expect(TokenType::SOQL_FUNCTION);
+
+        if( ! $this->tokenizer->is(TokenType::LEFT_PAREN))
         {
-            $t_type  = $token[0];
-            $t_value = $token[1];
-            $t_col   = $token[2];
-
-            switch($t_type)
-            {
-                case TokenizerInterface::TOKEN_SOQL_PART:
-                case TokenizerInterface::TOKEN_EXPRESSION;
-                    $output .= $this->getParameter($t_value, $parameters)->toSOQL();
-                    break;
-
-                case TokenizerInterface::TOKEN_LITERAL:
-                    $output .= '\'' . $t_value . '\'';
-                    break;
-                case TokenizerInterface::TOKEN_SOQL_PART:
-
-                    $output .= $t_value;
-
-                    break;
-            }
-            $previous_token = $token;
+            throw new ParseException(sprintf('Expected left parenthesis, "%s" found', $this->tokenizer->getTokenValue()), $this->tokenizer->getLine(), $this->tokenizer->getLinePos(), $this->tokenizer->getInput());
         }
-        return $output;
+    }
+
+    private function parseLeftParen()
+    {
+        $this->tokenizer->expect(TokenType::LEFT_PAREN);
+
+        $this->level ++;
+
+        $this->output .= '(';
+    }
+
+    private function parseRightParen()
+    {
+        $this->tokenizer->expect(TokenType::RIGHT_PAREN);
+
+        $this->level --;
+
+        $this->output .= ')';
     }
 
     /**
      * getNamedParameter()
      *
-     * @param $soqlPart
-     * @param array $params
-     *
      * @throws ParseException
+     *
      * @return mixed $param
      */
-    private function getNamedParameter($soqlPart, array $params)
+    private function parseNamedVariable()
     {
+        $soqlPart = $this->tokenizer->getTokenValue();
+
         $name = substr($soqlPart, 1);
 
-        if( ! array_key_exists($name, $params))
+        if( ! array_key_exists($name, $this->parameters))
         {
             throw new ParseException(sprintf('Named variable "%s" was never bound.', $soqlPart), $this->tokenizer->getLine(), $this->tokenizer->getLinePos(), $this->tokenizer->getInput());
             // "COMPLEX" Expression, @TODO: Check if it is a variable
             // return new Expression($name);
         }
 
-        $param = $params[$name];
+        $param = $this->parameters[$name];
 
         if( ! $param instanceof TypeInterface)
         {
@@ -182,28 +243,30 @@ class QueryParser implements QueryParserInterface
         {
             throw new ParseException(sprintf('No Salesforce compatible type given. Param "%s" must implement \Codemitte\Sfdc\Soql\Type\TypeInterface.', $soqlPart), $this->tokenizer->getLine(), $this->tokenizer->getLinePos(), $this->tokenizer->getInput());
         }
-        return $param;
+        $this->output .= $param->toSOQL();
+
+        $this->tokenizer->readNextToken();
     }
 
     /**
      * getIndexedParameter()
      *
-     * @param $soqlPart
-     * @param array $params
-     *
      * @throws ParseException
+     *
      * @return mixed $param
      */
-    private function getIndexedParameter($index, array $params)
+    private function parseAnonVariable()
     {
-        if( ! array_key_exists($index, $params))
+        $this->tokenizer->expect(TokenType::ANON_VARIABLE);
+
+        if( ! array_key_exists($this->varIndex, $this->indexedParameters))
         {
-            throw new ParseException(sprintf('Anonymous variable with index "%s" was never bound.', $index), $this->tokenizer->getLine(), $this->tokenizer->getLinePos(), $this->tokenizer->getInput());
+            throw new ParseException(sprintf('Anonymous variable with index "%s" was never bound.', $this->varIndex), $this->tokenizer->getLine(), $this->tokenizer->getLinePos(), $this->tokenizer->getInput());
             // "COMPLEX" Expression, @TODO: Check if it is a variable
             // return new Expression($name);
         }
 
-        $param = $params[$index];
+        $param = $this->indexedParameters[$this->varIndex];
 
         if( ! $param instanceof TypeInterface)
         {
@@ -214,6 +277,8 @@ class QueryParser implements QueryParserInterface
         {
             throw new ParseException(sprintf('No Salesforce compatible type given. Param "%s" must implement \Codemitte\Sfdc\Soql\Type\TypeInterface.', $soqlPart), $this->tokenizer->getLine(), $this->tokenizer->getLinePos(), $this->tokenizer->getInput());
         }
-        return $param;
+        $this->output .= $param->toSOQL();
+
+        $this->tokenizer->readNextToken();
     }
 }

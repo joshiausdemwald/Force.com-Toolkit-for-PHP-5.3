@@ -25,6 +25,8 @@ class TokenType
         KEYWORD             = 'SOQL_KEYWORD',
         EXPRESSION          = 'SOQL_EXPRESSION',
 
+        SOQL_FUNCTION       = 'SOQL_FUNCTION',
+
         OP_EQ               = 'SOQL_OP_EQ',
         OP_NE               = 'SOQL_OP_NE',
 
@@ -39,7 +41,7 @@ class TokenType
         OP_OR               = 'SOQL_OP_OR',
 
         OP_LIKE             = 'SOQL_OP_LIKE',
-        OP_IN               = 'SOQL_OP_IN',       // BEWARE OF "NOT IN"
+        OP_IN               = 'SOQL_OP_IN',           // BEWARE OF "NOT IN"
         OP_NOT_IN           = 'SOQL_OP_NOT_IN',       // BEWARE OF "NOT IN"
         OP_INCLUDES         = 'SOQL_OP_INCLUDES',
         OP_EXCLUDES         = 'SOQL_OP_EXCLUDES'

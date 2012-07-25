@@ -1,6 +1,34 @@
 <?php
 namespace Codemitte\Sfdc\Soql\Tokenizer;
 
+/**
+ * Notes:
+ * ======
+ * NON-ALIAS-NAMES:
+ * ----------------
+ * AND, ASC, DESC, EXCLUDES, FIRST, FROM, GROUP, HAVING, IN, INCLUDES, LAST, LIKE, LIMIT, NOT, NULL, NULLS, OR,
+ * SELECT, WHERE, WITH
+ *
+ * ALLOWED STRING ESCAPE SEQUENCES:
+ * --------------------------------
+ * You can use the following escape sequences with SOQL:
+ * Sequence	Meaning
+ * \n or \N	New line
+ * \r or \R	Carriage return
+ * \t or \T	Tab
+ * \b or \B	Bell
+ * \f or \F	Form feed
+ * \"	One double-quote character
+ * \'	One single-quote character
+ * \\	Backslash
+ * LIKE expression only: \_	Matches a single underscore character ( _ )
+ * LIKE expression only:\%	Matches a single percent sign character ( % )
+ *
+ * SITUATIONS WITH "WITH":
+ * =======================
+ * 1.) SELECT Title FROM KnowledgeArticleVersion WHERE PublishStatus='online' WITH DATA CATEGORY Geography__c ABOVE usa__c
+ * 2.) SELECT Id FROM UserProfileFeed WITH UserId='005D0000001AamR' ORDER BY CreatedDate DESC, Id DESC LIMIT 20
+ */
 class Tokenizer implements TokenizerInterface
 {
     /**
@@ -73,27 +101,67 @@ class Tokenizer implements TokenizerInterface
         'SELECT',
         'FROM',
         'WHERE',
-        'WITH',
+
+        // COMPOUND: "GROUP BY"
         'GROUP',
         'BY',
         'HAVING',
         'ORDER',
         'LIMIT',
         'OFFSET',
+
+        // COMPOUND: "WITH DATA CATEGORY"
+        'WITH',
         'DATA',
         'CATEGORY',
+        'AT',
         'ABOVE',
-        'ABOVE_OR_BELOW',
         'BELOW',
+        'ABOVE_OR_BELOW',
         'ROLLUP',
         'CUBE',
-        'NULL',
         'DESC',
         'ASC',
         'NULLS',
         'FIRST',
         'LAST'
     );
+
+    /**
+     * @var array
+     */
+    private static $functions = array(
+        'COUNT',
+        'COUNT_DISTINCT',
+        'MAX',
+        'MIN',
+        'AVG',
+        'SUM',
+
+        // SELECT GROUPING(LeadSource) ... GROUP BY ROLLUP
+        'GROUPING',
+
+        'CALENDAR_MONTH',
+        'CALENDAR_QUARTER',
+        'CALENDAR_YEAR',
+        'DAY_IN_MONTH',
+        'DAY_IN_WEEK',
+        'DAY_IN_YEAR',
+        'DAY_ONLY',
+        'FISCAL_MONTH',
+        'FISCAL_QUARTER',
+        'FISCAL_YEAR',
+        'HOUR_IN_DAY',
+        'WEEK_IN_MONTH',
+        'WEEK_IN_YEAR',
+
+        // CASE INSENSITIVE ... ALSO EGAL
+        'TOLABEL',
+        'CONVERTTIMEZONE',
+        'CONVERTCURRENCY'
+    );
+
+
 
     /**
      * @var array
@@ -177,7 +245,7 @@ class Tokenizer implements TokenizerInterface
         }
 
         // SPACE CHARACTER?
-        else if(ctype_space($c))
+        elseif(ctype_space($c))
         {
             // IS LINEBREAK
             if(in_array($c, array("\r", "\n")))
@@ -202,11 +270,11 @@ class Tokenizer implements TokenizerInterface
             {
                 $this->tokenType = TokenType::WHITESPACE;
 
-                while(($n = $this->currentChar()) && ctype_space($n) && ! in_array($n, array("\r", "\n")))
+                while(null !== ($n = $this->currentChar()) && ctype_space($n) && ! in_array($n, array("\r", "\n")))
                 {
-                    $this->nextChar();
-
                     $this->tokenValue .= $n;
+
+                    $this->nextChar();
                 }
             }
         }
@@ -218,17 +286,18 @@ class Tokenizer implements TokenizerInterface
         // DATE TIME LITERAL
         elseif(ctype_digit($c))
         {
+            // ASSERT: NUMBER
             $this->tokenType = TokenType::NUMBER;
 
-            while(($n = $this->currentChar()) && ! ctype_space($n) && ! in_array($n, self::$rightDelimiters))
+            while(null !== ($n = $this->currentChar()) && ! ctype_space($n) && ! in_array($n, self::$rightDelimiters))
             {
+                $this->nextChar();
+
                 if( ! ctype_digit($n) && ! in_array($n, array(
-                    '.', '-', 'T', 'Z', ':'
+                    '.', '-', 'T', 'Z', ':', '+'
                 ))) {
                     throw new TokenizerException('Unexpected char "' . $n . '"', $this->line, $this->linePos, $this->input);
                 }
-
-                $this->nextChar();
 
                 if('-' === $n)
                 {
@@ -246,37 +315,64 @@ class Tokenizer implements TokenizerInterface
             // VALIDATE DATE/DATETIME LITERALS
             if(TokenType::DATE_LITERAL === $this->getTokenType() && false === \DateTime::createFromFormat('Y-m-d', $this->getTokenValue()))
             {
-                throw new TokenizerException('Unexpected date literal format "' . $this->getTokenValue() . '"', $this->line, $this->linePos, $this->input);
+                throw new TokenizerException('Unexpected literal format "' . $this->getTokenValue() . '"', $this->line, $this->linePos, $this->input);
             }
 
             // VALIDATE DATE/DATETIME LITERALS
             if(TokenType::DATETIME_LITERAL === $this->getTokenType() && false === \DateTime::createFromFormat(\DateTime::W3C, $this->getTokenValue()))
             {
-                throw new TokenizerException('Unexpected datetime literal format "' . $this->getTokenValue() . '"', $this->line, $this->linePos, $this->input);
+                throw new TokenizerException('Unexpected literal format "' . $this->getTokenValue() . '"', $this->line, $this->linePos, $this->input);
             }
         }
 
         // STRING LITERALS
+        //
         elseif(in_array($c, array('\'', '\"')))
         {
+            $closed = false;
+
             $this->tokenType = TokenType::STRING_LITERAL;
 
-            $prev = null;
-
-            while(($n = $this->currentChar()))
+            while(null !== ($n = $this->currentChar()))
             {
                 $this->nextChar();
 
-                $this->tokenValue .= $n;
+                $n2 = $this->currentChar();
 
-                // NOT ESCAPED?
-                if($c === $n && '\\' !== $prev)
+                if('\\' === $n)
                 {
-                    // ADVANCE ...
-                    break;
-                }
+                    // CHECK ALLOWED ESCAPE SEQUENCES
+                    if(in_array($n2, array('n', 'M', 'r', 'R', 't', 'T', 'b', 'B', 'f', 'F', $c, '\\', '_', '%')))
+                    {
+                        $this->tokenValue .= '\\' . $n2;
 
-                $prev = $n;
+                        $this->nextChar();
+                    }
+                    else
+                    {
+                        throw new TokenizerException(sprintf('Unrecognized escape sequence "%s"', '\\' . $n2), $this->line, $this->linePos, $this->input);
+                    }
+                }
+                else
+                {
+                    $this->tokenValue .= $n;
+
+                    if($c === $n2)
+                    {
+                        $closed = true;
+
+                        $this->tokenValue .= $n2;
+
+                        $this->nextChar();
+
+                        break;
+                    }
+                }
+            }
+
+            if( ! $closed)
+            {
+                throw new TokenizerException('Unterminated string literal', $this->line, $this->linePos, $this->input);
             }
         }
 
@@ -285,7 +381,7 @@ class Tokenizer implements TokenizerInterface
         {
             $this->tokenType = TokenType::NAMED_VARIABLE;
 
-            while(($n = $this->currentChar()) && ! ctype_space($n) && ! in_array($n, self::$rightDelimiters))
+            while(null !== ($n = $this->currentChar()) && ! ctype_space($n) && ! in_array($n, self::$rightDelimiters))
             {
                 $this->nextChar();
 
@@ -293,6 +389,7 @@ class Tokenizer implements TokenizerInterface
             }
         }
 
+        // ARBITRARY CHAR (paranthesis, comma separator, ...)
         elseif(isset(self::$charMap[$c]))
         {
             $this->tokenType = self::$charMap[$c];
@@ -372,7 +469,7 @@ class Tokenizer implements TokenizerInterface
 
             $p2 = '';
 
-            while(($n = $this->currentChar()) && ! ctype_space($n) && ! in_array($n, self::$rightDelimiters))
+            while(null !== ($n = $this->currentChar()) && ! ctype_space($n) && ! in_array($n, self::$rightDelimiters))
             {
                 $this->nextChar();
 
@@ -423,7 +520,12 @@ class Tokenizer implements TokenizerInterface
                 $this->tokenType = TokenType::DATE_LITERAL;
             }
 
-            // SHOULD BE A FUNCTION OR COLUMN NAME. BUT BEWARE OF THE PARANTHESIS
+            elseif(in_array($t, self::$functions))
+            {
+                $this->tokenType = TokenType::SOQL_FUNCTION;
+            }
+
+            // CAN BE A FUNCTION OR COLUMN NAME. BUT BEWARE OF THE PARANTHESIS
             else
             {
                 $this->tokenType = TokenType::EXPRESSION;
@@ -453,7 +555,7 @@ class Tokenizer implements TokenizerInterface
      */
     public function expect($type)
     {
-        if($this->tokenType  != $type)
+        if( ! $this->is($type))
         {
             throw new TokenizerException('Unexpected token "' . $this->tokenType . '"', $this->line, $this->linePos, $this->input);
         }
@@ -461,20 +563,22 @@ class Tokenizer implements TokenizerInterface
     }
 
     /**
-     * @param $keyword
-     * @throws TokenizerException
+     * @param $tokenType
+     * @internal param $keyword
+     * @return bool
      */
-    public function expectKeyword($keyword)
+    public function is($tokenType)
     {
-        if($this->tokenType  != TokenType::KEYWORD)
-        {
-            throw new TokenizerException('Unexpected token "' . $this->tokenType . '"', $this->line, $this->linePos, $this->input);
-        }
-        if(0 !== strcasecmp($this->getTokenValue(), $keyword))
-        {
-            throw new TokenizerException('Expected "' . $keyword . '", got ' . $this->getTokenValue() . '"', $this->line, $this->linePos, $this->input);
-        }
-        $this->readNextToken();
+        return $this->tokenType  === $tokenType;
+    }
+
+    /**
+     * @param $value
+     * @return bool
+     */
+    public function isValue($value)
+    {
+        return 0 === strcasecmp($this->tokenValue, $value);
     }
 
     public function getLine()
