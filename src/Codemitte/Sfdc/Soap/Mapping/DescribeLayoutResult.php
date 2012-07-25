@@ -46,7 +46,7 @@ class DescribeLayoutResult implements ClassInterface
     }
 
     /**
-     * @return array
+     * @return array<RecordTypeMapping>
      */
     public function getRecordTypeMappings()
     {

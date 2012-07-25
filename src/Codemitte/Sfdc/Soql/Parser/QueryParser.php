@@ -27,6 +27,9 @@ use \Traversable;
 use Codemitte\Sfdc\Soql\Type\TypeFactory;
 use Codemitte\Sfdc\Soql\Type\TypeInterface;
 use Codemitte\Sfdc\Soql\Type\Expression;
+use Codemitte\Sfdc\Soql\Tokenizer\TokenizerInterface;
+use Codemitte\Sfdc\Soql\Tokenizer\TokenizerException;
+use Codemitte\Sfdc\Soql\Tokenizer\TokenType;
 
 /**
  * QueryParser
@@ -52,6 +55,7 @@ class QueryParser implements QueryParserInterface
      * Constructor.
      *
      * @param TokenizerInterface|null $tokenizer
+     * @param \Codemitte\Sfdc\Soql\Type\TypeFactory $typeFactory
      */
     public function __construct(TokenizerInterface $tokenizer = null, TypeFactory $typeFactory = null)
     {
@@ -72,15 +76,53 @@ class QueryParser implements QueryParserInterface
      *
      * @param string $soql
      * @param array $parameters
+     * @throws \Codemitte\Sfdc\Soql\Tokenizer\TokenizerException
      * @return string
      */
     public function parse($soql, array $parameters = array())
     {
-        $tokens = $this->tokenizer->getTokens($soql);
+        $this->tokenizer->setInput($soql);
 
         $output = '';
 
         $previous_token = null;
+
+        $indexedParameters = array_values($parameters);
+
+        $anonVarIndex = 0;
+
+        while(true)
+        {
+            $tokenType = $this->tokenizer->getTokenType();
+
+            $tokenValue = $this->tokenizer->getTokenValue();
+
+            switch($tokenType)
+            {
+                case TokenType::EOF:
+                    return $output;
+                case TokenType::ANON_VARIABLE:
+                    $output .= $this->getIndexedParameter($anonVarIndex++, $indexedParameters)->toSOQL();
+                    break;
+                case TokenType::NAMED_VARIABLE:
+                    $output .= $this->getNamedParameter($tokenValue, $parameters)->toSOQL();
+                    break;
+                default:
+                    $output .= $tokenValue;
+                    break;
+            }
+
+            try
+            {
+                $this->tokenizer->readNextToken();
+            }
+            catch(TokenizerException $e)
+            {
+                throw $e;
+            }
+        }
+
+        return $output;
 
         foreach($tokens AS $i => $token)
         {
@@ -110,21 +152,23 @@ class QueryParser implements QueryParserInterface
     }
 
     /**
-     * getParameter()
+     * getNamedParameter()
      *
-     * @throws ParseException
-     *
-     * @param string $name
+     * @param $soqlPart
      * @param array $params
      *
+     * @throws ParseException
      * @return mixed $param
      */
-    private function getParameter($name, array $params)
+    private function getNamedParameter($soqlPart, array $params)
     {
+        $name = substr($soqlPart, 1);
+
         if( ! array_key_exists($name, $params))
         {
+            throw new ParseException(sprintf('Named variable "%s" was never bound.', $soqlPart), $this->tokenizer->getLine(), $this->tokenizer->getLinePos(), $this->tokenizer->getInput());
             // "COMPLEX" Expression, @TODO: Check if it is a variable
-            return new Expression($name);
+            // return new Expression($name);
         }
 
         $param = $params[$name];
@@ -136,7 +180,39 @@ class QueryParser implements QueryParserInterface
 
         if( ! $param instanceof TypeInterface)
         {
-            throw new ParseException(sprintf('No Salesforce compatible type given. Param "%s" must implement \Codemitte\Sfdc\Soql\Type\TypeInterface.', $name));
+            throw new ParseException(sprintf('No Salesforce compatible type given. Param "%s" must implement \Codemitte\Sfdc\Soql\Type\TypeInterface.', $soqlPart), $this->tokenizer->getLine(), $this->tokenizer->getLinePos(), $this->tokenizer->getInput());
+        }
+        return $param;
+    }
+
+    /**
+     * getIndexedParameter()
+     *
+     * @param $soqlPart
+     * @param array $params
+     *
+     * @throws ParseException
+     * @return mixed $param
+     */
+    private function getIndexedParameter($index, array $params)
+    {
+        if( ! array_key_exists($index, $params))
+        {
+            throw new ParseException(sprintf('Anonymous variable with index "%s" was never bound.', $index), $this->tokenizer->getLine(), $this->tokenizer->getLinePos(), $this->tokenizer->getInput());
+            // "COMPLEX" Expression, @TODO: Check if it is a variable
+            // return new Expression($name);
+        }
+
+        $param = $params[$index];
+
+        if( ! $param instanceof TypeInterface)
+        {
+            $param = $this->typeFactory->create($param);
+        }
+
+        if( ! $param instanceof TypeInterface)
+        {
+            throw new ParseException(sprintf('No Salesforce compatible type given. Param "%s" must implement \Codemitte\Sfdc\Soql\Type\TypeInterface.', $soqlPart), $this->tokenizer->getLine(), $this->tokenizer->getLinePos(), $this->tokenizer->getInput());
         }
         return $param;
     }

@@ -3,7 +3,7 @@ namespace Codemitte\Sfdc\Soap\Mapping;
 
 use Codemitte\Soap\Mapping\ClassInterface;
 
-class PicklistEntry implements ClassInterface
+class PicklistEntry implements ClassInterface, \Serializable
 {
     /**
      *
@@ -100,4 +100,40 @@ class PicklistEntry implements ClassInterface
         return $this->value;
     }
 
+    /**
+     * (PHP 5 &gt;= 5.1.0)<br/>
+     * String representation of object
+     * @link http://php.net/manual/en/serializable.serialize.php
+     * @return string the string representation of the object or null
+     */
+    public function serialize()
+    {
+        return serialize(array(
+            'active' => $this->active,
+            'defaultValue' => $this->defaultValue,
+            'label' => $this->label,
+            'validFor' => $this->validFor,
+            'value' => $this->value
+        ));
+    }
+
+    /**
+     * (PHP 5 &gt;= 5.1.0)<br/>
+     * Constructs the object
+     * @link http://php.net/manual/en/serializable.unserialize.php
+     * @param string $serialized <p>
+     * The string representation of the object.
+     * </p>
+     * @return mixed the original value unserialized.
+     */
+    public function unserialize($serialized)
+    {
+        $data = unserialize($serialized);
+
+        $this->active =  $data['active'];
+        $this->defaultValue =  $data['defaultValue'];
+        $this->label=  $data['label'];
+        $this->validFor=  $data['validFor'];
+        $this->value=  $data['value'];
+    }
 }

@@ -22,6 +22,7 @@
 
 namespace Codemitte\Sfdc\Soap\Client\Connection;
 
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Codemitte\Soap\Client\Connection\ConnectionInterface;
 use Codemitte\Sfdc\Soap\Mapping\Base\login;
 use Codemitte\Sfdc\Soap\Mapping\Base\LoginResult;
@@ -41,11 +42,19 @@ interface SfdcConnectionInterface extends ConnectionInterface
      *
      * @abstract
      *
-     * @param login $credentials
-     *
+     * @internal param \Codemitte\Sfdc\Soap\Mapping\Base\login $credentials
      * @return \Codemitte\Sfdc\Soap\Mapping\Base\loginResponse
      */
-    public function login(login $credentials);
+    public function login();
+
+    /**
+     * Logs the current user out.
+     *
+     * @abstract
+     *
+     * @return void
+     */
+    public function logout();
 
     /**
      * Returns the login result. Expected to be null unless
@@ -56,11 +65,14 @@ interface SfdcConnectionInterface extends ConnectionInterface
     public function getLoginResult();
 
     /**
+     * To inject the session id of another connection
+     * into this one.
+     *
      * @abstract
-     * @param \Codemitte\Sfdc\Soap\Mapping\Base\LoginResult $result
+     * @param \Codemitte\Sfdc\Soap\Mapping\Base\LoginResult $loginResult
      * @return mixed
      */
-    public function setLoginResult(LoginResult $result);
+    public function setLoginResult(LoginResult $loginResult);
 
     /**
      * Returns true if a login result exists.
@@ -68,4 +80,22 @@ interface SfdcConnectionInterface extends ConnectionInterface
      * @return bool
      */
     public function isLoggedIn();
+
+    /**
+     * @abstract
+     * @return login
+     */
+    public function getCredentials();
+
+    /**
+     * @abstract
+     * @return bool
+     */
+    public function getDebug();
+
+    /**
+     * @abstract
+     * @return int
+     */
+    public function getLastLoginTime();
 }

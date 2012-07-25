@@ -38,6 +38,7 @@ class SoapFault extends GenericSoapFault
      */
     public function __construct(GenericSoapFault $fault)
     {
+
         parent::__construct(
             isset($fault->faultcode) ? $fault->faultcode : null,
             isset($fault->faultstring) ? $fault->faultstring : null,
@@ -50,31 +51,31 @@ class SoapFault extends GenericSoapFault
 
     public function getFaultactor()
     {
-        return parent::$faultactor;
+        return isset($this->faultactor) ? $this->faultactor : null;
     }
 
     public function getFaultcode()
     {
-        return parent::$faultcode;
+        return isset($this->faultcode) ? $this->faultcode: null;
     }
 
     public function getFaultdetail()
     {
-        return parent::$detail;
+        return isset($this->detail) ? $this->detail : null;
     }
 
     public function getFaultname()
     {
-        return parent::$_name;
+        return isset($this->_name) ? $this->_name : null;
     }
 
     public function getFaultstring()
     {
-        return parent::$faultstring;
+        return isset($this->faultstring) ? $this->faultstring : null;
     }
 
     public function getHeaderfault()
     {
-        return parent::$headerfault;
+        return isset($this->headerfault) ? $this->headerfault : null;
     }
 }

@@ -64,12 +64,13 @@ abstract class AbstractCustomWsClient extends BaseClient implements CustomWsClie
 
         /* @var $myConnection \Codemitte\Sfdc\Soap\Client\Connection\SfdcConnection */
         $myConnection = new \Codemitte\Sfdc\Soap\Client\Connection\SfdcConnection(
+            $clientConnection->getCredentials(),
             $wsdl,
             $this->locateEndpoint($clientConnection->getLocation(), $this->getSuffix())
         );
-
         $myConnection->setLoginResult($clientConnection->getLoginResult());
 
+        // (RE-)SETS SESSION HEADER
         parent::__construct($myConnection);
     }
 

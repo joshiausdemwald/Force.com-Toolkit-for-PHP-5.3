@@ -35,6 +35,11 @@ use Codemitte\Sfdc\Soap\Header;
  */
 class EnterpriseClient extends API
 {
+    const
+        TNS = 'urn:enterprise.soap.sforce.com',
+        FNS = 'urn:fault.enterprise.soap.sforce.com',
+        ENS = 'urn:sobject.enterprise.soap.sforce.com';
+
     /**
      * Returns the TargetNamespace as a valid uri string.
      *
@@ -42,7 +47,7 @@ class EnterpriseClient extends API
      */
     public function getUri()
     {
-        return 'urn:enterprise.soap.sforce.com';
+        return self::TNS;
     }
 
     /**
@@ -86,7 +91,7 @@ class EnterpriseClient extends API
             {
                 if( ! $sobject instanceof SobjectInterface)
                 {
-                    throw new InvalidArgumentException('$data must be an instance or a list of sObject(s).');
+                    throw new \InvalidArgumentException('$data must be an instance or a list of sObject(s).');
                 }
 
                 $param = new \stdClass();
@@ -146,7 +151,7 @@ class EnterpriseClient extends API
             {
                 if( ! $sobject instanceof SobjectInterface)
                 {
-                    throw new InvalidArgumentException('$data must be an instance or a list of sObject(s).');
+                    throw new \InvalidArgumentException('$data must be an instance or a list of sObject(s).');
                 }
 
                 $param = new \stdClass();

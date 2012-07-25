@@ -654,7 +654,7 @@ class Connection implements ConnectionInterface
             }
             if (null === $this->getOption('uri'))
             {
-                throw new MissingParameterException('"uri" option is required in non-WSDL mode.');
+                throw new MissingOptionException('"uri" option is required in non-WSDL mode.');
             }
         }
         else
@@ -686,9 +686,10 @@ class Connection implements ConnectionInterface
      * @abstract
      *
      * @param $name
-     * @param $arguments
+     * @param mixed $arguments
      * @param \Codemitte\Soap\Hydrator\HydratorInterface|null $hydrator
      *
+     * @throws SoapFault|TracedSoapFault|null
      * @return mixed
      */
     public function soapCall($name, $arguments, HydratorInterface $hydrator = null)
@@ -760,7 +761,9 @@ class Connection implements ConnectionInterface
      * Adds classes to the connection's soap classmap.
      *
      * @param string $complexType
-     * @param string $classname
+     * @param string $class
+     * @throws MappingException
+     * @return void
      */
     public function registerClass($complexType, $class)
     {
@@ -864,21 +867,16 @@ class Connection implements ConnectionInterface
      */
     public function serialize()
     {
-        $this->soapClient = null;
-
-        $this->soapInputHeaders = array();
-
         $retVal = array(
+            'decorator' => $this->decorator,
             'hydrator' => $this->hydrator,
+            'options' => $this->options,
+            'classMap' => $this->classMap,
+            'typeMap' => $this->typeMap,
+            'wsdl' => $this->wsdl,
+            'permanentSoapInputHeaders' => $this->permanentSoapInputHeaders,
+            'soapOutputHeaders' => $this->soapOutputHeaders
         );
-
-        // @TODO: WORKAROUND. TODO: AVOID CIRCULAR REFERENCE.
-        $this->decorator = null;
-
-        foreach($this AS $key => $value)
-        {
-            $retVal[$key] = $value;
-        }
 
         return serialize($retVal);
     }
@@ -896,16 +894,16 @@ class Connection implements ConnectionInterface
     {
         $data = unserialize($serialized);
 
-        foreach($data AS $key => $value)
-        {
-            $this->$key = $value;
-        }
+        $this->decorator                        = $data['decorator'];
+        $this->hydrator                         = $data['hydrator'];
+        $this->options                          = $data['options'];
+        $this->classMap                         = $data['classMap'];
+        $this->typeMap                          = $data['typeMap'];
+        $this->wsdl                             = $data['wsdl'];
+        $this->permanentSoapInputHeaders        = $data['permanentSoapInputHeaders'];
+        $this->soapOutputHeaders                = $data['soapOutputHeaders'];
 
-        if(null === $this->decorator)
-        {
-            $this->decorator = new SoapParamDecorator($this);
-        }
-
+        // POUR LE NEXT REQUEST
         if(count($this->permanentSoapInputHeaders) > 0)
         {
             $this->setSoapInputHeaders($this->permanentSoapInputHeaders, true);

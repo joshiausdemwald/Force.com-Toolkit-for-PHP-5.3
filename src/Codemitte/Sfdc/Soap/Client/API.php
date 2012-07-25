@@ -84,6 +84,8 @@ abstract class API extends BaseClient
         $connection->registerClass('DescribeLayoutResult', 'Codemitte\\Sfdc\\Soap\\Mapping\\DescribeLayoutResult');
         $connection->registerClass('DescribeLayoutRow', 'Codemitte\\Sfdc\\Soap\\Mapping\\DescribeLayoutRow');
         $connection->registerClass('DescribeLayoutSection', 'Codemitte\\Sfdc\\Soap\\Mapping\\DescribeLayoutSection');
+        $connection->registerClass('RecordTypeMapping', 'Codemitte\\Sfdc\\Soap\\Mapping\\RecordTypeMapping');
+        $connection->registerClass('PicklistForRecordType', 'Codemitte\\Sfdc\\Soap\\Mapping\\PicklistForRecordType');
 
         $connection->registerClass('DescribeSObjectResult', 'Codemitte\\Sfdc\\Soap\\Mapping\\DescribeSObjectResult');
         $connection->registerClass('RecordTypeInfo', 'Codemitte\\Sfdc\\Soap\\Mapping\\RecordTypeInfo');

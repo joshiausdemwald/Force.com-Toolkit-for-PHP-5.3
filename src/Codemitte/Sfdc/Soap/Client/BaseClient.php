@@ -27,8 +27,10 @@ use \Serializable;
 use \BadMethodCallException;
 
 use Codemitte\Sfdc\Soap\Client\Connection\SfdcConnectionInterface;
-
 use Codemitte\Sfdc\Soap\Header\SessionHeader;
+
+use Codemitte\Sfdc\Soap\Client\Connection\Event\ConnectionEvent;
+use Codemitte\Sfdc\Soap\Client\Connection\Event\ConnectionEvents;
 
 /**
  * BaseClient
@@ -63,15 +65,15 @@ abstract class BaseClient implements ClientInterface
 
         $this->connection->setURI($this->getUri());
 
-        $connection->registerClass('SessionHeader', 'Codemitte\\Sfdc\\Soap\\Mapping\\Base\\SessionHeader');
+        $this->configure($connection);
+
+        $this->connection->resetSoapInputHeaders();
 
         // ADD PERMANENT SESSION HEADER
         $this->connection->addSoapInputHeader(new SessionHeader(
-            $this->getUri(),
+            $this->getURI(),
             $this->connection->getLoginResult()->getSessionId()
         ), true);
-
-        $this->configure($connection);
     }
 
     /**
@@ -127,7 +129,9 @@ abstract class BaseClient implements ClientInterface
      */
     public function serialize()
     {
-       return serialize(array('connection' => $this->connection));
+       return serialize(array(
+           'connection' => $this->connection
+       ));
     }
 
     /**

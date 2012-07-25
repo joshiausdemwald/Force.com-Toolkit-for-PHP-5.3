@@ -3,7 +3,7 @@ namespace Codemitte\Sfdc\Soap\Mapping;
 
 use Codemitte\Soap\Mapping\ClassInterface;
 
-class Field implements ClassInterface
+class Field implements ClassInterface, \Serializable
 {
     /**
      *
@@ -643,5 +643,110 @@ class Field implements ClassInterface
     public function getWriteRequiresMasterRead()
     {
         return $this->writeRequiresMasterRead;
+    }
+
+    /**
+     * (PHP 5 &gt;= 5.1.0)<br/>
+     * String representation of object
+     * @link http://php.net/manual/en/serializable.serialize.php
+     * @return string the string representation of the object or null
+     */
+    public function serialize()
+    {
+        return serialize(array(
+            'autoNumber'              =>  $this->autoNumber,
+            'byteLength'              =>  $this->byteLength,
+            'calculated'              =>  $this->calculated,
+            'calculatedFormula'       =>  $this->calculatedFormula,
+            'caseSensitive'           =>  $this->caseSensitive,
+            'controllerName'          =>  $this->controllerName,
+            'createable'              =>  $this->createable,
+            'custom'                  =>  $this->custom,
+            'defaultValueFormula'     =>  $this->defaultValueFormula,
+            'defaultedOnCreate'       =>  $this->defaultedOnCreate,
+            'dependentPicklist'       =>  $this->dependentPicklist,
+            'deprecatedAndHidden'     =>  $this->deprecatedAndHidden,
+            'digits'                  =>  $this->digits,
+            'externalId'              =>  $this->externalId,
+            'filterable'              =>  $this->filterable,
+            'groupable'               =>  $this->groupable,
+            'htmlFormatted'           =>  $this->htmlFormatted,
+            'idLookup'                =>  $this->idLookup,
+            'inlineHelpText'          =>  $this->inlineHelpText,
+            'label'                   =>  $this->label,
+            'length'                  =>  $this->length,
+            'name'                    =>  $this->name,
+            'nameField'               =>  $this->nameField,
+            'namePointing'            =>  $this->namePointing,
+            'nillable'                =>  $this->nillable,
+            'permissionable'          =>  $this->permissionable,
+            'picklistValues'          =>  $this->picklistValues,
+            'precision'               =>  $this->precision,
+            'referenceTo'             =>  $this->referenceTo,
+            'relationshipName'        =>  $this->relationshipName,
+            'relationshipOrder'       =>  $this->relationshipOrder,
+            'restrictedPicklist'      =>  $this->restrictedPicklist,
+            'scale'                   =>  $this->scale,
+            'soapType'                =>  $this->soapType,
+            'sortable'                =>  $this->sortable,
+            'type'                    =>  $this->type,
+            'unique'                  =>  $this->unique,
+            'updateable'              =>  $this->updateable,
+            'writeRequiresMasterRead' =>  $this->writeRequiresMasterRead
+        ));
+    }
+
+    /**
+     * (PHP 5 &gt;= 5.1.0)<br/>
+     * Constructs the object
+     * @link http://php.net/manual/en/serializable.unserialize.php
+     * @param string $serialized <p>
+     * The string representation of the object.
+     * </p>
+     * @return mixed the original value unserialized.
+     */
+    public function unserialize($serialized)
+    {
+        $data = unserialize($serialized);
+        
+        $this->autoNumber              =  $data['autoNumber'];            
+        $this->byteLength              =  $data['byteLength'];            
+        $this->calculated              =  $data['calculated'];            
+        $this->calculatedFormula       =  $data['calculatedFormula'];     
+        $this->caseSensitive           =  $data['caseSensitive'];         
+        $this->controllerName          =  $data['controllerName'];        
+        $this->createable              =  $data['createable'];            
+        $this->custom                  =  $data['custom'];                
+        $this->defaultValueFormula     =  $data['defaultValueFormula'];   
+        $this->defaultedOnCreate       =  $data['defaultedOnCreate'];     
+        $this->dependentPicklist       =  $data['dependentPicklist'];     
+        $this->deprecatedAndHidden     =  $data['deprecatedAndHidden'];   
+        $this->digits                  =  $data['digits'];                
+        $this->externalId              =  $data['externalId'];            
+        $this->filterable              =  $data['filterable'];            
+        $this->groupable               =  $data['groupable'];             
+        $this->htmlFormatted           =  $data['htmlFormatted'];         
+        $this->idLookup                =  $data['idLookup'];              
+        $this->inlineHelpText          =  $data['inlineHelpText'];        
+        $this->label                   =  $data['label'];                 
+        $this->length                  =  $data['length'];                
+        $this->name                    =  $data['name'];                  
+        $this->nameField               =  $data['nameField'];             
+        $this->namePointing            =  $data['namePointing'];          
+        $this->nillable                =  $data['nillable'];              
+        $this->permissionable          =  $data['permissionable'];        
+        $this->picklistValues          =  $data['picklistValues'];        
+        $this->precision               =  $data['precision'];             
+        $this->referenceTo             =  $data['referenceTo'];           
+        $this->relationshipName        =  $data['relationshipName'];      
+        $this->relationshipOrder       =  $data['relationshipOrder'];     
+        $this->restrictedPicklist      =  $data['restrictedPicklist'];    
+        $this->scale                   =  $data['scale'];                 
+        $this->soapType                =  $data['soapType'];              
+        $this->sortable                =  $data['sortable'];              
+        $this->type                    =  $data['type'];                  
+        $this->unique                  =  $data['unique'];                
+        $this->updateable              =  $data['updateable'];            
+        $this->writeRequiresMasterRead =  $data['writeRequiresMasterRead'];
     }
 }

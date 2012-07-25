@@ -40,6 +40,12 @@ use \SoapVar;
  */
 class PartnerClient extends API
 {
+    const
+            FNS='urn:fault.partner.soap.sforce.com',
+            TNS='urn:partner.soap.sforce.com',
+            ENS='urn:sobject.partner.soap.sforce.com'
+    ;
+
     /**
      * Returns the TargetNamespace as a valid uri string.
      *
@@ -47,21 +53,7 @@ class PartnerClient extends API
      */
     public function getUri()
     {
-        return 'urn:partner.soap.sforce.com';
-    }
-
-    /**
-     * Different behaviour of sobject mapping in enterprise and
-     * partner.wsdl requires this.
-     *
-     * @param Connection\SfdcConnectionInterface $connection
-     */
-    protected function configure(SfdcConnectionInterface $connection)
-    {
-        parent::configure($connection);
-
-        // GENERIC SOBJECT
-        // $connection->registerClass('sObject', 'Codemitte\\Sfdc\\Soap\\Mapping\\Partner\\Sobject');
+        return self::TNS;
     }
 
     /**
@@ -70,6 +62,7 @@ class PartnerClient extends API
      *
      * @param string $queryString
      * @param array $params
+     * @throws \Exception
      * @return \Codemitte\Soap\Mapping\GenericResult|mixed
      */
     public function query($queryString, array $params = array())

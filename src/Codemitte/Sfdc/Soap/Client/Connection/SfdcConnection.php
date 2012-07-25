@@ -25,9 +25,11 @@ namespace Codemitte\Sfdc\Soap\Client\Connection;
 use Codemitte\Soap\Client\Connection\SoapClientCommon;
 use Codemitte\Soap\Client\Connection\Connection;
 use Codemitte\Sfdc\Soap\Mapping\Base\login;
+use Codemitte\Sfdc\Soap\Header\SessionHeader;
 use Codemitte\Soap\Hydrator\HydratorInterface;
 use Codemitte\Soap\Client\Connection\UnknownOptionException;
 use Codemitte\Sfdc\Soap\Mapping\Base\LoginResult;
+use Codemitte\Soap\Client\Decorator\DecoratorInterface;
 
 /**
  * SfdcConnection: Sfdc soap connector.
@@ -91,7 +93,7 @@ use Codemitte\Sfdc\Soap\Mapping\Base\LoginResult;
  *   -  soap.wsdl_cache_enabled	1	        aktiviert oder deaktiviert den WSDL-Cache
  *   -  soap.wsdl_cache_dir	    /tmp	    Verzeichnis für den WSDL-Cache
  *   -  soap.wsdl_cache_ttl	    86400	    Zeitraum in Sekunden wie lange zwischengespeicherte WSDL-Dateien genutzt werden sollen
- *   -  soap.wsdl_cache_limit	    5	        maximale Anzahl von WSDL-Dateien, die gespeichert werden können
+ *   -  soap.wsdl_cache_limit	    5	    maximale Anzahl von WSDL-Dateien, die gespeichert werden können
  *
  * @author Johannes Heinen <johannes.heinen@code-mitte.de>
  * @copyright 2012 code mitte GmbH, Cologne, Germany
@@ -113,6 +115,21 @@ class SfdcConnection extends Connection implements SfdcConnectionInterface
      * @var \Codemitte\Sfdc\Soap\Mapping\Base\LoginResult
      */
     private $loginResult;
+
+    /**
+     * @var \Codemitte\Sfdc\Soap\Mapping\Base\login
+     */
+    private $credentials;
+
+    /**
+     * @var bool
+     */
+    private $debug;
+
+    /**
+     * @var int
+     */
+    private $lastLoginTime;
 
     /**
      * Constructor.
@@ -175,21 +192,31 @@ class SfdcConnection extends Connection implements SfdcConnectionInterface
      * - openssl_version: One of the OPENSSL_VERSION_x-constants. If a version >= 0 is chosed, a request workaround
      *   if performed to exclude SSLv2 from beeing used as cipher.
      *
+     * @param \Codemitte\Sfdc\Soap\Mapping\Base\login $credentials
      * @param string $wsdl: The path to the wsdl file.
      * @param string $serviceLocation: The location of the webservice, only used when differs from service definition
      *                                 in wsdl.
      * @param array $options
-     * @param \Codemitte\Soap\Hydrator\HydratorInterface|null $hydrator
+     * @param bool $debug
      */
-    public function __construct($wsdl, $serviceLocation = null, array $options = array(), HydratorInterface $hydrator = null)
-    {
+    public function __construct(
+        login $credentials,
+        $wsdl,
+        $serviceLocation = null,
+        array $options = array(),
+        $debug = false
+    ) {
         // $wsdl = null, array $options = array(), HydratorInterface $hydrator = null
-        parent::__construct($wsdl, array(), $hydrator);
+        parent::__construct($wsdl, array(), null, null);
+
+        $this->credentials = $credentials;
 
         if(null !== $serviceLocation)
         {
             $this->setOption('location', $serviceLocation);
         }
+
+        $this->debug = $debug;
 
         $this->setOptions(array_merge($options, array(
             'soap_version' => SOAP_1_1,
@@ -212,7 +239,7 @@ class SfdcConnection extends Connection implements SfdcConnectionInterface
             )),*/
 
             // IF DEBUG
-            'cache_wsdl' => WSDL_CACHE_NONE
+            'cache_wsdl' => $debug ? WSDL_CACHE_NONE : WSDL_CACHE_BOTH
         )));
 
         $this->registerClass('GetUserInfoResult', 'Codemitte\\Sfdc\\Soap\\Mapping\\Base\\GetUserInfoResult');
@@ -221,6 +248,7 @@ class SfdcConnection extends Connection implements SfdcConnectionInterface
         $this->registerClass('loginResponse', 'Codemitte\\Sfdc\\Soap\\Mapping\\Base\\loginResponse');
         $this->registerClass('LoginScopeHeader', 'Codemitte\\Sfdc\\Soap\\Mapping\\Base\\LoginScopeHeader');
         $this->registerClass('LoginResult', 'Codemitte\\Sfdc\\Soap\\Mapping\\Base\\LoginResult');
+        $this->registerClass('SessionHeader', 'Codemitte\\Sfdc\\Soap\\Mapping\\Base\\SessionHeader');
     }
 
     /**
@@ -228,17 +256,18 @@ class SfdcConnection extends Connection implements SfdcConnectionInterface
      *
      * Registers the given username to the specified organisation.
      *
-     * @param login $credentials
-     *
+     * @internal param $credentials
      * @return \Codemitte\Sfdc\Soap\Mapping\Base\loginResponse
      */
-    public function login(login $credentials)
+    public function login()
     {
-        $response = $this->soapCall('login', array($credentials));
+        $response = parent::soapCall('login', array($this->getCredentials()));
 
         $this->setLoginResult($response->getResult());
 
         $this->setOption('location', $this->loginResult->getServerUrl());
+
+        $this->lastLoginTime = time();
 
         return $response;
     }
@@ -265,6 +294,21 @@ class SfdcConnection extends Connection implements SfdcConnectionInterface
     }
 
     /**
+     * @throws \LogicException
+     */
+    public function logout()
+    {
+        if( ! $this->isLoggedIn())
+        {
+            throw new \LogicException('Cannot logout a non-logged-in user.');
+        }
+
+        $this->soapCall('logout', array());
+
+        $this->loginResult = null;
+    }
+
+    /**
      * (PHP 5 &gt;= 5.1.0)<br/>
      * String representation of object
      *
@@ -274,7 +318,10 @@ class SfdcConnection extends Connection implements SfdcConnectionInterface
     public function serialize()
     {
         return serialize(array(
+            'credentials' => $this->credentials,
             'loginResult' => $this->loginResult,
+            'debug' => $this->debug,
+            'lastLoginTime' => $this->lastLoginTime,
             '__parentData' => parent::serialize()
         ));
     }
@@ -292,7 +339,10 @@ class SfdcConnection extends Connection implements SfdcConnectionInterface
     {
         $data = unserialize($serialized);
 
-        $this->loginResult = $data['loginResult'];
+        $this->credentials   = $data['credentials'];
+        $this->loginResult   = $data['loginResult'];
+        $this->debug         = $data['debug'];
+        $this->lastLoginTime = $data['lastLoginTime'];
 
         parent::unserialize($data['__parentData']);
     }
@@ -361,11 +411,38 @@ class SfdcConnection extends Connection implements SfdcConnectionInterface
     }
 
     /**
-     * @param \Codemitte\Sfdc\Soap\Mapping\Base\LoginResult $result
+     * To inject the session id of another connection
+     * into this one.
+     *
+     * @param \Codemitte\Sfdc\Soap\Mapping\Base\LoginResult $loginResult
      * @return mixed
      */
     public function setLoginResult(LoginResult $loginResult)
     {
         $this->loginResult = $loginResult;
+    }
+
+    /**
+     * @return login
+     */
+    public function getCredentials()
+    {
+        return $this->credentials;
+    }
+
+    /**
+     * @return bool
+     */
+    public function getDebug()
+    {
+        return $this->debug;
+    }
+
+    /**
+     * @return int
+     */
+    public function getLastLoginTime()
+    {
+        return $this->lastLoginTime;
     }
 }

@@ -21,7 +21,7 @@
  */
 namespace Codemitte\Sfdc\Soql\Parser;
 
-use \RuntimeException;
+use Codemitte\Sfdc\Soql\Tokenizer\TokenizerException;
 
 /**
  * ParseException
@@ -31,7 +31,7 @@ use \RuntimeException;
  * @package Sfdc
  * @subpackage Soql
  */
-class ParseException extends RuntimeException
+class ParseException extends TokenizerException
 {
 
 }

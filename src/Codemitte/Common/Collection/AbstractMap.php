@@ -130,7 +130,8 @@ abstract class AbstractMap implements MapInterface
             {
                 if(count($arguments > 0))
                 {
-                    return $this->put($prop, $arguments[0]);                }
+                    return $this->put($prop, $arguments[0]);
+                }
             }
         }
 
