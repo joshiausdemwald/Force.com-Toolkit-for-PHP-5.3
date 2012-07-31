@@ -46,6 +46,10 @@ class TypeFactory
         {
             return new NullValue($param);
         }
+        elseif($param instanceof TypeInterface)
+        {
+            return $param;
+        }
         elseif(is_bool($param))
         {
             return new Boolean($param);

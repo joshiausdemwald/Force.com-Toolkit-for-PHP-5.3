@@ -62,36 +62,27 @@ class Tokenizer implements TokenizerInterface
     private $tokenValue;
 
     /**
-     * @var array
+     * @var bool
      */
-    private static $rightDelimiters = array(
-        '(', ')', ',', '=', '!', '<', '>', '\'', '"', '\\'
-    );
+    private $skipWhitespace = true;
 
     /**
      * @var array
      */
-    private static $operatorMap = array(
-        'AND' => TokenType::OP_AND,
-        'OR' => TokenType::OP_OR,
-        'NOT' => TokenType::OP_NOT,
-        'LIKE' => TokenType::OP_LIKE,
-        'INCLUDES' => TokenType::OP_INCLUDES,
-        'EXCLUDES' => TokenType::OP_EXCLUDES,
-
-        // BEWARE OF THE "NOT IN"
-        'IN' => TokenType::OP_IN,
-        'NOT IN' => TokenType::OP_NOT_IN
+    private static $rightDelimiters = array(
+        '(', ')', ',', '=', '!', '<', '>', '\'', '"', '\\', ':', ';'
     );
 
     /**
      * @var array
      */
     private static $charMap = array(
-        ',' => TokenType::SEPARATOR,
+        ',' => TokenType::COMMA,
+        ':' => TokenType::COLON,
+        '?' => TokenType::QUESTION_MARK,
         ')' => TokenType::RIGHT_PAREN,
         '(' => TokenType::LEFT_PAREN,
-        '?' => TokenType::ANON_VARIABLE
+        ';' => TokenType::SEMI_COLON
     );
 
     /**
@@ -99,6 +90,7 @@ class Tokenizer implements TokenizerInterface
      */
     private static $keywords = array(
         'SELECT',
+        'USING',
         'FROM',
         'WHERE',
 
@@ -128,82 +120,7 @@ class Tokenizer implements TokenizerInterface
     );
 
     /**
-     * @var array
-     */
-    private static $functions = array(
-        'COUNT',
-        'COUNT_DISTINCT',
-        'MAX',
-        'MIN',
-        'AVG',
-        'SUM',
-
-        // SELECT GROUPING(LeadSource) ... GROUP BY ROLLUP
-        'GROUPING',
-
-        'CALENDAR_MONTH',
-        'CALENDAR_QUARTER',
-        'CALENDAR_YEAR',
-        'DAY_IN_MONTH',
-        'DAY_IN_WEEK',
-        'DAY_IN_YEAR',
-        'DAY_ONLY',
-        'FISCAL_MONTH',
-        'FISCAL_QUARTER',
-        'FISCAL_YEAR',
-        'HOUR_IN_DAY',
-        'WEEK_IN_MONTH',
-        'WEEK_IN_YEAR',
-
-        // CASE INSENSITIVE ... ALSO EGAL
-        'TOLABEL',
-        'CONVERTTIMEZONE',
-        'CONVERTCURRENCY'
-    );
-
-
-
-    /**
-     * @var array
-     */
-    private static $dateLiterals = array(
-        'YESTERDAY',
-        'TODAY',
-        'TOMORROW',
-        'LAST_WEEK',
-        'THIS_WEEK',
-        'NEXT_WEEK',
-        'LAST_MONTH',
-        'THIS_MONTH',
-        'NEXT_MONTH',
-        'LAST_90_DAYS',
-        'NEXT_90_DAYS',
-        'LAST_N_DAYS:',
-        'NEXT_N_DAYS:',
-        'THIS_QUARTER',
-        'LAST_QUARTER',
-        'NEXT_QUARTER',
-        'NEXT_N_QUARTERS:',
-        'LAST_N_QUARTERS:',
-        'THIS_YEAR',
-        'LAST_YEAR',
-        'NEXT_YEAR',
-        'NEXT_N_YEARS:',
-        'LAST_N_YEARS:',
-        'THIS_FISCAL_QUARTER',
-        'LAST_FISCAL_QUARTER',
-        'NEXT_FISCAL_QUARTER',
-        'NEXT_N_FISCAL_​QUARTERS:',
-        'LAST_N_FISCAL_​QUARTERS:',
-        'THIS_FISCAL_YEAR',
-        'LAST_FISCAL_YEAR',
-        'NEXT_FISCAL_YEAR',
-        'NEXT_N_FISCAL_​YEARS:',
-        'LAST_N_FISCAL_​YEARS:'
-    );
-
-    /**
-     * Sets the input string
+     * Sets the input string, resets the tokenizer...
      */
     public function setInput($input)
     {
@@ -277,6 +194,11 @@ class Tokenizer implements TokenizerInterface
                     $this->nextChar();
                 }
             }
+
+            if($this->skipWhitespace)
+            {
+                $this->readNextToken();
+            }
         }
 
         // NUMBER, COULD BE
@@ -313,20 +235,19 @@ class Tokenizer implements TokenizerInterface
             }
 
             // VALIDATE DATE/DATETIME LITERALS
-            if(TokenType::DATE_LITERAL === $this->getTokenType() && false === \DateTime::createFromFormat('Y-m-d', $this->getTokenValue()))
+            if(TokenType::DATE_LITERAL === $this->getTokenType() && false === ($this->tokenValue = \DateTime::createFromFormat('Y-m-d', $this->getTokenValue())))
             {
                 throw new TokenizerException('Unexpected literal format "' . $this->getTokenValue() . '"', $this->line, $this->linePos, $this->input);
             }
 
             // VALIDATE DATE/DATETIME LITERALS
-            if(TokenType::DATETIME_LITERAL === $this->getTokenType() && false === \DateTime::createFromFormat(\DateTime::W3C, $this->getTokenValue()))
+            if(TokenType::DATETIME_LITERAL === $this->getTokenType() && false === ($this->tokenValue = \DateTime::createFromFormat(\DateTime::W3C, $this->getTokenValue())))
             {
                 throw new TokenizerException('Unexpected literal format "' . $this->getTokenValue() . '"', $this->line, $this->linePos, $this->input);
             }
         }
 
         // STRING LITERALS
-        //
         elseif(in_array($c, array('\'', '\"')))
         {
             $closed = false;
@@ -376,26 +297,13 @@ class Tokenizer implements TokenizerInterface
             }
         }
 
-        // NAMED VARIABLE
-        elseif(':' === $c)
-        {
-            $this->tokenType = TokenType::NAMED_VARIABLE;
-
-            while(null !== ($n = $this->currentChar()) && ! ctype_space($n) && ! in_array($n, self::$rightDelimiters))
-            {
-                $this->nextChar();
-
-                $this->tokenValue .= $n;
-            }
-        }
-
         // ARBITRARY CHAR (paranthesis, comma separator, ...)
         elseif(isset(self::$charMap[$c]))
         {
             $this->tokenType = self::$charMap[$c];
         }
 
-        // (MATH.) COMPARISON OPERATORS
+        // (MATH.) [COMPOUNT] COMPARISON OPERATORS
         elseif(in_array($c, array('<', '>', '=', '!')))
         {
             $n = $this->currentChar();
@@ -502,30 +410,12 @@ class Tokenizer implements TokenizerInterface
 
             $t = strtoupper($p1);
 
-            // LOGICAL OPERATOR? (AND, OR, NOT?)
-            if(isset(self::$operatorMap[$t]))
-            {
-                $this->tokenType = self::$operatorMap[$t];
-            }
-
             // SOQL KEYWORDS
-            elseif(in_array($t, self::$keywords))
+            if(in_array($t, self::$keywords))
             {
                 $this->tokenType = TokenType::KEYWORD;
             }
 
-            // DATE LITERALS
-            elseif(in_array($t, self::$dateLiterals))
-            {
-                $this->tokenType = TokenType::DATE_LITERAL;
-            }
-
-            elseif(in_array($t, self::$functions))
-            {
-                $this->tokenType = TokenType::SOQL_FUNCTION;
-            }
-
-            // CAN BE A FUNCTION OR COLUMN NAME. BUT BEWARE OF THE PARANTHESIS
             else
             {
                 $this->tokenType = TokenType::EXPRESSION;
@@ -549,6 +439,14 @@ class Tokenizer implements TokenizerInterface
         return $this->tokenValue;
     }
 
+    public function skipWhitespace()
+    {
+        while($this->is(TokenType::WHITESPACE) || $this->is(TokenType::LINEBREAK))
+        {
+            $this->readNextToken();
+        }
+    }
+
     /**
      * @param $type
      * @throws TokenizerException
@@ -557,8 +455,28 @@ class Tokenizer implements TokenizerInterface
     {
         if( ! $this->is($type))
         {
-            throw new TokenizerException('Unexpected token "' . $this->tokenType . '"', $this->line, $this->linePos, $this->input);
+            throw new TokenizerException('Unexpected token "' . $this->tokenType . '" with value "' . $this->tokenValue . '", expected "' . $type . '"', $this->line, $this->linePos, $this->input);
         }
+        $this->readNextToken();
+    }
+
+    /**
+     * @param $keyword
+     * @throws TokenizerException
+     * @return void
+     */
+    public function expectKeyword($keyword)
+    {
+        if( ! $this->is(TokenType::KEYWORD))
+        {
+            throw new TokenizerException('Unexpected token "' . $this->tokenType . '" with value "' . $this->tokenValue . '", expected "'  . TokenType::KEYWORD . '"', $this->line, $this->linePos, $this->input);
+        }
+
+        if( ! $this->isTokenValue($keyword))
+        {
+            throw new TokenizerException('Unexpected keyword "' . $this->tokenValue. '" with value "' . $this->tokenValue . '", expected "' .$keyword  . '"', $this->line, $this->linePos, $this->input);
+        }
+
         $this->readNextToken();
     }
 
@@ -573,10 +491,20 @@ class Tokenizer implements TokenizerInterface
     }
 
     /**
+     * @param $keyword
+     * @throws TokenizerException
+     * @return void
+     */
+    public function isKeyword($keyword)
+    {
+        return $this->is(TokenType::KEYWORD) && $this->isTokenValue($keyword);
+    }
+
+    /**
      * @param $value
      * @return bool
      */
-    public function isValue($value)
+    public function isTokenValue($value)
     {
         return 0 === strcasecmp($this->tokenValue, $value);
     }

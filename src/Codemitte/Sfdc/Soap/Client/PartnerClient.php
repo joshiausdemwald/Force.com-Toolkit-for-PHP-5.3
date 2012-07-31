@@ -61,14 +61,13 @@ class PartnerClient extends API
      * Always holds a GenericResultCollection.
      *
      * @param string $queryString
-     * @param array $params
      * @throws \Exception
      * @return \Codemitte\Soap\Mapping\GenericResult|mixed
      */
-    public function query($queryString, array $params = array())
+    public function query($queryString)
     {
         /* @var $queryResponse \Codemitte\Soap\Mapping\GenericResult */
-        $queryResponse = parent::query($queryString, $params);
+        $queryResponse = parent::query($queryString);
 
         /* @var $queryResult \Codemitte\Soap\Mapping\GenericResult */
         $queryResult = $queryResponse->result;

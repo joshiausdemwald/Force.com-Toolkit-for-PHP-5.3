@@ -52,26 +52,13 @@ use Codemitte\Sfdc\Soap\Client\DMLException;
 abstract class API extends BaseClient
 {
     /**
-     * @var QueryParser|QueryParserInterface|null
-     */
-    protected $queryParser;
-
-    /**
      * Constructor.
      *
      * @param Connection\SfdcConnectionInterface $connection
-     * @param \Codemitte\Sfdc\Soql\Parser\QueryParser|\Codemitte\Sfdc\Soql\Parser\QueryParserInterface|null $queryParser
      */
-    public function __construct(SfdcConnectionInterface $connection, QueryParserInterface $queryParser = null)
+    public function __construct(SfdcConnectionInterface $connection)
     {
         parent::__construct($connection);
-
-        if(null === $queryParser)
-        {
-            $queryParser = new QueryParser();
-        }
-
-        $this->queryParser = $queryParser;
 
         // OPTIONAL. SEEN THAT IN SOME REFERENCE IMPL.
         $connection->setOption('actor', $this->getUri());
@@ -162,15 +149,14 @@ abstract class API extends BaseClient
      * @param string $queryString
      * @return mixed $result
      */
-    public function query($queryString, array $params = array())
+    public function query($queryString)
     {
-        $res = $this->getConnection()->soapCall(
+        return $this->getConnection()->soapCall(
             'query',
             array(array(
-                'queryString' => $this->queryParser->parse($queryString, $params)
+                'queryString' => $queryString
             ))
         );
-
         return $res;
     }
 

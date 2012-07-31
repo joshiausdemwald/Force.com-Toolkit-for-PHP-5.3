@@ -11,9 +11,15 @@ interface TokenizerInterface
 
     public function expect($tokenType);
 
+    public function skipWhitespace();
+
     public function is($tokenType);
 
-    public function isValue($value);
+    public function isTokenValue($value);
+
+    public function expectKeyword($keyword);
+
+    public function isKeyword($keyword);
 
     public function getTokenValue();
 

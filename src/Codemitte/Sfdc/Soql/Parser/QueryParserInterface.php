@@ -40,5 +40,20 @@ interface QueryParserInterface
      *
      * @return string
      */
-    public function parse($soql, array $parameters = array());
+    public function parse($soql);
+
+    public function parseSelectSoql($soql);
+
+    public function parseFromSoql($soql);
+
+    public function parseWhereSoql($soql);
+
+    public function parseWithSoql($soql);
+
+    public function parseGroupSoql($soql);
+
+    public function parseHavingSoql($soql);
+
+    public function parseOrderBySoql($soql);
+
 }
