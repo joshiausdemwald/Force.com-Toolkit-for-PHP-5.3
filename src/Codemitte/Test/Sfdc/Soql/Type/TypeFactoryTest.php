@@ -24,7 +24,7 @@ namespace Codemitte\Test\Sfdc\Soql\Type;
 
 use \PHPUnit_Framework_TestCase;
 
-use Codemitte\Sfdc\Soql\Type\TypeFactory;
+use Codemitte\ForceToolkit\Soql\Type\TypeFactory;
 
 /**
  * @author Johannes Heinen <johannes.heinen@code-mitte.de>
@@ -40,15 +40,15 @@ class TypeFactoryTest extends PHPUnit_Framework_TestCase
 
         $string = $typeFactory->create('teststring');
 
-        $this->assertInstanceOf('Codemitte\Sfdc\Soql\Type\String', $string);
+        $this->assertInstanceOf('Codemitte\ForceToolkit\Soql\Type\String', $string);
 
         $string = $typeFactory->create('1234');
 
-        $this->assertInstanceOf('Codemitte\Sfdc\Soql\Type\String', $string);
+        $this->assertInstanceOf('Codemitte\ForceToolkit\Soql\Type\String', $string);
 
         $string = $typeFactory->create('1234.123');
 
-        $this->assertInstanceOf('Codemitte\Sfdc\Soql\Type\String', $string);
+        $this->assertInstanceOf('Codemitte\ForceToolkit\Soql\Type\String', $string);
     }
 
     public function testNumber()
@@ -57,19 +57,19 @@ class TypeFactoryTest extends PHPUnit_Framework_TestCase
 
         $number = $typeFactory->create(1234);
 
-        $this->assertInstanceOf('Codemitte\Sfdc\Soql\Type\Number', $number);
+        $this->assertInstanceOf('Codemitte\ForceToolkit\Soql\Type\Number', $number);
 
         $number = $typeFactory->create('1234');
 
-        $this->assertNotInstanceOf('Codemitte\Sfdc\Soql\Type\Number', $number);
+        $this->assertNotInstanceOf('Codemitte\ForceToolkit\Soql\Type\Number', $number);
 
         $number = $typeFactory->create(1234.123);
 
-        $this->assertInstanceOf('Codemitte\Sfdc\Soql\Type\Number', $number);
+        $this->assertInstanceOf('Codemitte\ForceToolkit\Soql\Type\Number', $number);
 
         $number = $typeFactory->create('1234.123');
 
-        $this->assertNotInstanceOf('Codemitte\Sfdc\Soql\Type\Number', $number);
+        $this->assertNotInstanceOf('Codemitte\ForceToolkit\Soql\Type\Number', $number);
     }
 
     public function testDate()
@@ -78,23 +78,23 @@ class TypeFactoryTest extends PHPUnit_Framework_TestCase
 
         $date = $typeFactory->create('2011-02-13');
 
-        $this->assertInstanceOf('Codemitte\Sfdc\Soql\Type\Date', $date);
+        $this->assertInstanceOf('Codemitte\ForceToolkit\Soql\Type\Date', $date);
 
         $date = $typeFactory->create('20-02-13');
 
-        $this->assertNotInstanceOf('Codemitte\Sfdc\Soql\Type\Date', $date);
+        $this->assertNotInstanceOf('Codemitte\ForceToolkit\Soql\Type\Date', $date);
 
         $date = $typeFactory->create('-02-13');
 
-        $this->assertNotInstanceOf('Codemitte\Sfdc\Soql\Type\Date', $date);
+        $this->assertNotInstanceOf('Codemitte\ForceToolkit\Soql\Type\Date', $date);
 
         $date = $typeFactory->create('-2012-02-13');
 
-        $this->assertNotInstanceOf('Codemitte\Sfdc\Soql\Type\Date', $date);
+        $this->assertNotInstanceOf('Codemitte\ForceToolkit\Soql\Type\Date', $date);
 
         $date = $typeFactory->create('1989-16-52');
 
-        $this->assertNotInstanceOf('Codemitte\Sfdc\Soql\Type\Date', $date);
+        $this->assertNotInstanceOf('Codemitte\ForceToolkit\Soql\Type\Date', $date);
     }
 
     public function testDateTime()
@@ -103,25 +103,25 @@ class TypeFactoryTest extends PHPUnit_Framework_TestCase
 
         $date = $typeFactory->create('2011-02-13T12:32:12Z');
 
-        $this->assertInstanceOf('Codemitte\Sfdc\Soql\Type\DateTime', $date);
+        $this->assertInstanceOf('Codemitte\ForceToolkit\Soql\Type\DateTime', $date);
 
         $this->assertEquals('2011-02-13T12:32:12+00:00', $date->toSOQL());
 
         $date = $typeFactory->create('2011-02-13Z12:32:12-07:32');
 
-        $this->assertInstanceOf('Codemitte\Sfdc\Soql\Type\DateTime', $date);
+        $this->assertInstanceOf('Codemitte\ForceToolkit\Soql\Type\DateTime', $date);
 
         $date = $typeFactory->create('2011-02-13 12:32');
 
-        $this->assertInstanceOf('Codemitte\Sfdc\Soql\Type\DateTime', $date);
+        $this->assertInstanceOf('Codemitte\ForceToolkit\Soql\Type\DateTime', $date);
 
         $date = $typeFactory->create('-2011-02-13Z12:32:12-07:32');
 
-        $this->assertNotInstanceOf('Codemitte\Sfdc\Soql\Type\DateTime', $date);
+        $this->assertNotInstanceOf('Codemitte\ForceToolkit\Soql\Type\DateTime', $date);
 
         $date = $typeFactory->create('2011-02-78Z12:32:12-07:32');
 
-        $this->assertNotInstanceOf('Codemitte\Sfdc\Soql\Type\DateTime', $date);
+        $this->assertNotInstanceOf('Codemitte\ForceToolkit\Soql\Type\DateTime', $date);
     }
 
     public function testBoolean()
@@ -130,13 +130,13 @@ class TypeFactoryTest extends PHPUnit_Framework_TestCase
 
         $bool = $typeFactory->create(true);
 
-        $this->assertInstanceOf('Codemitte\Sfdc\Soql\Type\Boolean', $bool);
+        $this->assertInstanceOf('Codemitte\ForceToolkit\Soql\Type\Boolean', $bool);
 
         $this->assertEquals(true, $bool->getPHPValue());
 
         $bool = $typeFactory->create(false);
 
-        $this->assertInstanceOf('Codemitte\Sfdc\Soql\Type\Boolean', $bool);
+        $this->assertInstanceOf('Codemitte\ForceToolkit\Soql\Type\Boolean', $bool);
 
         $this->assertEquals(false, $bool->getPHPValue());
     }
@@ -164,33 +164,33 @@ class TypeFactoryTest extends PHPUnit_Framework_TestCase
             )
         ));
 
-        $this->assertInstanceOf('Codemitte\Sfdc\Soql\Type\ArrayType', $array);
+        $this->assertInstanceOf('Codemitte\ForceToolkit\Soql\Type\ArrayType', $array);
 
         $values = $array->getPHPValue();
 
-        $this->assertInstanceOf('Codemitte\Sfdc\Soql\Type\String', $values[0]);
-        $this->assertInstanceOf('Codemitte\Sfdc\Soql\Type\Number', $values[1]);
-        $this->assertInstanceOf('Codemitte\Sfdc\Soql\Type\Number', $values[2]);
-        $this->assertInstanceOf('Codemitte\Sfdc\Soql\Type\Date', $values[3]);
-        $this->assertInstanceOf('Codemitte\Sfdc\Soql\Type\DateTime', $values[4]);
-        $this->assertInstanceOf('Codemitte\Sfdc\Soql\Type\Boolean', $values[5]);
-        $this->assertInstanceOf('Codemitte\Sfdc\Soql\Type\Boolean', $values[6]);
-        $this->assertInstanceOf('Codemitte\Sfdc\Soql\Type\ArrayType', $values[7]);
+        $this->assertInstanceOf('Codemitte\ForceToolkit\Soql\Type\String', $values[0]);
+        $this->assertInstanceOf('Codemitte\ForceToolkit\Soql\Type\Number', $values[1]);
+        $this->assertInstanceOf('Codemitte\ForceToolkit\Soql\Type\Number', $values[2]);
+        $this->assertInstanceOf('Codemitte\ForceToolkit\Soql\Type\Date', $values[3]);
+        $this->assertInstanceOf('Codemitte\ForceToolkit\Soql\Type\DateTime', $values[4]);
+        $this->assertInstanceOf('Codemitte\ForceToolkit\Soql\Type\Boolean', $values[5]);
+        $this->assertInstanceOf('Codemitte\ForceToolkit\Soql\Type\Boolean', $values[6]);
+        $this->assertInstanceOf('Codemitte\ForceToolkit\Soql\Type\ArrayType', $values[7]);
 
         $values = $values[7]->getPHPValue();
 
-        $this->assertInstanceOf('Codemitte\Sfdc\Soql\Type\String', $values[0]);
-        $this->assertInstanceOf('Codemitte\Sfdc\Soql\Type\Number', $values[1]);
-        $this->assertInstanceOf('Codemitte\Sfdc\Soql\Type\Number', $values[2]);
-        $this->assertInstanceOf('Codemitte\Sfdc\Soql\Type\Date', $values[3]);
-        $this->assertInstanceOf('Codemitte\Sfdc\Soql\Type\DateTime', $values[4]);
-        $this->assertInstanceOf('Codemitte\Sfdc\Soql\Type\Boolean', $values[5]);
-        $this->assertInstanceOf('Codemitte\Sfdc\Soql\Type\Boolean', $values[6]);
+        $this->assertInstanceOf('Codemitte\ForceToolkit\Soql\Type\String', $values[0]);
+        $this->assertInstanceOf('Codemitte\ForceToolkit\Soql\Type\Number', $values[1]);
+        $this->assertInstanceOf('Codemitte\ForceToolkit\Soql\Type\Number', $values[2]);
+        $this->assertInstanceOf('Codemitte\ForceToolkit\Soql\Type\Date', $values[3]);
+        $this->assertInstanceOf('Codemitte\ForceToolkit\Soql\Type\DateTime', $values[4]);
+        $this->assertInstanceOf('Codemitte\ForceToolkit\Soql\Type\Boolean', $values[5]);
+        $this->assertInstanceOf('Codemitte\ForceToolkit\Soql\Type\Boolean', $values[6]);
     }
 
     public function testExpression()
     {
-        $e = new \Codemitte\Sfdc\Soql\Type\Expression("ping");
+        $e = new \Codemitte\ForceToolkit\Soql\Type\Expression("ping");
 
         $this->assertEquals('ping', $e->toSOQL());
     }

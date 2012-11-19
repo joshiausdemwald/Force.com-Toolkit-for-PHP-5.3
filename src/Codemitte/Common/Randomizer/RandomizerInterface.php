@@ -12,4 +12,14 @@ interface RandomizerInterface
      * @return mixed
      */
     public function getUniqueId($encode_base_64 = true);
+
+    /**
+     * Creates a random code consisting of digits only
+     * (like a pin number)
+     *
+     * @abstract
+     * @param int $length
+     * @return string
+     */
+    public function createRandomCode($length = 4);
 }

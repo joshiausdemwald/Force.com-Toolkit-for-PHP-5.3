@@ -35,22 +35,41 @@ use Codemitte\Soap\Mapping\GenericResultCollection;
  */
 class ResultHydrator extends AbstractHydrator
 {
-    public function doHydrateList($list)
+    /**
+     * @param array $list
+     * @param null $parentKey
+     * @return \Codemitte\Soap\Mapping\GenericResultCollection
+     */
+    protected function doHydrateList(array $list, $parentKey = null)
     {
         foreach($list AS $key => $value)
         {
-            $list[$key] = $this->hydrate($value);
+            $list[$key] = $this->hydrate($value, $key);
         }
         return new GenericResultCollection($list);
     }
 
-    public function doHydrate($result)
+    /**
+     * @param \stdClass $result
+     * @param string null $parentKey
+     * @return \Codemitte\Soap\Mapping\GenericResult
+     */
+    protected function doHydrate(\stdClass $result, $parentKey = null)
     {
         $data = array();
+
         foreach($result AS $name => $prop)
         {
-            // any => 0 => "<sf:s...>", "Account" => Object { .... }
-            $data[$name] = $this->hydrate($prop);
+            // WORKAROUND FOR "ANY"-FIELDS; ARBITRARY XML.
+            if('any' === $name)
+            {
+                $data = array_merge($data, $this->fromAny($prop));
+            }
+            else
+            {
+                // any => 0 => "<sf:s...>", "Account" => Object { .... }
+                $data[$name] = $this->hydrate($prop, $name);
+            }
         }
         return new GenericResult($data);
     }

@@ -51,7 +51,7 @@ class SoapClientCommon extends SoapClient
     /**
      * Common Soap Client constructor. doRequestCallback may be any php callable.
      *
-     * @param callback $doRequestCallback
+     * @param callable $doRequestCallback
      * @param string $wsdl
      * @param array $options
      */
@@ -103,7 +103,9 @@ class SoapClientCommon extends SoapClient
         {
             $params[] = $one_way;
         }
-        return call_user_func_array($this->doRequestCallback, $params);
+        $retVal = call_user_func_array($this->doRequestCallback, $params);
+
+        return $retVal;
     }
 
     /**

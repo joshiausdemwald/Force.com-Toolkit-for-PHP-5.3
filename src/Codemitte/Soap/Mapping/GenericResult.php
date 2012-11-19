@@ -23,9 +23,7 @@
 namespace Codemitte\Soap\Mapping;
 
 
-use \SoapVar;
 use Codemitte\Common\Collection\GenericMap;
-use Codemitte\Soap\Mapping\Type\TypeInterface;
 use Codemitte\Soap\Mapping\ClassInterface;
 
 /**

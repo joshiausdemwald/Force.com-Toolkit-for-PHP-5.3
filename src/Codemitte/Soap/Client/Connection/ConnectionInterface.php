@@ -24,7 +24,6 @@ namespace Codemitte\Soap\Client\Connection;
 
 use \Serializable;
 use \SoapHeader;
-
 use Codemitte\Soap\Hydrator\HydratorInterface;
 
 /**
@@ -46,6 +45,7 @@ interface ConnectionInterface extends Serializable
      * @abstract
      * @param $name
      * @param mixed $args
+     * @param \Codemitte\Soap\Hydrator\HydratorInterface $hydrator
      * @return mixed
      */
     public function soapCall($name, $args, HydratorInterface $hydrator = null);
@@ -117,8 +117,9 @@ interface ConnectionInterface extends Serializable
      * dependent on the $permanent flag.
      *
      * @abstract
-     * @param array $header
+     * @param array $headers
      * @param bool $permanent
+     * @internal param array $header
      * @return void
      */
     public function setSoapInputHeaders(array $headers, $permanent = false);

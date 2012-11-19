@@ -22,51 +22,47 @@
 
 namespace Codemitte\Soap\Hydrator;
 
-use \stdClass;
-use \ReflectionObject;
-use \ReflectionProperty;
-
-use Codemitte\Soap\Mapping\ClassInterface;
 use Codemitte\Soap\Mapping\GenericResult;
 use Codemitte\Soap\Mapping\GenericResultCollection;
 
 abstract class AbstractHydrator implements HydratorInterface
 {
-    public abstract function doHydrateList($list);
+    /**
+     * @param array $list
+     * @param null $parentKey
+     * @return mixed
+     */
+    protected abstract function doHydrateList(array $list, $parentKey = null);
 
-    public abstract function doHydrate($result);
+    /**
+     * @param \stdClass $result
+     * @param string|null $parentKey
+     * @return mixed
+     */
+    protected abstract function doHydrate(\stdClass $result, $parentKey = null);
 
-    public function hydrate($result)
+    /**
+     * @param $field
+     * @param string|null $parentKey
+     *
+     * @return mixed
+     */
+    public function hydrate($field, $parentKey = null)
     {
         // stdClass: TRANSFORM IT!
-        if($result instanceof stdClass)
+        if($field instanceof \stdClass)
         {
-            return $this->doHydrate($result);
+            return $this->doHydrate($field, $parentKey);
         }
 
         // FINAL NOTE. EXPECTED IS A LIST, EVERYTHING ELSE
         // WILL BE FILTERED OUT AFTER is_object() SECTION
         // MAYBE LIST OR HASHMAP :(
-        // @TODO: REGARD LISTS OF TYPE "<any>"
         // THIS SUCKS SOOOOOO MUCH
         // if(is_array($result) && count($result) > 0)
-        if(is_array($result))
+        if(is_array($field))
         {
-            $retVal = array();
-
-            $is_numeric = true;
-
-            foreach($result AS $key => $value)
-            {
-                true === $is_numeric &&
-                false ===  is_numeric($key) &&
-                $is_numeric = false;
-
-                $retVal[$key] = $this->hydrate($value);
-            }
-
-            // HACK FOR AVOIDING DUPLICATE ID ATTRIBUTES -.--
-            return true === $is_numeric ? new GenericResultCollection($retVal) : new GenericResult($retVal);
+            return $this->doHydrateList($field, $parentKey);
         }
 
         // OBJECTS MAPPED BY SOAP CLIENT
@@ -105,6 +101,70 @@ abstract class AbstractHydrator implements HydratorInterface
         //}
 
         // ALL OTHER SCALAR VALUES, RESOURCES, TYPES ETC...
-        return $result;
+        return $field;
+    }
+
+    /**
+     * Converts a raw "<any..." xml stream into a php object
+     * representation.
+     *
+     * @param $anyXml
+     * @return array
+     */
+    protected function fromAny($anyXml)
+    {
+        if( ! is_array($anyXml))
+        {
+            $anyXml = array($anyXml);
+        }
+
+        $res = array();
+
+        foreach($anyXml AS $key => $value)
+        {
+            // XML STRING, CREATE GenericResult PROPERTIES FROM KEY/VALUE PAIRS
+            if(is_string($value))
+            {
+                $xml = new \SimpleXMLElement(sprintf('<data xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">%s</data>',  $this->stripNamespacePrefix($value)));
+
+                // CASTING MAGICK
+                foreach((array)$xml->children() AS $k=> $v)
+                {
+                    if($v instanceof \SimpleXMLElement)
+                    {
+                        $atts = $v->attributes('xsi', true);
+
+                        // NIL ATTRIBUTE ...
+                        if('true' === (string)$atts['nil'])
+                        {
+                            $v = null;
+                        }
+                        else
+                        {
+                            $v = '';
+                        }
+                    }
+                    $res[$k] = $this->hydrate($v);
+                }
+            }
+
+            // MAPPED TYPE/CLASS: MERGE AS GenericResult PROPERTIES
+            // BEWARE OF DUPLICATE (e.g. salesforce ID) attributes!!
+            elseif(is_string($key))
+            {
+                $res[$key] = $this->hydrate($value);
+            }
+        }
+        return $res;
+    }
+
+    /**
+     * @param string $xml
+     * @return mixed
+     * @return string
+     */
+    private function stripNamespacePrefix($xml)
+    {
+        return preg_replace('#<(/[ ]*?)?(?:.+?)\:#', '<$1', $xml);
     }
 }
