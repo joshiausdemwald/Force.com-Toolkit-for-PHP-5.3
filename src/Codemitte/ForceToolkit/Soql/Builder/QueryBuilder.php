@@ -285,7 +285,7 @@ class QueryBuilder implements QueryBuilderInterface
 
     public function groupBy($soql)
     {
-        $this->query->setGroupPart(new \Codemitte\ForceToolkit\Soql\AST\GroupPart());
+        $this->query->setGroupPart(new \Codemitte\ForceToolkit\Soql\AST\GroupByExpression());
 
         return $this->addGroupBy($soql);
     }
@@ -314,7 +314,7 @@ class QueryBuilder implements QueryBuilderInterface
     {
         if(null === $this->query->getGroupPart())
         {
-            $this->query->setGroupPart($g = new \Codemitte\ForceToolkit\Soql\AST\GroupPart());
+            $this->query->setGroupPart($g = new \Codemitte\ForceToolkit\Soql\AST\GroupByExpression());
         }
         $this->query->getGroupPart()->setIsCube($groupByCube);
 
@@ -329,7 +329,7 @@ class QueryBuilder implements QueryBuilderInterface
     {
         if(null === $this->query->getGroupPart())
         {
-            $this->query->setGroupPart($g = new \Codemitte\ForceToolkit\Soql\AST\GroupPart());
+            $this->query->setGroupPart($g = new \Codemitte\ForceToolkit\Soql\AST\GroupByExpression());
         }
         $this->query->getGroupPart()->setIsRollup($groupByRollup);
 
