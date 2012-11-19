@@ -24,7 +24,7 @@ namespace Codemitte\Test\Sfdc\Soql\Parser;
 
 use \PHPUnit_Framework_TestCase;
 
-use Codemitte\Sfdc\Soql\Parser\QueryParser;
+use Codemitte\ForceToolkit\Soql\Parser\QueryParser;
 
 /**
  * @author Johannes Heinen <johannes.heinen@code-mitte.de>

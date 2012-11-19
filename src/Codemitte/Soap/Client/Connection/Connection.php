@@ -22,19 +22,14 @@
 
 namespace Codemitte\Soap\Client\Connection;
 
-use \BadMethodCallException;
-use \InvalidArgumentException;
-use \RuntimeException;
-
 use \SoapHeader;
 use \SoapFault AS GenericSoapFault;
 
 use Codemitte\Soap\Client\Connection\SoapFault;
-use Codemitte\Soap\Hydrator\HydratorInterface;
-use Codemitte\Soap\Hydrator\ResultHydrator;
-use Codemitte\Soap\Mapping\GenericResultCollection;
+use Codemitte\Soap\Hydrator;
 use Codemitte\Soap\Client\Decorator\DecoratorInterface;
 use Codemitte\Soap\Client\Decorator\SoapParamDecorator;
+use Codemitte\Soap\Client\Exception AS ClientException;
 
 /**
  * Connection: Generic SOAP Client connection class.
@@ -165,7 +160,7 @@ class Connection implements ConnectionInterface
     private $soapOutputHeaders           = array();
 
     /**
-     * @var Codemitte\Soap\Hydrator\HydratorInterface
+     * @var Hydrator\HydratorInterface
      */
     private $hydrator;
 
@@ -233,13 +228,13 @@ class Connection implements ConnectionInterface
      *
      * @param string $wsdl
      * @param array $options
-     * @param HydratorInterface $hydrator
-     * @param \Codemitte\Sfdc\Soap\Decorator\DecoratorInterface|\Codemitte\Soap\Client\Decorator\DecoratorInterface|null $decorator
+     * @param Hydrator\HydratorInterface $hydrator
+     * @param DecoratorInterface|null $decorator
      */
     public function __construct(
         $wsdl = null,
         array $options = array(),
-        HydratorInterface $hydrator = null,
+        Hydrator\HydratorInterface $hydrator = null,
         DecoratorInterface $decorator = null
     ) {
         $this->wsdl = $wsdl;
@@ -248,7 +243,7 @@ class Connection implements ConnectionInterface
 
         if(null === $hydrator)
         {
-            $hydrator = new ResultHydrator();
+            $hydrator = new Hydrator\ResultHydrator();
         }
 
         if(null === $decorator)
@@ -392,7 +387,7 @@ class Connection implements ConnectionInterface
      * getOption()
      *
      * @param string $key
-     *
+     * @param null $default
      * @return mixed
      */
     public function getOption($key, $default = null)
@@ -498,15 +493,14 @@ class Connection implements ConnectionInterface
     /**
      * Retrieve request XML
      *
-     * @throws MissingOptionException
-     *
+     * @throws ClientException\MissingOptionException
      * @return string
      */
     public function getLastRequest()
     {
         if( ! $this->getOption('trace', self::DEFAULT_OPTION_TRACE))
         {
-            throw new MissingOptionException('getLastRequest() only works when "trace" option is set to true.');
+            throw new ClientException\MissingOptionException('getLastRequest() only works when "trace" option is set to true.');
         }
         return $this->getSoapClient()->__getLastRequest();
     }
@@ -514,7 +508,7 @@ class Connection implements ConnectionInterface
     /**
      * Get response XML
      *
-     * @throws MissingOptionException
+     * @throws ClientException\MissingOptionException
      *
      * @return string
      */
@@ -522,7 +516,7 @@ class Connection implements ConnectionInterface
     {
         if( ! $this->getOption('trace', self::DEFAULT_OPTION_TRACE))
         {
-            throw new MissingOptionException('getLastResponse() only works when "trace" option is set to true.');
+            throw new ClientException\MissingOptionException('getLastResponse() only works when "trace" option is set to true.');
         }
         return $this->getSoapClient()->__getLastResponse();
     }
@@ -530,7 +524,7 @@ class Connection implements ConnectionInterface
     /**
      * Retrieve request headers
      *
-     * @throws MissingOptionException
+     * @throws ClientException\MissingOptionException
      *
      * @return string
      */
@@ -538,7 +532,7 @@ class Connection implements ConnectionInterface
     {
         if( ! $this->getOption('trace'))
         {
-            throw new MissingOptionException('getLastRequestHeaders() only works when "trace" option is set to true.');
+            throw new ClientException\MissingOptionException('getLastRequestHeaders() only works when "trace" option is set to true.');
         }
         return $this->getSoapClient()->__getLastRequestHeaders();
     }
@@ -546,7 +540,7 @@ class Connection implements ConnectionInterface
     /**
      * Retrieve response headers (as string)
      *
-     * @throws MissingOptionException
+     * @throws ClientException\MissingOptionException
      *
      * @return string
      */
@@ -554,7 +548,7 @@ class Connection implements ConnectionInterface
     {
         if( ! $this->getOption('trace'))
         {
-            throw new MissingOptionException('getLastResponseHeaders() only works when "trace" option is set to true.');
+            throw new ClientException\MissingOptionException('getLastResponseHeaders() only works when "trace" option is set to true.');
         }
         return $this->getSoapClient()->__getLastResponseHeaders();
     }
@@ -562,14 +556,14 @@ class Connection implements ConnectionInterface
     /**
      * Return a list of available functions
      *
+     * @throws \BadMethodCallException
      * @return array
-     * @throws Zend_Soap_Client_Exception
      */
     public function getFunctions()
     {
         if (null === $this->wsdl)
         {
-            throw new BadMethodCallException('"getFunctions()" method is available only in WSDL mode.');
+            throw new \BadMethodCallException('"getFunctions()" method is available only in WSDL mode.');
         }
         return $this->getSoapClient()->__getFunctions();
     }
@@ -577,14 +571,14 @@ class Connection implements ConnectionInterface
     /**
      * Return a list of SOAP types
      *
+     * @throws \BadMethodCallException
      * @return array
-     * @throws Zend_Soap_Client_Exception
      */
     public function getTypes()
     {
         if (null === $this->wsdl)
         {
-            throw new BadMethodCallException('"getTypes()" method is available only in WSDL mode.');
+            throw new \BadMethodCallException('"getTypes()" method is available only in WSDL mode.');
         }
         return $this->getSoapClient()->__getTypes();
     }
@@ -619,8 +613,10 @@ class Connection implements ConnectionInterface
     /**
      * Initialize SOAP Client object
      *
-     * @throws Zend_Soap_Client_Exception
-     * @return \Codemitte\Sfdc\Soap\Client\SoapClientCommon
+     *
+     * @throws ClientException\RedundantOptionException
+     * @throws ClientException\MissingOptionException
+     * @return SoapClientCommon
      */
     protected function initSoapClientObject()
     {
@@ -635,7 +631,8 @@ class Connection implements ConnectionInterface
                  'trace'           => self::DEFAULT_OPTION_TRACE,
                  'exceptions'      => self::DEFAULT_OPTION_EXCEPTIONS,
                  'cache_wsdl'      => WSDL_CACHE_MEMORY,
-                 'useragent'       => self::DEFAULT_OPTION_USER_AGENT
+                 'useragent'       => self::DEFAULT_OPTION_USER_AGENT,
+                 'keep_alive'      => true
             ),
 
             $this->getOptions(),
@@ -650,24 +647,26 @@ class Connection implements ConnectionInterface
         {
             if (null === $this->getOption('location'))
             {
-                throw new MissingOptionException('"location" option is required in non-WSDL mode.');
+                throw new ClientException\MissingOptionException('"location" option is required in non-WSDL mode.');
             }
             if (null === $this->getOption('uri'))
             {
-                throw new MissingOptionException('"uri" option is required in non-WSDL mode.');
+                throw new ClientException\MissingOptionException('"uri" option is required in non-WSDL mode.');
             }
         }
         else
         {
             if (null !== $this->getOption('use'))
             {
-                throw new RedundantOptionException('"use" option only works in non-WSDL mode.');
+                throw new ClientException\RedundantOptionException('"use" option only works in non-WSDL mode.');
             }
             if (null !== $this->getOption('style'))
             {
-                throw new RedundantOptionException('"style" option only works in non-WSDL mode.');
+                throw new ClientException\RedundantOptionException('"style" option only works in non-WSDL mode.');
             }
         }
+
+        // var_dump(isset($this->options['location']) ? $this->options['location'] : 'No location set');
 
         return new SoapClientCommon(
             array($this, 'doRequestCallback'),
@@ -687,12 +686,12 @@ class Connection implements ConnectionInterface
      *
      * @param $name
      * @param mixed $arguments
-     * @param \Codemitte\Soap\Hydrator\HydratorInterface|null $hydrator
      *
-     * @throws SoapFault|TracedSoapFault|null
+     * @param Hydrator\HydratorInterface|null $hydrator
+     * @throws SoapFault|TracedSoapFault
      * @return mixed
      */
-    public function soapCall($name, $arguments, HydratorInterface $hydrator = null)
+    public function soapCall($name, $arguments, Hydrator\HydratorInterface $hydrator = null)
     {
         $soapClient = $this->getSoapClient();
 
@@ -721,11 +720,7 @@ class Connection implements ConnectionInterface
         {
             $ex = null;
 
-            if(null === $this->getOption('trace'))
-            {
-                $ex = new SoapFault($e);
-            }
-            else
+            if($this->getOption('trace'))
             {
                 $ex = new TracedSoapFault(
                     $this->getLastRequest(),
@@ -734,12 +729,16 @@ class Connection implements ConnectionInterface
                     $this->getLastResponseHeaders(),
                     $e
                 );
-                if(true === $this->getOption('exceptions'))
-                {
-                    throw $ex;
-                }
-                return $ex;
             }
+            else
+            {
+                $ex = new SoapFault($e);
+            }
+            if(true === $this->getOption('exceptions'))
+            {
+                throw $ex;
+            }
+            return $ex;
         }
 
         return $this->postProcessResult($this->preProcessResult($result), $hydrator);
@@ -762,7 +761,7 @@ class Connection implements ConnectionInterface
      *
      * @param string $complexType
      * @param string $class
-     * @throws MappingException
+     * @throws ClientException\MappingException
      * @return void
      */
     public function registerClass($complexType, $class)
@@ -776,32 +775,15 @@ class Connection implements ConnectionInterface
                 $class = substr($class, 1);
             }
 
-            $className = null;
-            $classPath = null;
-
-            // HAS NAMESPACE
-            if (false !== $pos = strrpos($class, '\\'))
-            {
-                $classPath = DIRECTORY_SEPARATOR . str_replace('\\', DIRECTORY_SEPARATOR, substr($class, 0, $pos));
-
-                $className = substr($class, $pos + 1);
-            }
-            else
-            {
-                $classPath = null;
-
-                $className = $class;
-            }
-
             if(! class_exists($class))
             {
-                throw new MappingException(sprintf('Complex type mapping class "%s" does not exist. (Tried to map soap class "%s".)', $class, $this->getOption('uri') . '.' . $complexType));
+                throw new ClientException\MappingException(sprintf('Complex type mapping class "%s" does not exist. (Tried to map soap class "%s".)', $class, $this->getOption('uri') . '.' . $complexType));
             }
         }
 
         if( ! in_array(self::CLASS_MAP_INTERFACE, class_implements($class)))
         {
-            throw new MappingException(sprintf('Complex type class "%s" must implement interface "%s"! (Tried to map soap class "%s".)', $class, self::CLASS_MAP_INTERFACE, $this->getOption('uri') . '.' . $complexType));
+            throw new ClientException\MappingException(sprintf('Complex type class "%s" must implement interface "%s"! (Tried to map soap class "%s".)', $class, self::CLASS_MAP_INTERFACE, $this->getOption('uri') . '.' . $complexType));
         }
 
         $this->classMap[$complexType] = $class;
@@ -810,13 +792,14 @@ class Connection implements ConnectionInterface
     /**
      * Adds types to the connection's soap typemap.
      *
-     * @throws RuntimeException
      *
      * @param string $typename
-     * @param $classname
+     * @param string $classname
      * @param string $namespace
      *
-     * @internal param string $namespaceUri
+     * @throws \Codemitte\Soap\Client\Exception\MappingException
+     * @throws \InvalidArgumentException
+     * @return void
      */
     public function registerType($typename, $classname, $namespace = null)
     {
@@ -824,12 +807,12 @@ class Connection implements ConnectionInterface
 
         if( ! class_exists($classname))
         {
-            throw new MappingException(sprintf('Simple type mapping class "%s" does not exist! (Tried to map %s)', $classname, $namespace . '.'. $typename));
+            throw new ClientException\MappingException(sprintf('Simple type mapping class "%s" does not exist! (Tried to map %s)', $classname, $namespace . '.'. $typename));
         }
 
         if( ! in_array(self::TYPE_MAP_INTERFACE, class_implements($classname)))
         {
-            throw new MappingException(sprintf('Stimple type mapping class "%s" must implement interface! (Tried to map %s)', $classname, $namespace . '.' . $typename));
+            throw new ClientException\MappingException(sprintf('Stimple type mapping class "%s" must implement interface! (Tried to map %s)', $classname, $namespace . '.' . $typename));
         }
 
         if(null === $namespace)
@@ -842,7 +825,7 @@ class Connection implements ConnectionInterface
 
                 if(null === $namespace)
                 {
-                    throw new InvalidArgumentException('A namespace must be provided, non given and no global URI defined.');
+                    throw new \InvalidArgumentException('A namespace must be provided, non given and no global URI defined.');
                 }
             }
         }
@@ -913,10 +896,8 @@ class Connection implements ConnectionInterface
     /**
      * preProcessArguments()
      *
-     * @internal
-     *
      * @param array $arguments
-     *
+     * @param \Codemitte\Soap\Client\Decorator\DecoratorInterface $decorator
      * @return array
      */
     public function preProcessArguments(array $arguments, DecoratorInterface $decorator = null)
@@ -931,10 +912,7 @@ class Connection implements ConnectionInterface
     /**
      * preProcessResult()
      *
-     * @internal
-     *
      * @param $result
-     *
      * @return mixed
      */
     public function preProcessResult($result)
@@ -945,27 +923,25 @@ class Connection implements ConnectionInterface
     /**
      * postProcessResult()
      *
-     * @internal
-     *
      * @param mixed $result
-     * @param \Codemitte\Soap\Hydrator\HydratorInterface|null $hydrator
-     *
+     * @param Hydrator\HydratorInterface $hydrator
      * @return mixed
      */
-    public function postProcessResult($result, HydratorInterface $hydrator = null)
+    public function postProcessResult($result, Hydrator\HydratorInterface $hydrator = null)
     {
         if(null == $hydrator)
         {
             $hydrator = $this->hydrator;
         }
 
-        return $hydrator->hydrate($result);
+        $retVal = $hydrator->hydrate($result);
+
+        return $retVal;
     }
 
     /**
      * doRequestCallback()
      *
-     * @internal
      * @param SoapClientCommon $client
      * @param $request
      * @param $location
@@ -997,7 +973,7 @@ class Connection implements ConnectionInterface
     /**
      * normalizeOptions()
      *
-     * @throws UnknownOptionException
+     * @throws ClientException\UnknownOptionException
      * @param array $options
      * @return array $normalizedKeys
      */
@@ -1016,7 +992,7 @@ class Connection implements ConnectionInterface
     /**
      * normalizeOption()
      *
-     * @throws UnknownOptionException
+     * @throws ClientException\UnknownOptionException
      * @param string $key
      * @return string $normalizedKey
      */
@@ -1099,7 +1075,7 @@ class Connection implements ConnectionInterface
             //     return 'connection_timeout';
 
             default:
-                throw new UnknownOptionException(sprintf('Unknown SOAP client option "%s"', $key));
+                throw new ClientException\UnknownOptionException(sprintf('Unknown SOAP client option "%s"', $key));
         }
     }
 
@@ -1109,6 +1085,9 @@ class Connection implements ConnectionInterface
      *
      * @todo implement me!
      * @param $dirname
+     * @throws \RuntimeException
+     * @throws ClientException\ClassMapRegistrationException
+     * @return void
      */
     public function registerClassDir($dirname)
     {
@@ -1116,12 +1095,12 @@ class Connection implements ConnectionInterface
 
         if( ! is_dir($dirname))
         {
-            throw new ClassMapRegistrationException(sprintf('Directory "%" could not be found.'));
+            throw new ClientException\ClassMapRegistrationException(sprintf('Directory "%" could not be found.'));
         }
 
         if( ! is_readable($dirname))
         {
-            throw new ClassMapRegistrationException(sprintf('Directory "%" cannot be read.'));
+            throw new ClientException\ClassMapRegistrationException(sprintf('Directory "%" cannot be read.'));
         }
 
         foreach(new \RecursiveIteratorIterator(\RecursiveDirectoryIterator($dirname)) AS $file)
@@ -1136,7 +1115,7 @@ class Connection implements ConnectionInterface
     /**
      * Returns the connection's default hydrator.
      *
-     * @return HydratorInterface
+     * @return Hydrator\HydratorInterface
      */
     public function getHydrator()
     {

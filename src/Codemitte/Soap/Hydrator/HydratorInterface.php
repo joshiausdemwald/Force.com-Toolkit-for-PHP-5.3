@@ -37,9 +37,9 @@ interface HydratorInterface
     /**
      * hydrate()
      *
-     * @abstract
-     * @param mixed $result
+     * @param $field
+     * @param null $parentKey
      * @return mixed $hydratedResult
      */
-    public function hydrate($result);
+    public function hydrate($field, $parentKey = null);
 }
