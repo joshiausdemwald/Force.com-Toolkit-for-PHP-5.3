@@ -4,7 +4,7 @@ namespace Codemitte\ForceToolkit\Soql\Builder;
 use Codemitte\ForceToolkit\Soql\Parser\QueryParser;
 use Codemitte\ForceToolkit\Soql\Renderer\QueryRenderer;
 use Codemitte\ForceToolkit\Soql\AST\Query;
-use Codemitte\ForceToolkit\Soap\Client\ClientInterface;
+use Codemitte\ForceToolkit\Soap\Client\APIInterface;
 use Codemitte\Soap\Mapping\GenericResultCollection;
 
 class QueryBuilder implements QueryBuilderInterface
@@ -25,7 +25,7 @@ class QueryBuilder implements QueryBuilderInterface
     private $renderer;
 
     /**
-     * @var \Codemitte\ForceToolkit\Soap\Client\ClientInterface
+     * @var APIInterface
      */
     private $client;
 
@@ -35,11 +35,11 @@ class QueryBuilder implements QueryBuilderInterface
     private $parameters;
 
     /**
-     * @param \Codemitte\ForceToolkit\Soap\Client\ClientInterface $client
+     * @param APIInterface $client
      * @param \Codemitte\ForceToolkit\Soql\Parser\QueryParser $parser
      * @param QueryRenderer $renderer
      */
-    public function __construct(ClientInterface $client, QueryParser $parser, QueryRenderer $renderer)
+    public function __construct(APIInterface $client, QueryParser $parser, QueryRenderer $renderer)
     {
         $this->client = $client;
 

@@ -37,7 +37,7 @@ use Codemitte\ForceToolkit\Soap\Client\DMLException;
  *
  * @abstract
  */
-abstract class API extends BaseClient
+abstract class API extends BaseClient implements APIInterface
 {
     /**
      * Constructor.

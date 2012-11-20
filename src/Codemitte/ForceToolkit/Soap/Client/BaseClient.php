@@ -22,16 +22,11 @@
 
 namespace Codemitte\ForceToolkit\Soap\Client;
 
-use \SoapHeader;
-use \Serializable;
 use \BadMethodCallException;
 
 use Codemitte\ForceToolkit\Soap\Client\Connection\SfdcConnectionInterface;
 use Codemitte\ForceToolkit\Soap\Header\SessionHeader;
 use Codemitte\ForceToolkit\Soap\Header\CallOptions;
-
-use Codemitte\ForceToolkit\Soap\Client\Connection\Event\ConnectionEvent;
-use Codemitte\ForceToolkit\Soap\Client\Connection\Event\ConnectionEvents;
 
 /**
  * BaseClient
@@ -43,7 +38,7 @@ use Codemitte\ForceToolkit\Soap\Client\Connection\Event\ConnectionEvents;
  *
  * @abstract
  */
-abstract class BaseClient implements ClientInterface
+abstract class BaseClient implements BaseClientInterface
 {
     /**
      * @var string

@@ -2,7 +2,7 @@
 namespace Codemitte\ForceToolkit\Metadata;
 
 use
-    Codemitte\ForceToolkit\Soap\Client\ClientInterface,
+    Codemitte\ForceToolkit\Soap\Client\APIInterface,
     Codemitte\ForceToolkit\Soap\Mapping\DescribeSObjectResult;
 
 class DescribeSobjectFactory implements DescribeSobjectFactoryInterface
@@ -15,9 +15,9 @@ class DescribeSobjectFactory implements DescribeSobjectFactoryInterface
     /**
      * Constructor.
      *
-     * @param \Codemitte\ForceToolkit\Soap\Client\ClientInterface $client
+     * @param APIInterface $client
      */
-    public function __construct(ClientInterface $client)
+    public function __construct(APIInterface $client)
     {
         $this->client = $client;
     }
