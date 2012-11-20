@@ -12,8 +12,9 @@
         }
     ],
     "require": {
-        "codemitte/common": "v1.0.x",
-        "codemitte/soap": "v1.0.x"
+        "php" : ">=5.3.6",
+        "codemitte/common": "dev-master",
+        "codemitte/soap": "dev-master"
     },
     "autoload": {
         "psr-0": {
