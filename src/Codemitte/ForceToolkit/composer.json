@@ -1,0 +1,24 @@
+{
+    "name":        "codemitte/force-toolkit",
+    "type":        "library",
+    "description": "Force.com Toolkit for PHP 5.3",
+    "keywords":    ["force.com", "salesforce"],
+    "homepage":    "https://github.com/joshiausdemwald/Force.com-Toolkit-for-PHP-5.3",
+    "license":     "MIT",
+    "authors": [
+        {
+            "name": "Johannes Heinen",
+            "homepage": "https://github.com/joshiausdemwald"
+        }
+    ],
+    "require": {
+        "codemitte/common": "v1.0.x",
+        "codemitte/soap": "v1.0.x"
+    },
+    "autoload": {
+        "psr-0": {
+            "Codemitte\\ForceToolkit": ""
+        }
+    },
+    "target-dir": "Codemitte/ForceToolkit"
+}
