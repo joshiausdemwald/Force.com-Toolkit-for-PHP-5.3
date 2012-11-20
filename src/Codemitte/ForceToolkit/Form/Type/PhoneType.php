@@ -16,6 +16,6 @@ class PhoneType extends TextType
      */
     public function getName()
     {
-        return 'sfdc_phone';
+        return 'forcetk_phone';
     }
 }

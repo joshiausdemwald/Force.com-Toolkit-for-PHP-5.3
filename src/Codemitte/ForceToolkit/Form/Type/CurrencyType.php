@@ -48,6 +48,6 @@ class CurrencyType extends TextType
      */
     public function getName()
     {
-        return 'sfdc_currency';
+        return 'forcetk_currency';
     }
 }

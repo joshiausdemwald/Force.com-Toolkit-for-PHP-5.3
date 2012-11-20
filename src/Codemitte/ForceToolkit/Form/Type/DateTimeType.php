@@ -79,6 +79,6 @@ class DateTimeType extends TextType
      */
     public function getName()
     {
-        return 'sfdc_datetime';
+        return 'forcetk_datetime';
     }
 }

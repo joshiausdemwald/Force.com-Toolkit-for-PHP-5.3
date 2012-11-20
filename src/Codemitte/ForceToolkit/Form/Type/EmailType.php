@@ -16,6 +16,6 @@ class EmailType extends TextType
      */
     public function getName()
     {
-        return 'sfdc_email';
+        return 'forcetk_email';
     }
 }

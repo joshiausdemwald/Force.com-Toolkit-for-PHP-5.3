@@ -45,6 +45,6 @@ class Text extends Constraint
      */
     public function validatedBy()
     {
-        return 'forcetk_picklist_validator';
+        return 'forcetk_text_validator';
     }
 }

@@ -16,6 +16,6 @@ class TextareaType extends TextType
      */
     public function getName()
     {
-        return 'sfdc_textarea';
+        return 'forcetk_textarea';
     }
 }

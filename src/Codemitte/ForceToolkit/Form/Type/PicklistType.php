@@ -197,6 +197,6 @@ class PicklistType extends AbstractSfdcType
      */
     public function getName()
     {
-        return 'sfdc_picklist';
+        return 'forcetk_picklist';
     }
 }

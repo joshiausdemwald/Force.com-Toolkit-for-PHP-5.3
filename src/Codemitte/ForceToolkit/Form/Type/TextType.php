@@ -48,6 +48,6 @@ class TextType extends AbstractSfdcType
      */
     public function getName()
     {
-        return 'sfdc_text';
+        return 'forcetk_text';
     }
 }
