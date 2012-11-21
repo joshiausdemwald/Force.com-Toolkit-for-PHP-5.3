@@ -145,7 +145,7 @@ class PartnerClient extends API
      * @param \Codemitte\ForceToolkit\Soap\Mapping\Partner\Sobject $sobject
      * @return \stdClass
      */
-    protected function fromSobject(Sobject $sobject)
+    public function fromSobject(Sobject $sobject)
     {
         $retVal = new \stdClass();
 

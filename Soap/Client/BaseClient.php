@@ -43,7 +43,7 @@ abstract class BaseClient implements BaseClientInterface
     /**
      * @var string
      */
-    const API_VERSION = '23.0';
+    const API_VERSION = '26.0';
 
     /**
      * @var SfdcConnectionInterface
