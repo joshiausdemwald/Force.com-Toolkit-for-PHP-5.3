@@ -4,7 +4,8 @@
 >
     <php>
         <const name="SFDC_USERNAME" value="tester@test.int" />
-        <const name="SFDC_PASSWORD" value="test1234567cz6KMu5Dn7BazuXnrHzIWL3O" />
+        <const name="SFDC_PASSWORD" value="test1test4QYGdSTgYhsZqmU2oeNtDwKt" />
+        <const name="SFDC_SERVICE_LOCATION" value="" />
     </php>
     <testsuites>
         <testsuite name="Soap_Client">

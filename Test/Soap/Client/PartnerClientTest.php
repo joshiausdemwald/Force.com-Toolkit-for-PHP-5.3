@@ -32,7 +32,7 @@ class PartnerClientTest extends \PHPUnit_Framework_TestCase
 
         $wsdl = __DIR__ . '/../../fixtures/partner.wsdl.xml';
 
-        $serviceLocation = null;
+        $serviceLocation = SFDC_SERVICE_LOCATION ? SFDC_SERVICE_LOCATION : null;
 
         self::$connection = new SfdcConnection($credentials, $wsdl, $serviceLocation, array(), true);
     }
