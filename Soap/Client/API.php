@@ -85,7 +85,7 @@ abstract class API extends BaseClient implements APIInterface
      *
      * @param string $sObjectType
      * @param array $recordTypeIds
-     * @return \Codemitte\ForceToolkit\Soap\Mapping\describeLayoutResponse
+     * @return describeLayoutResponse
      */
     public function describeLayout($sObjectType, array $recordTypeIds = null)
     {
@@ -171,7 +171,7 @@ abstract class API extends BaseClient implements APIInterface
      * @param \Codemitte\ForceToolkit\Soap\Header\AllOrNoneHeader|null $allOrNoneHeader
      * @param \Codemitte\ForceToolkit\Soap\Header\EmailHeader|null $emailHeader
      *
-     * @return \Codemitte\ForceToolkit\Soap\Mapping\createResponse $response
+     * @return createResponse $response
      */
     public function create(
         $d,
@@ -220,7 +220,7 @@ abstract class API extends BaseClient implements APIInterface
      * @param \Codemitte\ForceToolkit\Soap\Header\AllOrNoneHeader|null $allOrNoneHeader
      * @param \Codemitte\ForceToolkit\Soap\Header\EmailHeader|null $emailHeader
      *
-     * @return \Codemitte\ForceToolkit\Soap\Mapping\createResponse $response
+     * @return createResponse $response
      */
     public function update(
         $d,

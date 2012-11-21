@@ -13,7 +13,7 @@
     ],
     "require": {
         "php" : ">=5.3.6",
-        "ext/apc" : "*",
+        "ext-apc" : "*",
         "codemitte/common": "dev-master",
         "codemitte/soap": "dev-master"
     },
