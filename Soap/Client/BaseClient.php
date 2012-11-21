@@ -54,6 +54,7 @@ abstract class BaseClient implements BaseClientInterface
      * Constructor.
      *
      * @param SfdcConnectionInterface $connection
+     * @throws SfdcClientException
      */
     public function __construct(SfdcConnectionInterface $connection)
     {
@@ -64,6 +65,11 @@ abstract class BaseClient implements BaseClientInterface
         $this->configure($connection);
 
         $this->connection->resetSoapInputHeaders();
+
+        if( ! $this->connection->isLoggedIn())
+        {
+            throw new SfdcClientException('Cannot build client, connection has no login information! Call SfdcConnectionInterface::login() first');
+        }
 
         // ADD PERMANENT SESSION HEADER
         $this->connection->addSoapInputHeader(new SessionHeader(

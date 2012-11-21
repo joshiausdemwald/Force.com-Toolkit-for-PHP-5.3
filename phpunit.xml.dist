@@ -1,5 +1,7 @@
 <?xml version="1.0"?>
-<phpunit>
+<phpunit
+    bootstrap="Test/bootstrap.php"
+>
     <testsuites>
         <testsuite name="Soap_Client">
             <directory>Test/Soap/Client</directory>
