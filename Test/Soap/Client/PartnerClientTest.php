@@ -13,20 +13,20 @@ class PartnerClientTest extends \PHPUnit_Framework_TestCase
     /**
      * @var PartnerClient
      */
-    private $client;
+    private static $client;
 
     /**
      * @var SfdcConnection
      */
-    private $connection;
+    private static $connection;
 
-    public function setUp()
+    public static function setUpBeforeClass()
     {
-        $this->setUpConnection();
-        $this->setUpClient();
+        self::setUpConnection();
+        self::setUpClient();
     }
 
-    private function setUpConnection()
+    private static function setUpConnection()
     {
         $credentials = new login(SFDC_USERNAME, SFDC_PASSWORD);
 
@@ -34,27 +34,27 @@ class PartnerClientTest extends \PHPUnit_Framework_TestCase
 
         $serviceLocation = null;
 
-        $this->connection = new SfdcConnection($credentials, $wsdl, $serviceLocation, array(), true);
+        self::$connection = new SfdcConnection($credentials, $wsdl, $serviceLocation, array(), true);
     }
 
-    private function setUpClient()
+    private static function setUpClient()
     {
-        $this->connection->login();
+        self::$connection->login();
 
-        $this->client = new PartnerClient($this->connection);
+        self::$client = new PartnerClient(self::$connection);
     }
 
     public function testConnection()
     {
-        $this->assertTrue($this->connection->isLoggedIn());
-        $this->assertTrue($this->connection->getDebug());
-        $this->assertInstanceOf('\Codemitte\ForceToolkit\Soap\Mapping\Base\LoginResult', $this->connection->getLoginResult());
-        $this->assertInstanceOf('\Codemitte\ForceToolkit\Soap\Mapping\Base\login', $this->connection->getCredentials());
+        $this->assertTrue(self::$connection->isLoggedIn());
+        $this->assertTrue(self::$connection->getDebug());
+        $this->assertInstanceOf('\Codemitte\ForceToolkit\Soap\Mapping\Base\LoginResult', self::$connection->getLoginResult());
+        $this->assertInstanceOf('\Codemitte\ForceToolkit\Soap\Mapping\Base\login', self::$connection->getCredentials());
     }
 
     public function testConnectionInputHeaders()
     {
-        $headers = $this->connection->getSoapInputHeaders();
+        $headers = self::$connection->getSoapInputHeaders();
 
         $this->assertInstanceOf('\Codemitte\ForceToolkit\Soap\Header\SessionHeader', $headers[0]);
         $this->assertInstanceOf('\Codemitte\ForceToolkit\Soap\Header\CallOptions', $headers[1]);
@@ -64,21 +64,21 @@ class PartnerClientTest extends \PHPUnit_Framework_TestCase
 
     public function testLogout()
     {
-        $this->connection->logout();
+        self::$connection->logout();
 
-        $this->assertFalse($this->connection->isLoggedIn());
-        $this->assertNull($this->connection->getLoginResult());
-        $this->assertInstanceOf('\Codemitte\ForceToolkit\Soap\Mapping\Base\login', $this->connection->getCredentials());
+        $this->assertFalse(self::$connection->isLoggedIn());
+        $this->assertNull(self::$connection->getLoginResult());
+        $this->assertInstanceOf('\Codemitte\ForceToolkit\Soap\Mapping\Base\login', self::$connection->getCredentials());
 
-        $this->connection->login();
+        self::$connection->login();
 
-        $this->client = new PartnerClient($this->connection);
+        self::$client = new PartnerClient(self::$connection);
     }
 
     public function testClient()
     {
-        $this->assertEquals('urn:partner.soap.sforce.com', $this->client->getUri());
-        $this->assertEquals('26.0', $this->client->getAPIVersion()); // hard coded, should match wsdl. @todo: refactor me.
+        $this->assertEquals('urn:partner.soap.sforce.com', self::$client->getUri());
+        $this->assertEquals('26.0', self::$client->getAPIVersion()); // hard coded, should match wsdl. @todo: refactor me.
     }
 
     public function testClientToAny()
@@ -90,7 +90,7 @@ class PartnerClientTest extends \PHPUnit_Framework_TestCase
 
         $target = new \stdClass();
 
-        $this->client->toAny($obj, $target);
+        self::$client->toAny($obj, $target);
 
         $this->assertNotEmpty($target->any);
 
@@ -106,7 +106,7 @@ class PartnerClientTest extends \PHPUnit_Framework_TestCase
             'LastName' => 'Wurst'
         ));
 
-        $result = $this->client->fromSobject($sobject);
+        $result = self::$client->fromSobject($sobject);
 
         $this->assertInstanceOf('\stdClass', $result);
 
@@ -128,7 +128,7 @@ class PartnerClientTest extends \PHPUnit_Framework_TestCase
             'LastName' => 'Wurst'
         ));
 
-        $response = $this->client->create($sobject);
+        $response = self::$client->create($sobject);
 
         $this->assertInstanceOf('\Codemitte\Soap\Mapping\GenericResult', $response);
         $this->assertNotEmpty(true, $response->get('result'));
@@ -137,7 +137,7 @@ class PartnerClientTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(1, $response->get('result')->get(0)->get('success'));
         $this->assertNotEmpty($response->get('result')->get(0)->get('id'));
 
-        $response = $this->client->delete($response->get('result')->get(0)->get('id'));
+        $response = self::$client->delete($response->get('result')->get(0)->get('id'));
 
         $this->assertInstanceOf('\Codemitte\Soap\Mapping\GenericResult', $response);
         $this->assertNotEmpty(true, $response->get('result'));
