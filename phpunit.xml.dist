@@ -2,6 +2,10 @@
 <phpunit
     bootstrap="Test/bootstrap.php"
 >
+    <php>
+        <const name="SFDC_USERNAME" value="tester@test.int" />
+        <const name="SFDC_PASSWORD" value="test1234567cz6KMu5Dn7BazuXnrHzIWL3O" />
+    </php>
     <testsuites>
         <testsuite name="Soap_Client">
             <directory>Test/Soap/Client</directory>

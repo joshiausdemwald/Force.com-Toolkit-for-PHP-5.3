@@ -28,7 +28,7 @@ class PartnerClientTest extends \PHPUnit_Framework_TestCase
 
     private function setUpConnection()
     {
-        $credentials = new login('johannes.heinen@gmail.com', 'luckystrike14RC2JA66VKAySU0NEXdXNTXtS');
+        $credentials = new login(SFDC_USERNAME, SFDC_PASSWORD);
 
         $wsdl = __DIR__ . '/../../fixtures/partner.wsdl.xml';
 
