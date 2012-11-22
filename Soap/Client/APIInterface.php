@@ -50,6 +50,24 @@ interface APIInterface extends BaseClientInterface
     public function query($queryString);
 
     /**
+     * queryAll()
+     *
+     * Performs an arbitrary soql query against
+     * the database, delivering deleted records, too.
+     *
+     * <soap:header use="literal" message="tns:Header" part="SessionHeader"/>
+     * <soap:header use="literal" message="tns:Header" part="CallOptions"/>
+     * <soap:header use="literal" message="tns:Header" part="QueryOptions"/>
+     * <soap:header use="literal" message="tns:Header" part="MruHeader"/>
+     * <soap:header use="literal" message="tns:Header" part="PackageVersionHeader"/>
+     * <soap:body parts="parameters" use="literal"/>
+     *
+     * @param string $queryString
+     * @return mixed $result
+     */
+    public function queryAll($queryString);
+
+    /**
      * create() persists new rows to the database.
      *
      * <soap:header use="literal" message="tns:Header" part="SessionHeader"/>

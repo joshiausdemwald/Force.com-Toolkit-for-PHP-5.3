@@ -5,7 +5,7 @@ use
     Codemitte\ForceToolkit\Soap\Client\PartnerClient,
     Codemitte\ForceToolkit\Soap\Client\Connection\SfdcConnection,
     Codemitte\ForceToolkit\Soap\Mapping\Base\login,
-    Codemitte\ForceToolkit\Soap\Mapping\Partner\Sobject
+    Codemitte\ForceToolkit\Soap\Mapping\Sobject
 ;
 
 class PartnerClientTest extends \PHPUnit_Framework_TestCase
@@ -141,8 +141,9 @@ class PartnerClientTest extends \PHPUnit_Framework_TestCase
         $this->assertEmpty($sobject->getId());
 
         $sobject = new Sobject('Contact', array(
+            'Id' => $createResponse->get('result')->get(0)->get('id'),
             'Title' => 'Graf'
-        ), $createResponse->get('result')->get(0)->get('id'));
+        ));
 
         $updateResponse = self::$client->update($sobject);
 
@@ -163,7 +164,7 @@ class PartnerClientTest extends \PHPUnit_Framework_TestCase
 
     public function testCreateSobjectNegative()
     {
-        $sobject = new Sobject('Contact', array('zurbelnase'));
+        $sobject = new Sobject('Contact', array('FirstName' => 'zurbelnase'));
         $exThrown = null;
         try
         {
@@ -213,13 +214,14 @@ class PartnerClientTest extends \PHPUnit_Framework_TestCase
         $this->assertNotEmpty($queryResponse);
         $this->assertInstanceOf('\Codemitte\Soap\Mapping\GenericResult', $queryResponse);
         $this->assertNotEmpty($queryResponse->get('result'));
-        $this->assertNotCount(0, $queryResponse->get('result')->get('records'));
-        $this->assertEquals(1, $queryResponse->get('result')->get('size'));
-        $this->assertInstanceOf('\Codemitte\ForceToolkit\Soap\Mapping\SobjectInterface', $queryResponse->get('result')->get('records')->get(0));
-        $this->assertEquals('Mr', $queryResponse->get('result')->get('records')->get(0)->get('Salutation'));
-        $this->assertEquals(null, $queryResponse->get('result')->get('records')->get(0)->get('Title'));
-        $this->assertEquals('Hans', $queryResponse->get('result')->get('records')->get(0)->get('FirstName'));
-        $this->assertEquals('Wurst', $queryResponse->get('result')->get('records')->get(0)->get('LastName'));
+        $this->assertInstanceOf('\Codemitte\ForceToolkit\Soap\Mapping\QueryResult', $queryResponse->get('result'));
+        $this->assertNotCount(0, $queryResponse->get('result')->getRecords());
+        $this->assertEquals(1, $queryResponse->get('result')->getSize());
+        $this->assertInstanceOf('\Codemitte\ForceToolkit\Soap\Mapping\SobjectInterface', $queryResponse->get('result')->getRecords()->get(0));
+        $this->assertEquals('Mr', $queryResponse->get('result')->getRecords()->get(0)->get('Salutation'));
+        $this->assertEquals(null, $queryResponse->get('result')->getRecords()->get(0)->get('Title'));
+        $this->assertEquals('Hans', $queryResponse->get('result')->getRecords()->get(0)->get('FirstName'));
+        $this->assertEquals('Wurst', $queryResponse->get('result')->getRecords()->get(0)->get('LastName'));
 
         self::$client->delete($createResponse->get('result')->get(0)->get('id'));
     }
@@ -240,6 +242,36 @@ class PartnerClientTest extends \PHPUnit_Framework_TestCase
         $this->assertNotNull($exThrown);
         $this->assertInstanceOf('\Codemitte\Soap\Client\Connection\TracedSoapFault', $exThrown);
         $this->assertEquals('MALFORMED_QUERY: unexpected token: FROM', $exThrown->getMessage());
+    }
+
+    public function testQueryAll()
+    {
+        $sobject = new Sobject('Contact', array(
+            'Salutation' => 'Mr',
+            'Title' => null,
+            'FirstName' => 'Hans',
+            'LastName' => 'Wurst'
+        ));
+
+        $createResponse= self::$client->create($sobject);
+
+        self::$client->delete($createResponse->get('result')->get(0)->get('id'));
+
+        $queryResponse = self::$client->queryAll('SELECT Id, Salutation, Title, FirstName, LastName FROM Contact WHERE Id = \'' . $createResponse->get('result')->get(0)->get('id') . '\'');
+
+        $this->assertNotEmpty($queryResponse);
+        $this->assertInstanceOf('\Codemitte\Soap\Mapping\GenericResult', $queryResponse);
+        $this->assertNotEmpty($queryResponse->get('result'));
+        $this->assertInstanceOf('\Codemitte\ForceToolkit\Soap\Mapping\QueryResult', $queryResponse->get('result'));
+        $this->assertNotCount(0, $queryResponse->get('result')->getRecords());
+        $this->assertEquals(1, $queryResponse->get('result')->getSize());
+        $this->assertInstanceOf('\Codemitte\ForceToolkit\Soap\Mapping\SobjectInterface', $queryResponse->get('result')->getRecords()->get(0));
+        $this->assertEquals('Mr', $queryResponse->get('result')->getRecords()->get(0)->get('Salutation'));
+        $this->assertEquals(null, $queryResponse->get('result')->getRecords()->get(0)->get('Title'));
+        $this->assertEquals('Hans', $queryResponse->get('result')->getRecords()->get(0)->get('FirstName'));
+        $this->assertEquals('Wurst', $queryResponse->get('result')->getRecords()->get(0)->get('LastName'));
+
+
     }
 }
 

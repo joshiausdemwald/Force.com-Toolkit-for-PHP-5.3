@@ -27,9 +27,11 @@
 
 namespace Codemitte\ForceToolkit\Soap\Mapping;
 
-use Codemitte\Common\Collection\MapInterface;
+use
+    Codemitte\Soap\Mapping\ClassInterface,
+    Codemitte\Common\Collection\MapInterface;
 
-interface SobjectInterface extends MapInterface
+interface SobjectInterface extends MapInterface, ClassInterface, \Countable
 {
     /**
      * Returns all the fields of the sobject
@@ -49,6 +51,12 @@ interface SobjectInterface extends MapInterface
     public function getId();
 
     /**
+     * @param \Codemitte\ForceToolkit\Soap\Mapping\Type\ID | string $id
+     * @return void
+     */
+    public function setId($id);
+
+    /**
      * Returns the sobject type.
      *
      * @abstract
@@ -56,13 +64,4 @@ interface SobjectInterface extends MapInterface
      * @return string
      */
     public function getSobjectType();
-
-    /**
-     * Sets the sobject type.
-     *
-     * @abstract
-     *
-     * @param string sObjectType
-     */
-    public function setSobjectType($sObjectType);
 }

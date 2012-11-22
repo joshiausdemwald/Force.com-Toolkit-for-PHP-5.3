@@ -62,6 +62,8 @@ abstract class API extends BaseClient implements APIInterface
         $connection->registerClass('RecordTypeMapping', 'Codemitte\\ForceToolkit\\Soap\\Mapping\\RecordTypeMapping');
         $connection->registerClass('PicklistForRecordType', 'Codemitte\\ForceToolkit\\Soap\\Mapping\\PicklistForRecordType');
 
+        $connection->registerClass('QueryResult', 'Codemitte\\ForceToolkit\\Soap\\Mapping\\QueryResult');
+        $connection->registerClass('sObject', 'Codemitte\\ForceToolkit\\Soap\\Mapping\\Sobject');
         $connection->registerClass('DescribeSObjectResult', 'Codemitte\\ForceToolkit\\Soap\\Mapping\\DescribeSObjectResult');
         $connection->registerClass('RecordTypeInfo', 'Codemitte\\ForceToolkit\\Soap\\Mapping\\RecordTypeInfo');
         $connection->registerClass('RecordType', 'Codemitte\\ForceToolkit\\Soap\\Mapping\\RecordType');
@@ -145,6 +147,32 @@ abstract class API extends BaseClient implements APIInterface
                 'queryString' => $queryString
             ))
         );
+    }
+
+    /**
+     * queryAll()
+     *
+     * Performs an arbitrary soql query against
+     * the database, delivering deleted records, too.
+     *
+     * <soap:header use="literal" message="tns:Header" part="SessionHeader"/>
+     * <soap:header use="literal" message="tns:Header" part="CallOptions"/>
+     * <soap:header use="literal" message="tns:Header" part="QueryOptions"/>
+     * <soap:header use="literal" message="tns:Header" part="MruHeader"/>
+     * <soap:header use="literal" message="tns:Header" part="PackageVersionHeader"/>
+     * <soap:body parts="parameters" use="literal"/>
+     *
+     * @param string $queryString
+     * @return mixed $result
+     */
+    public function queryAll($queryString)
+    {
+        return $this->getConnection()->soapCall(
+            'queryAll',
+            array(array(
+                'queryString' => $queryString
+            ))
+        );
 
         return $res;
     }
@@ -221,6 +249,7 @@ abstract class API extends BaseClient implements APIInterface
      * @param \Codemitte\ForceToolkit\Soap\Header\AllOrNoneHeader|null $allOrNoneHeader
      * @param \Codemitte\ForceToolkit\Soap\Header\EmailHeader|null $emailHeader
      *
+     * @throws DMLException
      * @return createResponse $response
      */
     public function update(

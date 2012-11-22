@@ -25,9 +25,9 @@ namespace Codemitte\ForceToolkit\Soap\Client;
 use \SoapVar;
 
 use Codemitte\Soap\Mapping\GenericResult;
-use Codemitte\Soap\Mapping\GenericResultCollection;
-use Codemitte\ForceToolkit\Soap\Mapping\Partner\Sobject;
+use Codemitte\ForceToolkit\Soap\Mapping\SobjectInterface;
 use Codemitte\ForceToolkit\Soap\Header;
+use Codemitte\ForceToolkit\Soap\Mapping\Type\ID;
 
 /**
  * PartnerClient
@@ -37,7 +37,7 @@ use Codemitte\ForceToolkit\Soap\Header;
  * @package Sfdc
  * @subpackage Soap
  */
-class PartnerClient extends API
+final class PartnerClient extends API
 {
     const
         FNS='urn:fault.partner.soap.sforce.com',
@@ -66,30 +66,25 @@ class PartnerClient extends API
     public function query($queryString)
     {
         /* @var $queryResponse \Codemitte\Soap\Mapping\GenericResult */
-        $queryResponse = parent::query($queryString);
+        return parent::query($queryString);
 
-        $queryResult = $queryResponse->get('result');
-
-        if($queryResult->get('records'))
-        {
-            $queryResult->put('records', $this->toSobjectList($queryResult->get('records')));
-        }
-
-        return $queryResponse;
+        return $this->decorateQueryResponse($queryResponse);
     }
 
     /**
-     * @param GenericResultCollection $records
+     * First key is "result"; in any way. Second is "records".
+     * Always holds a GenericResultCollection.
+     *
+     * @param string $queryString
      * @throws \Exception
-     * @return \Codemitte\Soap\Mapping\GenericResult
+     * @return \Codemitte\Soap\Mapping\GenericResult|mixed
      */
-    protected function toSobjectList(GenericResultCollection $records)
+    public function queryAll($queryString)
     {
-        foreach ($records as $i => $record)
-        {
-            $records->replace($i, $this->toSobject($record));
-        }
-        return $records;
+        /* @var $queryResponse \Codemitte\Soap\Mapping\GenericResult */
+        return parent::queryAll($queryString);
+
+        return $this->decorateQueryResponse($queryResponse);
     }
 
     /**
@@ -137,15 +132,16 @@ class PartnerClient extends API
         {
             $data[] = $this->fromSobject($sobject);
         }
+
         return parent::update($data, $assignmentRuleHeader, $mruHeader, $allowFieldTruncationHeader, $disableFeedTrackingHeader, $allOrNoneHeader, $emailHeader);
     }
 
 
     /**
-     * @param \Codemitte\ForceToolkit\Soap\Mapping\Partner\Sobject $sobject
+     * @param \Codemitte\ForceToolkit\Soap\Mapping\SobjectInterface $sobject
      * @return \stdClass
      */
-    public function fromSobject(Sobject $sobject)
+    public function fromSobject(SobjectInterface $sobject)
     {
         $retVal = new \stdClass();
 
@@ -155,6 +151,7 @@ class PartnerClient extends API
         }
 
         $this->toAny($sobject->toArray(), $retVal);
+
 
         $retVal->type = $sobject->getSobjectType();
 
@@ -189,6 +186,12 @@ EOF;
                 elseif($value instanceof Sobject)
                 {
                     $target->$key = $this->fromSobject($value);
+                }
+
+                // REGARD RENEWED ID HANDLING ...
+                elseif($value instanceof ID)
+                {
+                    $target->Id = (string)$value;
                 }
 
                 // RELATED LIST?
@@ -228,7 +231,39 @@ EOF;
     }
 
     /**
-     * getNullableFieldsVar()
+     * @param GenericResult $queryResponse
+     * @return GenericResult
+     */
+    private function decorateQueryResponse($queryResponse)
+    {
+        $queryResult = $queryResponse->get('result');
+
+        if($queryResult->getSize())
+        {
+            $records = & $queryResponse->getRecords();
+
+            $records = $this->toSobjectList($records);
+        }
+
+        return $queryResponse;
+    }
+
+    /**
+     * @param array $records
+     * @throws \Exception
+     * @return \Codemitte\Soap\Mapping\GenericResult
+     */
+    private function toSobjectList(array $records)
+    {
+        foreach ($records as $i => $record)
+        {
+            $records->replace($i, $this->toSobject($record));
+        }
+        return $records;
+    }
+
+    /**
+     * fixNullableFieldsVar()
      * Used in CRU(D)-Methods to fix and add the fieldsToNull property in a Salesforce-way.
      *
      * @param \SoapVar|\stdClass $object
@@ -236,7 +271,7 @@ EOF;
      *
      * @return void
      */
-    protected function fixNullableFieldsVar(\stdClass $object, array $nullableFields = null)
+    private function fixNullableFieldsVar(\stdClass $object, array $nullableFields = null)
     {
         if(null !== $nullableFields && count($nullableFields) > 0)
         {
