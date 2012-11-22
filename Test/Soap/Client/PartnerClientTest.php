@@ -119,7 +119,7 @@ class PartnerClientTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('<fieldsToNull>Title</fieldsToNull>', $result->fieldsToNull->enc_value->enc_value);
     }
 
-    public function testCreateSobject()
+    public function testDML()
     {
         $sobject = new Sobject('Contact', array(
             'Salutation' => 'Mr',
@@ -128,22 +128,118 @@ class PartnerClientTest extends \PHPUnit_Framework_TestCase
             'LastName' => 'Wurst'
         ));
 
-        $response = self::$client->create($sobject);
+        $createResponse = self::$client->create($sobject);
 
+        $this->assertInstanceOf('\Codemitte\Soap\Mapping\GenericResult', $createResponse);
+        $this->assertNotEmpty(true, $createResponse->get('result'));
+        $this->assertInstanceOf('\Codemitte\Soap\Mapping\GenericResultCollection', $createResponse->get('result'));
+        $this->assertNotCount(0, $createResponse->get('result'));
+        $this->assertEquals(1, $createResponse->get('result')->get(0)->get('success'));
+        $this->assertNotEmpty($createResponse->get('result')->get(0)->get('id'));
+
+        // ID OF sObject empty?
+        $this->assertEmpty($sobject->getId());
+
+        $sobject = new Sobject('Contact', array(
+            'Title' => 'Graf'
+        ), $createResponse->get('result')->get(0)->get('id'));
+
+        $updateResponse = self::$client->update($sobject);
+
+        $this->assertInstanceOf('\Codemitte\Soap\Mapping\GenericResult', $updateResponse);
+        $this->assertNotEmpty(true, $updateResponse->get('result'));
+        $this->assertInstanceOf('\Codemitte\Soap\Mapping\GenericResultCollection', $updateResponse->get('result'));
+        $this->assertNotCount(0, $updateResponse->get('result'));
+        $this->assertEquals(1, $updateResponse->get('result')->get(0)->get('success'));
+
+        $deleteResponse = self::$client->delete($createResponse->get('result')->get(0)->get('id'));
+
+        $this->assertInstanceOf('\Codemitte\Soap\Mapping\GenericResult', $deleteResponse);
+        $this->assertNotEmpty(true, $deleteResponse->get('result'));
+        $this->assertInstanceOf('\Codemitte\Soap\Mapping\GenericResultCollection', $deleteResponse->get('result'));
+        $this->assertNotCount(0, $deleteResponse->get('result'));
+        $this->assertEquals(1, $deleteResponse->get('result')->get(0)->get('success'));
+    }
+
+    public function testCreateSobjectNegative()
+    {
+        $sobject = new Sobject('Contact', array('zurbelnase'));
+        $exThrown = null;
+        try
+        {
+            self::$client->create($sobject);
+        }
+        catch(\Exception $e)
+        {
+            $exThrown = $e;
+        }
+        $this->assertNotNull($exThrown);
+        $this->assertInstanceOf('\Codemitte\ForceToolkit\Soap\Client\DMLException', $exThrown);
+    }
+
+    public function testDescribeSobject()
+    {
+        $response = self::$client->describeSobject('Contact');
+
+        $this->assertNotEmpty($response);
         $this->assertInstanceOf('\Codemitte\Soap\Mapping\GenericResult', $response);
-        $this->assertNotEmpty(true, $response->get('result'));
-        $this->assertInstanceOf('\Codemitte\Soap\Mapping\GenericResultCollection', $response->get('result'));
-        $this->assertNotCount(0, $response->get('result'));
-        $this->assertEquals(1, $response->get('result')->get(0)->get('success'));
-        $this->assertNotEmpty($response->get('result')->get(0)->get('id'));
+        $this->assertNotEmpty($response->get('result'));
+        $this->assertInstanceOf('\Codemitte\ForceToolkit\Soap\Mapping\DescribeSObjectResult', $response->get('result'));
+    }
 
-        $response = self::$client->delete($response->get('result')->get(0)->get('id'));
+    public function testDescribeLayout()
+    {
+        $response = self::$client->describeLayout('Contact');
 
+        $this->assertNotEmpty($response);
         $this->assertInstanceOf('\Codemitte\Soap\Mapping\GenericResult', $response);
-        $this->assertNotEmpty(true, $response->get('result'));
-        $this->assertInstanceOf('\Codemitte\Soap\Mapping\GenericResultCollection', $response->get('result'));
-        $this->assertNotCount(0, $response->get('result'));
-        $this->assertEquals(1, $response->get('result')->get(0)->get('success'));
+        $this->assertNotEmpty($response->get('result'));
+        $this->assertInstanceOf('\Codemitte\ForceToolkit\Soap\Mapping\DescribeLayoutResult', $response->get('result'));
+    }
+
+    public function testQuery()
+    {
+        $sobject = new Sobject('Contact', array(
+            'Salutation' => 'Mr',
+            'Title' => null,
+            'FirstName' => 'Hans',
+            'LastName' => 'Wurst'
+        ));
+
+        $createResponse= self::$client->create($sobject);
+
+        $queryResponse = self::$client->query('SELECT Id, Salutation, Title, FirstName, LastName FROM Contact WHERE Id = \'' . $createResponse->get('result')->get(0)->get('id') . '\'');
+
+        $this->assertNotEmpty($queryResponse);
+        $this->assertInstanceOf('\Codemitte\Soap\Mapping\GenericResult', $queryResponse);
+        $this->assertNotEmpty($queryResponse->get('result'));
+        $this->assertNotCount(0, $queryResponse->get('result')->get('records'));
+        $this->assertEquals(1, $queryResponse->get('result')->get('size'));
+        $this->assertInstanceOf('\Codemitte\ForceToolkit\Soap\Mapping\SobjectInterface', $queryResponse->get('result')->get('records')->get(0));
+        $this->assertEquals('Mr', $queryResponse->get('result')->get('records')->get(0)->get('Salutation'));
+        $this->assertEquals(null, $queryResponse->get('result')->get('records')->get(0)->get('Title'));
+        $this->assertEquals('Hans', $queryResponse->get('result')->get('records')->get(0)->get('FirstName'));
+        $this->assertEquals('Wurst', $queryResponse->get('result')->get('records')->get(0)->get('LastName'));
+
+        self::$client->delete($createResponse->get('result')->get(0)->get('id'));
+    }
+
+    public function testQueryNegative()
+    {
+        $exThrown = null;
+
+        try
+        {
+            self::$client->query('FROM Dingsda SELECT Nix');
+        }
+        catch(\Exception $e)
+        {
+            $exThrown = $e;
+        }
+
+        $this->assertNotNull($exThrown);
+        $this->assertInstanceOf('\Codemitte\Soap\Client\Connection\TracedSoapFault', $exThrown);
+        $this->assertEquals('MALFORMED_QUERY: unexpected token: FROM', $exThrown->getMessage());
     }
 }
 

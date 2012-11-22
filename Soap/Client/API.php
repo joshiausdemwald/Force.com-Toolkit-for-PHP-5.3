@@ -171,6 +171,7 @@ abstract class API extends BaseClient implements APIInterface
      * @param \Codemitte\ForceToolkit\Soap\Header\AllOrNoneHeader|null $allOrNoneHeader
      * @param \Codemitte\ForceToolkit\Soap\Header\EmailHeader|null $emailHeader
      *
+     * @throws DMLException
      * @return createResponse $response
      */
     public function create(
