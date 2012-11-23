@@ -22,9 +22,12 @@
 
 namespace Codemitte\ForceToolkit\Soap\Client;
 
-use Codemitte\ForceToolkit\Soap\Client\Connection\SfdcConnectionInterface;
-use Codemitte\ForceToolkit\Soap\Header;
-use Codemitte\ForceToolkit\Soap\Client\DMLException;
+use
+    Codemitte\ForceToolkit\Soap\Client\Connection\SfdcConnectionInterface,
+    Codemitte\ForceToolkit\Soap\Header,
+    Codemitte\ForceToolkit\Soap\Client\DMLException,
+    Codemitte\ForceToolkit\Soap\Mapping\Type\QueryLocator
+;
 
 /**
  * API. Abstract parent class for partner
@@ -137,10 +140,15 @@ abstract class API extends BaseClient implements APIInterface
      * <soap:body parts="parameters" use="literal"/>
      *
      * @param string $queryString
+     * @param int|null $batchSize
      * @return mixed $result
      */
-    public function query($queryString)
+    public function query($queryString, $batchSize = null)
     {
+        if(null !== $batchSize)
+        {
+            $this->getConnection()->addSoapInputHeader(new Header\QueryOptions($this->getConnection()->getURI(), $batchSize));
+        }
         return $this->getConnection()->soapCall(
             'query',
             array(array(
@@ -163,10 +171,15 @@ abstract class API extends BaseClient implements APIInterface
      * <soap:body parts="parameters" use="literal"/>
      *
      * @param string $queryString
+     * @param int|null $batchSize
      * @return mixed $result
      */
-    public function queryAll($queryString)
+    public function queryAll($queryString, $batchSize = null)
     {
+        if(null !== $batchSize)
+        {
+            $this->getConnection()->addSoapInputHeader(new Header\QueryOptions($this->getConnection()->getURI(), $batchSize));
+        }
         return $this->getConnection()->soapCall(
             'queryAll',
             array(array(
@@ -343,5 +356,23 @@ abstract class API extends BaseClient implements APIInterface
             }
         }
         throw new DMLException('No result');
+    }
+
+    /**
+     * queryMore() Retrieves the next batch of objects from a query().
+     *     QueryResult = connection.queryMore( QueryLocator QueryLocator);
+     * Use this call to process query() calls that retrieve a large number of
+     * records (by default, more than 500) in the result set.
+     *
+     * @param QueryLocator $queryLocator: A specialized string, similar to ID.
+     *                     Used in the subsequent queryMore() call for retrieving sets
+     *                     of objects from the query results, if applicable.
+     * @return mixed $result
+     */
+    public function queryMore(QueryLocator $queryLocator)
+    {
+        return $this->getConnection()->soapCall('queryMore', array(
+            array('queryLocator' => (string)$queryLocator)
+        ));
     }
 }

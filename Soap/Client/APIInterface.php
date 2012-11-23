@@ -1,7 +1,10 @@
 <?php
 namespace Codemitte\ForceToolkit\Soap\Client;
 
-use Codemitte\ForceToolkit\Soap\Header;
+use
+    Codemitte\ForceToolkit\Soap\Header,
+    Codemitte\ForceToolkit\Soap\Mapping\Type\QueryLocator
+;
 
 /**
  * APIInterface
@@ -45,9 +48,10 @@ interface APIInterface extends BaseClientInterface
      * <soap:body parts="parameters" use="literal"/>
      *
      * @param string $queryString
+     * @param int|null $batchSize
      * @return mixed $result
      */
-    public function query($queryString);
+    public function query($queryString, $batchSize = null);
 
     /**
      * queryAll()
@@ -63,9 +67,21 @@ interface APIInterface extends BaseClientInterface
      * <soap:body parts="parameters" use="literal"/>
      *
      * @param string $queryString
+     * @param int|null $batchSize
      * @return mixed $result
      */
-    public function queryAll($queryString);
+    public function queryAll($queryString, $batchSize = null);
+
+    /**
+     * queryMore() Retrieves the next batch of objects from a query().
+     *     QueryResult = connection.queryMore( QueryLocator QueryLocator);
+     * Use this call to process query() calls that retrieve a large number of
+     * records (by default, more than 500) in the result set.
+     *
+     * @param QueryLocator $queryLocator
+     * @return mixed $result
+     */
+    public function queryMore(QueryLocator $queryLocator);
 
     /**
      * create() persists new rows to the database.

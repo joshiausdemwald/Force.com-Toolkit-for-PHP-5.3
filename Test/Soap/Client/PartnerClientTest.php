@@ -244,6 +244,51 @@ class PartnerClientTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('MALFORMED_QUERY: unexpected token: FROM', $exThrown->getMessage());
     }
 
+    public function testQueryMore()
+    {
+        $saveResponses = array();
+
+        for($j=0; $j<5; $j++)
+        {
+            $sobjects = array();
+
+            for($i = 0; $i < 200; $i ++)
+            {
+                $sobjects[] = new Sobject('Contact', array(
+                    'Salutation' => 'Mr',
+                    'Title' => 'lord',
+                    'FirstName' => 'Firstname_' . $j . $i,
+                    'LastName' => 'Lastname_' . $j . $i
+                ));
+            }
+            $saveResponses[] = self::$client->create($sobjects);
+        }
+
+        $queryResponse = self::$client->query('SELECT Salutation, Title, FirstName, LastName FROM Contact', 750);
+
+        $this->assertNotEmpty($queryResponse->get('result'));
+        $this->assertNotEmpty($queryResponse->get('result')->get('queryLocator'));
+
+        $queryLocator = $queryResponse->get('result')->get('queryLocator');
+
+        $this->assertInstanceOf('Codemitte\ForceToolkit\Soap\Mapping\Type\QueryLocator', $queryLocator);
+
+        $queryResponse = self::$client->queryMore($queryLocator);
+
+        print_r($queryResponse);
+
+        foreach($saveResponses AS $saveResponse)
+        {
+            $ids = array();
+
+            foreach($saveResponse->get('result') AS $res)
+            {
+                $ids = $res->get('id');
+            }
+            self::$client->delete($ids);
+        }
+    }
+
     public function testQueryAll()
     {
         $sobject = new Sobject('Contact', array(
@@ -270,8 +315,6 @@ class PartnerClientTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(null, $queryResponse->get('result')->getRecords()->get(0)->get('Title'));
         $this->assertEquals('Hans', $queryResponse->get('result')->getRecords()->get(0)->get('FirstName'));
         $this->assertEquals('Wurst', $queryResponse->get('result')->getRecords()->get(0)->get('LastName'));
-
-
     }
 }
 
