@@ -16,6 +16,8 @@ class SobjectTest extends \PHPUnit_Framework_TestCase
             'test' => 'testvalue'
         ));
 
+        $this->assertCount(3, $sobject);
+
         $this->assertTrue($sobject->contains('hans'));
         $this->assertEquals('wurst', $sobject->get('hans'));
         $this->assertTrue(isset($sobject['test'])); // array_key_access incompatible to ArrayAccess interface

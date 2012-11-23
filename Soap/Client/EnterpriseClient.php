@@ -22,8 +22,11 @@
 
 namespace Codemitte\ForceToolkit\Soap\Client;
 
-use Codemitte\ForceToolkit\Soap\Client\Connection\SfdcConnectionInterface;
-use Codemitte\ForceToolkit\Soap\Header;
+use
+    Codemitte\ForceToolkit\Soap\Client\Connection\SfdcConnectionInterface,
+    Codemitte\ForceToolkit\Soap\Header,
+    Codemitte\ForceToolkit\Soap\Mapping\SobjectInterface
+;
 
 /**
  * EnterpriseClient
@@ -61,7 +64,7 @@ class EnterpriseClient extends API
         parent::configure($connection);
 
         // GENERIC SOBJECT
-        $connection->registerClass('sObject', 'Codemitte\\ForceToolkit\\Soap\\Mapping\\Enterprise\\Sobject');
+        $connection->registerClass('sObject', 'Codemitte\\ForceToolkit\\Soap\\Mapping\\Sobject');
     }
 
     /**
@@ -83,7 +86,7 @@ class EnterpriseClient extends API
 
         foreach($data AS $sobject)
         {
-            if($data instanceof SoapVar)
+            if($data instanceof \SoapVar)
             {
                 $soapVar = $data;
             }
@@ -107,7 +110,7 @@ class EnterpriseClient extends API
                 }
 
                 // CONVERT TO "GENERIC" SOAP VAR
-                $soapVar = new SoapVar(
+                $soapVar = new \SoapVar(
                     $param,
                     SOAP_ENC_OBJECT,
                     $sobject->getSobjectType(),
@@ -143,7 +146,7 @@ class EnterpriseClient extends API
 
         foreach($data AS $sobject)
         {
-            if($data instanceof SoapVar)
+            if($data instanceof \SoapVar)
             {
                 $soapVar = $data;
             }
@@ -167,7 +170,7 @@ class EnterpriseClient extends API
                 }
 
                 // CONVERT TO "GENERIC" SOAP VAR
-                $soapVar = new SoapVar(
+                $soapVar = new \SoapVar(
                     $param,
                     SOAP_ENC_OBJECT,
                     $sobject->getSobjectType(),
@@ -193,12 +196,12 @@ class EnterpriseClient extends API
      *
      * @return void
      */
-    protected function fixNullableFieldsVar(SoapVar $object, array $nullableFields = null)
+    protected function fixNullableFieldsVar(\SoapVar $object, array $nullableFields = null)
     {
         if(null !== $nullableFields && count($nullableFields) > 0)
         {
-            $var = new SoapVar(
-                new SoapVar('<fieldsToNull>' . implode('</fieldsToNull><fieldsToNull>', $nullableFields) . '</fieldsToNull>', XSD_ANYXML), SOAP_ENC_ARRAY
+            $var = new \SoapVar(
+                new \SoapVar('<fieldsToNull>' . implode('</fieldsToNull><fieldsToNull>', $nullableFields) . '</fieldsToNull>', XSD_ANYXML), SOAP_ENC_ARRAY
             );
 
             if(is_array($object->enc_value))
