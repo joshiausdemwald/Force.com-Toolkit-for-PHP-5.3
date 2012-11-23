@@ -20,6 +20,20 @@ class LogicalCondition implements LogicalConditionInterface
 
     /**
      * @param SoqlExpressionInterface $left
+     * @param string|null $operator
+     * @param ComparableInterface $right
+     */
+    public function __construct(SoqlExpressionInterface $left = null, $operator = null, ComparableInterface $right = null)
+    {
+        $this->left = $left;
+
+        $this->operator = $operator;
+
+        $this->right = $right;
+    }
+
+    /**
+     * @param SoqlExpressionInterface $left
      */
     public function setLeft(SoqlExpressionInterface $left)
     {
