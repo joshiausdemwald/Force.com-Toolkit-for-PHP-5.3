@@ -8,16 +8,16 @@ namespace Codemitte\ForceToolkit\Soql\Builder;
  *
  * Usage example:
  *
- * $right: name
+ * $left: name
  * $op: Operator (one of the OP_* constancts)
- * $left: Scalar Value, collection or query
+ * $right: Scalar Value, collection or query
  *
  * $builder
- *     ->xpr($right, $op, $left)
+ *     ->xpr($left, $op, $right)
  *     ->andXpr(
  *         $builder
- *             ->xpr($right, $op, $left)
- *             ->orXpr($right, $op, $left)
+ *             ->xpr($left, $op, $right)
+ *             ->orXpr($left, $op, $right)
  *     )
  *     ->andNotXpr()
  *
@@ -40,52 +40,62 @@ interface ExpressionBuilderInterface
         OP_NOT_IN = 'NOT IN'
     ;
 
-    /**
-     * @param $right
-     * @param null $op
-     * @param null $left
-     * @return ExpressionBuilderInterface
-     */
-    public function xpr($right, $op = null, $left = null);
+    const
+        CONTEXT_WHERE = 1,
+        CONTEXT_HAVING = 2;
+
 
     /**
-     * @param $right
+     * @param string $left: Name, function() or AggregateFunction()
      * @param null $op
-     * @param null $left
+     * @param null $right
      * @return ExpressionBuilderInterface
      */
-    public function notXpr($right, $op = null, $left = null);
+    public function xpr($left, $op = null, $right = null);
 
     /**
-     * @param $right
+     * @param string $left: Name, function() or AggregateFunction()
      * @param null $op
-     * @param null $left
+     * @param null $right
      * @return ExpressionBuilderInterface
      */
-    public function andXpr($right, $op = null, $left = null);
+    public function notXpr($left, $op = null, $right = null);
 
     /**
-     * @param $right
+     * @param string $left: Name, function() or AggregateFunction()
      * @param null $op
-     * @param null $left
+     * @param null $right
      * @return ExpressionBuilderInterface
      */
-    public function andNotXpr($right, $op = null, $left = null);
+    public function andXpr($left, $op = null, $right = null);
 
     /**
-     * @param $right
+     * @param string $left: Name, function() or AggregateFunction()
      * @param null $op
-     * @param null $left
+     * @param null $right
      * @return ExpressionBuilderInterface
      */
-    public function orXpr($right, $op = null, $left = null);
+    public function andNotXpr($left, $op = null, $right = null);
 
     /**
-     * @param $right
+     * @param string $left: Name, function() or AggregateFunction()
      * @param null $op
-     * @param null $left
+     * @param null $right
      * @return ExpressionBuilderInterface
      */
-    public function orNotXpr($right, $op = null, $left = null);
+    public function orXpr($left, $op = null, $right = null);
+
+    /**
+     * @param string $left: Name, function() or AggregateFunction()
+     * @param null $op
+     * @param null $right
+     * @return ExpressionBuilderInterface
+     */
+    public function orNotXpr($left, $op = null, $right = null);
+
+    /**
+     * @return int $context: One of the CONTEXT_* constants
+     */
+    public function getContext();
 }
 

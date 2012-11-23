@@ -1,5 +1,5 @@
 <?php
-namespace Codemitte\ForceToolkit\Test;
+namespace Codemitte\ForceToolkit\Test\Soap\Mapping;
 
 use
     Codemitte\ForceToolkit\Soap\Mapping\Sobject,

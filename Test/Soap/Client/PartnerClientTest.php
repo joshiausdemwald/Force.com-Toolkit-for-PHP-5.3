@@ -1,5 +1,5 @@
 <?php
-namespace Codemitte\ForceToolkit\Test;
+namespace Codemitte\ForceToolkit\Test\Soap\Client;
 
 use
     Codemitte\ForceToolkit\Soap\Client\PartnerClient,

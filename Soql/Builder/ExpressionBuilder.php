@@ -1,101 +1,136 @@
 <?php
 namespace Codemitte\ForceToolkit\Soql\Builder;
 
-use Codemitte\ForceToolkit\Soql\AST;
+use
+    Codemitte\ForceToolkit\Soql\AST,
+    Codemitte\ForceToolkit\Soql\Parser\QueryParser
+;
 
 
 class ExpressionBuilder implements ExpressionBuilderInterface
 {
+    /**
+     * @var \Codemitte\ForceToolkit\Soql\AST\LogicalGroup
+     */
     private $expression;
 
     /**
-     * @param $right
-     * @param null $op
-     * @param null $left
-     * @return ExpressionBuilderInterface
+     * @var \Codemitte\ForceToolkit\Soql\Parser\QueryParser
      */
-    public function xpr($right, $op = null, $left = null)
+    private $parser;
+
+    /**
+     * @var string
+     */
+    private $context;
+
+    /**
+     * @param \Codemitte\ForceToolkit\Soql\Parser\QueryParser $parser
+     * @param int $context: One of the CONTEXT_* constants (CONTEXT_WHERE, CONTEXT_HAVING)
+     */
+    public function __construct(QueryParser $parser, $context)
     {
-        return $this->buildExpression($right, $op, $left);
+        $this->parser = $parser;
+
+        $this->context = $context;
     }
 
     /**
-     * @param $right
+     * @param string $left: Name, function() or AggregateFunction()
      * @param null $op
-     * @param null $left
+     * @param null $right
      * @return ExpressionBuilderInterface
      */
-    public function notXpr($right, $op = null, $left = null)
+    public function xpr($left, $op = null, $right = null)
     {
-        return $this->buildExpression($right, $op, $left, null, true);
+        return $this->buildExpression($left, $op, $right);
     }
 
     /**
-     * @param $right
+     * @param string $left: Name, function() or AggregateFunction()
      * @param null $op
-     * @param null $left
+     * @param null $right
      * @return ExpressionBuilderInterface
      */
-    public function andXpr($right, $op = null, $left = null)
+    public function notXpr($left, $op = null, $right = null)
     {
-        return $this->buildExpression($right, $op, $left, 'AND');
+        return $this->buildExpression($left, $op, $right, null, true);
     }
 
     /**
-     * @param $right
+     * @param string $left: Name, function() or AggregateFunction()
      * @param null $op
-     * @param null $left
+     * @param null $right
      * @return ExpressionBuilderInterface
      */
-    public function andNotXpr($right, $op = null, $left = null)
+    public function andXpr($left, $op = null, $right = null)
     {
-        return $this->buildExpression($right, $op, $left, 'AND', true);
+        return $this->buildExpression($left, $op, $right, 'AND');
     }
 
     /**
-     * @param $right
+     * @param string $left: Name, function() or AggregateFunction()
      * @param null $op
-     * @param null $left
+     * @param null $right
      * @return ExpressionBuilderInterface
      */
-    public function orXpr($right, $op = null, $left = null)
+    public function andNotXpr($left, $op = null, $right = null)
     {
-        return $this->buildExpression($right, $op, $left, 'OR');
+        return $this->buildExpression($left, $op, $right, 'AND', true);
     }
 
     /**
-     * @param $right
+     * @param string $left: Name, function() or AggregateFunction()
      * @param null $op
-     * @param null $left
+     * @param null $right
      * @return ExpressionBuilderInterface
      */
-    public function orNotXpr($right, $op = null, $left = null)
+    public function orXpr($left, $op = null, $right = null)
     {
-        return $this->buildExpression($right, $op, $left, 'OR', true);
+        return $this->buildExpression($left, $op, $right, 'OR');
     }
 
     /**
-     * @param $right
+     * @param string $left: Name, function() or AggregateFunction()
+     * @param null $op
+     * @param null $right
+     * @return ExpressionBuilderInterface
+     */
+    public function orNotXpr($left, $op = null, $right = null)
+    {
+        return $this->buildExpression($left, $op, $right, 'OR', true);
+    }
+
+    /**
+     * @return int $context: One of the CONTEXT_* constants
+     */
+    public function getContext()
+    {
+        return $this->context;
+    }
+
+    /**
+     * @param string $left: Name, function() or AggregateFunction()
      * @param int $op
-     * @param mixed $left: string|collection|subquery
+     * @param mixed $right: string|collection|subquery
      * @param string|null $junction; NULL|"AND"|"OR"
      * @param bool $not
      * @return ExpressionBuilderInterface
      */
-    private function buildExpression($right, $op = null, $left = null, $junction = null, $not = false)
+    private function buildExpression($left, $op = null, $right = null, $junction = null, $not = false)
     {
         $expression = $this->getExpression();
 
         // NESTED EXPRESSION
-        if($right instanceof ExpressionBuilderInterface)
+        if($left instanceof ExpressionBuilderInterface)
         {
-            $expression->add(new AST\LogicalJunction($not, $junction, $right->getExpression()));
+            $expression->add(new AST\LogicalJunction($not, $junction, $left->getExpression()));
         }
 
         // NAME
         else
         {
-            $expression->add(new AST\LogicalJunction($not, $junction, new AST\LogicalCondition($right, $op, $left)));
+            $expression->add(new AST\LogicalJunction($not, $junction, new AST\LogicalCondition($this->buildLeftExpression($left), $op, $this->buildRightExpression($right))));
         }
 
         return $this;
@@ -111,5 +146,39 @@ class ExpressionBuilder implements ExpressionBuilderInterface
             $this->expression = new AST\LogicalGroup();
         }
         return $this->expression;
+    }
+
+    /**
+     * Returns an instance of SoqlExpression interface, dependent on
+     * the given string, an plain Expression (fieldname), Function() or
+     * AggregateFunction()
+     *
+     * @param string $right
+     * @return \Codemitte\ForceToolkit\Soql\AST\SoqlExpressionInterface
+     */
+    private function buildRightExpression($right)
+    {
+        if(self::CONTEXT_HAVING === $this->getContext())
+        {
+            return $this->parser->parseRightHavingSoql($right);
+        }
+        return $this->parser->parseRightWhereSoql($right);
+    }
+
+    /**
+     * Returns an instance of SoqlExpression interface, dependent on
+     * the given string, an plain Expression (fieldname), Function() or
+     * AggregateFunction()
+     *
+     * @param $left
+     * @return \Codemitte\ForceToolkit\Soql\AST\SoqlExpressionInterface
+     */
+    private function buildLeftExpression($left)
+    {
+        if(self::CONTEXT_HAVING === $this->getContext())
+        {
+            return $this->parser->parseLeftHavingSoql($left);
+        }
+        return $this->parser->parseLeftWhereSoql($left);
     }
 }

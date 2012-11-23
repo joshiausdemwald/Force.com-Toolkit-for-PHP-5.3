@@ -55,4 +55,12 @@ interface QueryParserInterface
     public function parseHavingSoql($soql);
 
     public function parseOrderBySoql($soql);
+
+    public function parseLeftWhereSoql($soql);
+
+    public function parseLeftHavingSoql($soql);
+
+    public function parseRightWhereSoql($soql);
+
+    public function parseRightHavingSoql($soql);
 }

@@ -11,5 +11,11 @@
         <testsuite name="Soap_Client">
             <directory>Test/Soap/Client</directory>
         </testsuite>
+        <testsuite name="Soap_Mapping">
+            <directory>Test/Soap/Mapping</directory>
+        </testsuite>
+        <testsuite name="Soql_Builder">
+            <directory>Test/Soql/Builder</directory>
+        </testsuite>
     </testsuites>
 </phpunit>

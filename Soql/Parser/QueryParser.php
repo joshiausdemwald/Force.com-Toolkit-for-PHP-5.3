@@ -65,8 +65,7 @@ use
 
     Codemitte\ForceToolkit\Soql\AST\OrderPart,
     Codemitte\ForceToolkit\Soql\AST\OrderByField,
-    Codemitte\ForceToolkit\Soql\AST\SoqlOrderByAggregateFunction,
-    Codemitte\ForceToolkit\Soql\AST\SoqlOrderByFunction;
+    Codemitte\ForceToolkit\Soql\AST\SoqlOrderByAggregateFunction
 ;
 
 /**
@@ -319,6 +318,42 @@ class QueryParser implements QueryParserInterface
         $this->tokenizer->expect(TokenType::BOF);
 
         return $this->parseOrderByExpression();
+    }
+
+    public function parseLeftWhereSoql($soql)
+    {
+        $this->tokenizer->setInput($soql);
+
+        $this->tokenizer->expect(TokenType::BOF);
+
+        return $this->parseWhereLeft();
+    }
+
+    public function parseLeftHavingSoql($soql)
+    {
+        $this->tokenizer->setInput($soql);
+
+        $this->tokenizer->expect(TokenType::BOF);
+
+        return $this->parseHavingLeft();
+    }
+
+    public function parseRightWhereSoql($soql)
+    {
+        $this->tokenizer->setInput($soql);
+
+        $this->tokenizer->expect(TokenType::BOF);
+
+        return $this->parseWhereRight();
+    }
+
+    public function parseRightHavingSoql($soql)
+    {
+        $this->tokenizer->setInput($soql);
+
+        $this->tokenizer->expect(TokenType::BOF);
+
+        return $this->parseHavingRight();
     }
 
     /**
@@ -1090,7 +1125,7 @@ class QueryParser implements QueryParserInterface
                 }
                 else
                 {
-                    throw new ParseException(sprintf('Unexpected operator "%s"', $operator), $oldLine, $oldLinePos, $this->tokenizer->getInput());
+                    throw new ParseException(sprintf('Unexpected operator "%s"', $operator), $oldLine, $oldPos, $this->tokenizer->getInput());
                 }
             }
 
@@ -1251,7 +1286,7 @@ class QueryParser implements QueryParserInterface
      */
     public function parseGroupByAggregateFunction($functionName)
     {
-        $uppercaseName  = strtoupper($field);
+        $uppercaseName  = strtoupper($functionName);
 
         $oldPos = $this->tokenizer->getLinePos();
         $oldLine = $this->tokenizer->getLine();
@@ -1260,7 +1295,7 @@ class QueryParser implements QueryParserInterface
 
         if(in_array($uppercaseName, self::$AGGREGATE_FUNCTIONS))
         {
-            $field = new SoqlAggregateFunction($field, $this->tokenizer->getTokenValue());
+            $field = new SoqlAggregateFunction($functionName, $this->tokenizer->getTokenValue());
 
             $this->tokenizer->expect(TokenType::EXPRESSION);
 
@@ -1599,14 +1634,14 @@ class QueryParser implements QueryParserInterface
 
     /**
      * @param string $funcname
-     * @return \Codemitte\ForceToolkit\Soql\AST\SoqlOrderByFunction
+     * @return \Codemitte\ForceToolkit\Soql\AST\SoqlOrderByAggregateFunction
      * @throws ParseException
      */
     public function parseOrderByFunction($funcname)
     {
         $this->tokenizer->expect(TokenType::LEFT_PAREN);
 
-        $field = new SoqlOrderByFunction($funcname, $this->tokenizer->getTokenValue());
+        $field = new SoqlOrderByAggregateFunction($funcname, $this->tokenizer->getTokenValue());
 
         $this->tokenizer->expect(TokenType::EXPRESSION);
 
