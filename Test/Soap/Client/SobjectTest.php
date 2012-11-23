@@ -177,6 +177,7 @@ class SobjectTest extends \PHPUnit_Framework_TestCase
         $sobject = new Sobject('Account', array(
             'Name' => 'Firmax',
             'BillingStreet' => 'Dingsstraße',
+            'BillingHouseNumber' => NULL,
             'Contacts' => new GenericResultCollection(array(
                 new sObject('Contact', array(
                     'FirstName' => 'Luise',
@@ -185,6 +186,7 @@ class SobjectTest extends \PHPUnit_Framework_TestCase
                 new sObject('Contact', array(
                     'FirstName' => 'Petra',
                     'LastName' => 'Artep'
+
                 ))
             ))
         ));
@@ -200,5 +202,10 @@ class SobjectTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('Kaffeebohne', $sobject->Contacts[0]['LastName']);
         $this->assertEquals('Petra', $sobject->Contacts[1]['FirstName']);
         $this->assertEquals('Artep', $sobject->Contacts[1]['LastName']);
+
+        $this->assertNull($sobject->BillingHouseNumber);
+        $this->assertNotEmpty($sobject->getFieldsToNull());
+        $this->assertCount(1, $sobject->getFieldsToNull());
+        $this->assertContains('BillingHouseNumber', $sobject->getFieldsToNull());
     }
 }
