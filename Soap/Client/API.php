@@ -65,7 +65,7 @@ abstract class API extends BaseClient implements APIInterface
         $connection->registerClass('RecordTypeMapping', 'Codemitte\\ForceToolkit\\Soap\\Mapping\\RecordTypeMapping');
         $connection->registerClass('PicklistForRecordType', 'Codemitte\\ForceToolkit\\Soap\\Mapping\\PicklistForRecordType');
 
-        // $connection->registerClass('QueryResult', 'Codemitte\\ForceToolkit\\Soap\\Mapping\\QueryResult');
+        $connection->registerClass('QueryResult', 'Codemitte\\ForceToolkit\\Soap\\Mapping\\QueryResult');
         $connection->registerClass('sObject', 'Codemitte\\ForceToolkit\\Soap\\Mapping\\Sobject');
         $connection->registerClass('DescribeSObjectResult', 'Codemitte\\ForceToolkit\\Soap\\Mapping\\DescribeSObjectResult');
         $connection->registerClass('RecordTypeInfo', 'Codemitte\\ForceToolkit\\Soap\\Mapping\\RecordTypeInfo');

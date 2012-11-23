@@ -268,12 +268,19 @@ class PartnerClientTest extends \PHPUnit_Framework_TestCase
 
         $this->assertNotEmpty($queryResponse->get('result'));
         $this->assertNotEmpty($queryResponse->get('result')->get('queryLocator'));
+        $this->assertNotEquals(1, $queryResponse->get('result')->get('done'));
+        $this->assertGreaterThan(750, $queryResponse->get('result')->get('size'));
 
         $queryLocator = $queryResponse->get('result')->get('queryLocator');
 
         $this->assertInstanceOf('Codemitte\ForceToolkit\Soap\Mapping\Type\QueryLocator', $queryLocator);
 
         $queryResponse = self::$client->queryMore($queryLocator);
+
+        $this->assertNotEmpty($queryResponse->get('result'));
+        $this->assertNotEmpty($queryResponse->get('result')->get('queryLocator'));
+        $this->assertNotEquals(1, $queryResponse->get('result')->get('done'));
+        $this->assertGreaterThan(750, $queryResponse->get('result')->get('size'));
 
         foreach($saveResponses AS $saveResponse)
         {
