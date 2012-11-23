@@ -24,8 +24,8 @@ namespace Codemitte\ForceToolkit\Soap\Client;
 
 use \SoapVar;
 
-use Codemitte\Soap\Mapping\GenericResult;
 use Codemitte\ForceToolkit\Soap\Mapping\SobjectInterface;
+use Codemitte\ForceToolkit\Soap\Mapping\Sobject;
 use Codemitte\ForceToolkit\Soap\Header;
 use Codemitte\ForceToolkit\Soap\Mapping\Type\ID;
 
@@ -53,38 +53,6 @@ final class PartnerClient extends API
     public function getUri()
     {
         return self::TNS;
-    }
-
-    /**
-     * First key is "result"; in any way. Second is "records".
-     * Always holds a GenericResultCollection.
-     *
-     * @param string $queryString
-     * @throws \Exception
-     * @return \Codemitte\Soap\Mapping\GenericResult|mixed
-     */
-    public function query($queryString)
-    {
-        /* @var $queryResponse \Codemitte\Soap\Mapping\GenericResult */
-        return parent::query($queryString);
-
-        return $this->decorateQueryResponse($queryResponse);
-    }
-
-    /**
-     * First key is "result"; in any way. Second is "records".
-     * Always holds a GenericResultCollection.
-     *
-     * @param string $queryString
-     * @throws \Exception
-     * @return \Codemitte\Soap\Mapping\GenericResult|mixed
-     */
-    public function queryAll($queryString)
-    {
-        /* @var $queryResponse \Codemitte\Soap\Mapping\GenericResult */
-        return parent::queryAll($queryString);
-
-        return $this->decorateQueryResponse($queryResponse);
     }
 
     /**
@@ -206,60 +174,6 @@ EOF;
         {
             $target->any = $anyStr;
         }
-    }
-
-    /**
-     * Cleans up an sobject, removes duplicate ids, performs
-     * transformation of <any>-fields.
-     *
-     * @param $record
-     * @throws \Exception
-     * @return \Codemitte\ForceToolkit\Soap\Mapping\Partner\Sobject
-     */
-    public function toSobject($record)
-    {
-        $type = $record['type'];
-
-        $id = null;
-
-        if(isset($record['Id']))
-        {
-            $id = $record['Id'];
-        }
-
-        return new Sobject($type, $record, $id);
-    }
-
-    /**
-     * @param GenericResult $queryResponse
-     * @return GenericResult
-     */
-    private function decorateQueryResponse($queryResponse)
-    {
-        $queryResult = $queryResponse->get('result');
-
-        if($queryResult->getSize())
-        {
-            $records = & $queryResponse->getRecords();
-
-            $records = $this->toSobjectList($records);
-        }
-
-        return $queryResponse;
-    }
-
-    /**
-     * @param array $records
-     * @throws \Exception
-     * @return \Codemitte\Soap\Mapping\GenericResult
-     */
-    private function toSobjectList(array $records)
-    {
-        foreach ($records as $i => $record)
-        {
-            $records->replace($i, $this->toSobject($record));
-        }
-        return $records;
     }
 
     /**

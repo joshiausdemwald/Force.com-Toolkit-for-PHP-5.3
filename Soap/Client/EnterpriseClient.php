@@ -36,7 +36,7 @@ use
  * @package Sfdc
  * @subpackage Soap
  */
-class EnterpriseClient extends API
+final class EnterpriseClient extends API
 {
     const
         TNS = 'urn:enterprise.soap.sforce.com',
@@ -191,12 +191,12 @@ class EnterpriseClient extends API
      * getNullableFieldsVar()
      * Used in CRU(D)-Methods to fix and add the fieldsToNull property in a Salesforce-way.
      *
-     * @param SoapVar $object
+     * @param \SoapVar $object
      * @param array $nullableFields
      *
      * @return void
      */
-    protected function fixNullableFieldsVar(\SoapVar $object, array $nullableFields = null)
+    private function fixNullableFieldsVar(\SoapVar $object, array $nullableFields = null)
     {
         if(null !== $nullableFields && count($nullableFields) > 0)
         {
