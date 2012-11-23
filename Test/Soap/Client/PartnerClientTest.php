@@ -275,15 +275,13 @@ class PartnerClientTest extends \PHPUnit_Framework_TestCase
 
         $queryResponse = self::$client->queryMore($queryLocator);
 
-        print_r($queryResponse);
-
         foreach($saveResponses AS $saveResponse)
         {
             $ids = array();
 
             foreach($saveResponse->get('result') AS $res)
             {
-                $ids = $res->get('id');
+                $ids[] = $res->get('id');
             }
             self::$client->delete($ids);
         }
