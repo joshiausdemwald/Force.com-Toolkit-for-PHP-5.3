@@ -78,6 +78,12 @@ interface APIInterface extends BaseClientInterface
      * Use this call to process query() calls that retrieve a large number of
      * records (by default, more than 500) in the result set.
      *
+     * <soap:header use="literal" message="tns:Header" part="SessionHeader"/>
+     * <soap:header use="literal" message="tns:Header" part="CallOptions"/>
+     * <soap:header use="literal" message="tns:Header" part="QueryOptions"/>
+     * <soap:header use="literal" message="tns:Header" part="MruHeader"/>
+     * <soap:header use="literal" message="tns:Header" part="PackageVersionHeader"/>
+     *
      * @param QueryLocator $queryLocator
      * @return mixed $result
      */
@@ -157,4 +163,13 @@ interface APIInterface extends BaseClientInterface
      * @return GenericResult
      */
     public function delete($ids);
+
+    /**
+     * Use this call to end one or more sessions.
+     * You can also use logout() to end just one session, the session of the logged-in user.
+     *
+     * @param $sessionIds
+     * @return InvalidateSessionsResult = connection.invalidateSessions(string[] sessionIds);
+     */
+    public function invalidateSessions($sessionIds);
 }

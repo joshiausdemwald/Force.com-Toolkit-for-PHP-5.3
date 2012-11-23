@@ -66,6 +66,7 @@ abstract class API extends BaseClient implements APIInterface
         $connection->registerClass('PicklistForRecordType', 'Codemitte\\ForceToolkit\\Soap\\Mapping\\PicklistForRecordType');
 
         $connection->registerClass('QueryResult', 'Codemitte\\ForceToolkit\\Soap\\Mapping\\QueryResult');
+        $connection->registerClass('Error', 'Codemitte\\ForceToolkit\\Soap\\Mapping\\Error');
         $connection->registerClass('sObject', 'Codemitte\\ForceToolkit\\Soap\\Mapping\\Sobject');
         $connection->registerClass('DescribeSObjectResult', 'Codemitte\\ForceToolkit\\Soap\\Mapping\\DescribeSObjectResult');
         $connection->registerClass('RecordTypeInfo', 'Codemitte\\ForceToolkit\\Soap\\Mapping\\RecordTypeInfo');
@@ -73,6 +74,7 @@ abstract class API extends BaseClient implements APIInterface
         $connection->registerClass('ChildRelationship', 'Codemitte\\ForceToolkit\\Soap\\Mapping\\ChildRelationship');
         $connection->registerClass('Field', 'Codemitte\\ForceToolkit\\Soap\\Mapping\\Field');
         $connection->registerClass('PicklistEntry', 'Codemitte\\ForceToolkit\\Soap\\Mapping\\PicklistEntry');
+        $connection->registerClass('InvalidateSessionsResult', 'Codemitte\\ForceToolkit\\Soap\\Mapping\\InvalidateSessionsResult');
 
         $connection->registerType('ID', 'Codemitte\\ForceToolkit\\Soap\\Mapping\\Type\\ID', $this->getUri());
         $connection->registerType('QueryLocator', 'Codemitte\\ForceToolkit\\Soap\\Mapping\\Type\\QueryLocator', $this->getUri());
@@ -341,16 +343,14 @@ abstract class API extends BaseClient implements APIInterface
                 {
                     $fields = array();
 
-                    if($error->contains('fields'))
+                    foreach($error->getFields() AS $field)
                     {
-                        foreach($error->get('fields') AS $field)
-                        {
-                            $fields[] = '"' . $field . '"';
-                        }
+                        $fields[] = '"' . $field . '"';
                     }
+
                     $fields = implode(', ', $fields);
 
-                    $e = new DMLException('Message: "' . $error->get('message') . '", Code: "' . (string)$error->get('statusCode') . '", Fields: [' . $fields . ']', null, $e);
+                    $e = new DMLException('Message: "' . $error->getMessage() . '", Code: "' . (string)$error->getStatusCode() . '", Fields: [' . $fields . ']', null, $e);
                 }
                 throw $e;
             }
@@ -373,6 +373,25 @@ abstract class API extends BaseClient implements APIInterface
     {
         return $this->getConnection()->soapCall('queryMore', array(
             array('queryLocator' => (string)$queryLocator)
+        ));
+    }
+
+    /**
+     * Use this call to end one or more sessions.
+     * You can also use logout() to end just one session, the session of the logged-in user.
+     *
+     * @param $sessionIds
+     * @return InvalidateSessionsResult = connection.invalidateSessions(string[] sessionIds);
+     */
+    public function invalidateSessions($sessionIds)
+    {
+        if( ! is_array($sessionIds))
+        {
+            $sessionIds = array($sessionIds);
+        }
+
+        return $this->getConnection()->soapCall('invalidateSessions', array(
+            array('sessionIds' => $sessionIds)
         ));
     }
 }
