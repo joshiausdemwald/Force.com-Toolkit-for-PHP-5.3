@@ -158,6 +158,9 @@ class ExpressionBuilder implements ExpressionBuilderInterface
      */
     private function buildRightExpression($right)
     {
+        // BASIC TYPE CHECK. POSSIBLE VALUES:
+        // array() [collection value]
+        // string: INLINE QUERY, OR FORMULA, OR VARIABLE
         if(self::CONTEXT_HAVING === $this->getContext())
         {
             return $this->parser->parseRightHavingSoql($right);
