@@ -199,23 +199,6 @@ class Sobject implements SobjectInterface
     }
 
     /**
-     * __call() magic.
-     * Used to map getXY() and setXY() non-existent methods
-     * to call get() and set().
-     *
-     *
-     * @param $name
-     * @param array $args
-     *
-     * @throws \BadMethodCallException
-     * @return mixed.
-     */
-    public function __call($name, array $args = array())
-    {
-        throw new \BadMethodCallException(sprintf('Method "%s" does not exists.', $name));
-    }
-
-    /**
      *
      * @param array|MapInterface $values
      *
@@ -281,6 +264,7 @@ class Sobject implements SobjectInterface
     {
         if(null === $this->_keyCache)
         {
+            // FILLS VALUE CACHE
             $this->getKeys();
         }
 
@@ -313,7 +297,6 @@ class Sobject implements SobjectInterface
                 }
             }
         }
-
         return $this->_keyCache;
     }
 

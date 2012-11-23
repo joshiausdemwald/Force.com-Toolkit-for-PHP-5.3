@@ -2,9 +2,8 @@
 namespace Codemitte\ForceToolkit\Test;
 
 use
-    Codemitte\ForceToolkit\Soap\Client\PartnerClient,
-    Codemitte\ForceToolkit\Soap\Client\Connection\SfdcConnection,
-    Codemitte\ForceToolkit\Soap\Mapping\Sobject
+    Codemitte\ForceToolkit\Soap\Mapping\Sobject,
+    Codemitte\Soap\Mapping\GenericResultCollection
 ;
 
 class SobjectTest extends \PHPUnit_Framework_TestCase
@@ -159,5 +158,47 @@ class SobjectTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('002C000001PeRT2IAN', $contact1->getId());
         $this->assertTrue($contact1->contains('Name'));
         $this->assertEquals('Testcompany', $contact1->get('Name'));
+    }
+
+    public function testGetFieldsToNull()
+    {
+        $sobject = new Sobject('Account', array(
+            'Name' => 'Firmax',
+            'BillingStreet' => null
+        ));
+
+        $this->assertNotEmpty($sobject->getFieldsToNull());
+        $this->assertCount(1, $sobject->getFieldsToNull());
+        $this->assertContains('BillingStreet', $sobject->getFieldsToNull());
+    }
+
+    public function testSerialize()
+    {
+        $sobject = new Sobject('Account', array(
+            'Name' => 'Firmax',
+            'BillingStreet' => 'Dingsstraße',
+            'Contacts' => new GenericResultCollection(array(
+                new sObject('Contact', array(
+                    'FirstName' => 'Luise',
+                    'LastName' => 'Kaffeebohne'
+                )),
+                new sObject('Contact', array(
+                    'FirstName' => 'Petra',
+                    'LastName' => 'Artep'
+                ))
+            ))
+        ));
+
+        $serialized = serialize($sobject);
+
+        $sobject = unserialize($serialized);
+
+        $this->assertEquals('Firmax', $sobject->Name);
+        $this->assertEquals('Dingsstraße', $sobject->BillingStreet);
+        $this->assertInstanceOf('Codemitte\Soap\Mapping\GenericResultCollection', $sobject->Contacts);
+        $this->assertEquals('Luise', $sobject->Contacts[0]['FirstName']);
+        $this->assertEquals('Kaffeebohne', $sobject->Contacts[0]['LastName']);
+        $this->assertEquals('Petra', $sobject->Contacts[1]['FirstName']);
+        $this->assertEquals('Artep', $sobject->Contacts[1]['LastName']);
     }
 }
