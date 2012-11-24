@@ -10,7 +10,7 @@ use Codemitte\ForceToolkit\Soql\AST;
 class QueryBuilder implements QueryBuilderInterface
 {
     /**
-     * @var \Codemitte\ForceToolkit\Soql\AST\Query
+     * @var AST\Query
      */
     private $query;
 
@@ -89,7 +89,7 @@ class QueryBuilder implements QueryBuilderInterface
 
         $this->parameters = array();
 
-        $p = new \Codemitte\ForceToolkit\Soql\AST\SelectPart();
+        $p = new AST\SelectPart();
 
         $this->query->setSelectPart($p);
 
@@ -124,7 +124,7 @@ class QueryBuilder implements QueryBuilderInterface
     }
 
     /**
-     * @param \Codemitte\ForceToolkit\Soql\AST\LogicalConditionInterface|string $soql
+     * @param AST\LogicalConditionInterface|string $soql
      * @param array $parameters
      * @throws \InvalidArgumentException
      * @return QueryBuilder
@@ -156,7 +156,7 @@ class QueryBuilder implements QueryBuilderInterface
             throw new \InvalidArgumentException(sprintf('Argument "$soql" must be string, instanceof ExpressionBuilderInterface or instanceof LogicalGroup, "%s" given.', gettype($soql)));
         }
 
-        $this->query->setWherePart(new WherePart($group));
+        $this->query->setWherePart(new AST\WherePart($group));
 
         return $this;
     }
@@ -178,12 +178,12 @@ class QueryBuilder implements QueryBuilderInterface
      */
     public function andWithDataCategory($soql)
     {
-        $g = new \Codemitte\ForceToolkit\Soql\AST\LogicalGroup();
+        $g = new AST\LogicalGroup();
 
         $g->addAll($this->parser->parseWithSoql($soql));
 
-        $junction = new \Codemitte\ForceToolkit\Soql\AST\LogicalJunction();
-        $junction->setOperator(\Codemitte\ForceToolkit\Soql\AST\LogicalJunction::OP_AND);
+        $junction = new AST\LogicalJunction();
+        $junction->setOperator(AST\LogicalJunction::OP_AND);
         $junction->setCondition($g);
 
         $this->addWithDataCategory($junction);
@@ -199,10 +199,10 @@ class QueryBuilder implements QueryBuilderInterface
     {
         if(null === $this->query->getWithPart())
         {
-            $this->query->setWithPart(new \Codemitte\ForceToolkit\Soql\AST\WithPart(new \Codemitte\ForceToolkit\Soql\AST\LogicalGroup()));
+            $this->query->setWithPart(new AST\WithPart(new AST\LogicalGroup()));
         }
 
-        if($soql instanceof \Codemitte\ForceToolkit\Soql\AST\LogicalJunction)
+        if($soql instanceof AST\LogicalJunction)
         {
             $this->query->getWithPart()->getLogicalGroup()->add($soql);
         }
@@ -215,7 +215,7 @@ class QueryBuilder implements QueryBuilderInterface
 
     public function groupBy($soql)
     {
-        $this->query->setGroupPart(new \Codemitte\ForceToolkit\Soql\AST\GroupByExpression());
+        $this->query->setGroupPart(new AST\GroupByExpression());
 
         return $this->addGroupBy($soql);
     }
@@ -244,7 +244,7 @@ class QueryBuilder implements QueryBuilderInterface
     {
         if(null === $this->query->getGroupPart())
         {
-            $this->query->setGroupPart($g = new \Codemitte\ForceToolkit\Soql\AST\GroupByExpression());
+            $this->query->setGroupPart($g = new AST\GroupByExpression());
         }
         $this->query->getGroupPart()->setIsCube($groupByCube);
 
@@ -259,7 +259,7 @@ class QueryBuilder implements QueryBuilderInterface
     {
         if(null === $this->query->getGroupPart())
         {
-            $this->query->setGroupPart($g = new \Codemitte\ForceToolkit\Soql\AST\GroupByExpression());
+            $this->query->setGroupPart($g = new AST\GroupByExpression());
         }
         $this->query->getGroupPart()->setIsRollup($groupByRollup);
 
@@ -303,7 +303,7 @@ class QueryBuilder implements QueryBuilderInterface
      */
     public function orderBy($soql, $dir = null, $nulls = null)
     {
-        $this->query->setOrderPart(new \Codemitte\ForceToolkit\Soql\AST\OrderPart());
+        $this->query->setOrderPart(new AST\OrderPart());
 
         return $this->addOrderBy($soql, $dir, $nulls);
     }
@@ -330,7 +330,7 @@ class QueryBuilder implements QueryBuilderInterface
             {
                 if(null !== $dir)
                 {
-                    /** @var $orderByField \Codemitte\ForceToolkit\Soql\AST\OrderByField */
+                    /** @var $orderByField AST\OrderByField */
                     $orderByField->setDirection(strtoupper($dir));
                 }
 
@@ -459,7 +459,7 @@ class QueryBuilder implements QueryBuilderInterface
      */
     public function count(array $parameters = array())
     {
-        $this->query->setSelectPart(new \Codemitte\ForceToolkit\Soql\AST\SelectPart());
+        $this->query->setSelectPart(new AST\SelectPart());
 
         $this->addSelect('COUNT()');
 
