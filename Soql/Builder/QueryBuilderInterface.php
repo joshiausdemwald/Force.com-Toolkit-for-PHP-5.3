@@ -1,7 +1,8 @@
 <?php
 namespace Codemitte\ForceToolkit\Soql\Builder;
 
-use \Codemitte\ForceToolkit\Soql\AST;
+use
+    \Codemitte\ForceToolkit\Soql\AST;
 
 interface QueryBuilderInterface
 {
@@ -52,50 +53,6 @@ interface QueryBuilderInterface
 
     /**
      * @param LogicalJunction|string $soql
-     * @param array $parameters
-     * @return QueryBuilder
-     */
-    public function whereNot($soql, array $parameters = array());
-
-    /**
-     * @param $soql
-     * @param array $parameters
-     * @return QueryBuilder
-     */
-    public function andWhere($soql, array $parameters = array());
-
-    /**
-     * @param $soql
-     * @param array $parameters
-     * @return QueryBuilder
-     */
-    public function andWhereNot($soql, array $parameters = array());
-
-    /**
-     * @param $soql
-     * @param array $parameters
-     * @return QueryBuilder
-     */
-    public function orWhere($soql, array $parameters = array());
-
-    /**
-     * @param $soql
-     * @param array $parameters
-     * @return QueryBuilder
-     */
-    public function orWhereNot($soql, array $parameters = array());
-
-    /**
-     * @param LogicalJunction|string $soql
-     * @param string $operator
-     * @param bool $isNot
-     * @param array $parameters
-     * @return QueryBuilder
-     */
-    public function addWhere($soql, $operator = null, $isNot = false, array $parameters = array());
-
-    /**
-     * @param LogicalJunction|string $soql
      * @return QueryBuilder
      */
     public function withDataCategory($soql);
@@ -136,44 +93,6 @@ interface QueryBuilderInterface
      * @return QueryBuilder
      */
     public function having($soql);
-
-    /**
-     * @param LogicalJunction|$soql
-     * @return QueryBuilder
-     */
-    public function havingNot($soql);
-
-    /**
-     * @param string $soql
-     * @return QueryBuilder
-     */
-    public function andHaving($soql);
-
-    /**
-     * @param string $soql
-     * @return QueryBuilder
-     */
-    public function orHaving($soql);
-
-    /**
-     * @param string $soql
-     * @return QueryBuilder
-     */
-    public function andHavingNot($soql);
-
-    /**
-     * @param string $soql
-     * @return QueryBuilder
-     */
-    public function orHavingNot($soql);
-
-    /**
-     * @param \Codemitte\ForceToolkit\Soql\AST\LogicalJunction|string $soql
-     * @param null $operator
-     * @param bool $isNot
-     * @return QueryBuilder
-     */
-    public function addHaving($soql, $operator = null, $isNot = false);
 
     /**
      * @param $soql
@@ -254,4 +173,21 @@ interface QueryBuilderInterface
      * @return int
      */
     public function count(array $parameters = array());
+
+    /**
+     * @return ExpressionBuilderInterface
+     */
+    public function whereExpr();
+
+    /**
+     * @return ExpressionBuilderInterface
+     */
+    public function havingExpr();
+
+    /**
+     * @param int $context: One of the ExpressionBuilderInterface::CONTEXT_* constants
+     * @return ExpressionBuilderInterface
+     */
+    public function newExpr($context);
+
 }

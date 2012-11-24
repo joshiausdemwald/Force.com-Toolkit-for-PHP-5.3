@@ -97,5 +97,18 @@ interface ExpressionBuilderInterface
      * @return int $context: One of the CONTEXT_* constants
      */
     public function getContext();
+
+    /**
+     * @param int $context: One of the CONTEXT_* constants.
+     */
+    public function setContext($context);
+
+    /**
+     * Returns the built-up expression to inject in in any
+     * arbitrary query AST:
+     *
+     * @return \Codemitte\ForceToolkit\Soql\AST\LogicalGroup
+     */
+    public function getExpression();
 }
 

@@ -3,9 +3,9 @@ namespace Codemitte\ForceToolkit\Soql\Builder;
 
 use Codemitte\ForceToolkit\Soql\Parser\QueryParser;
 use Codemitte\ForceToolkit\Soql\Renderer\QueryRenderer;
-use Codemitte\ForceToolkit\Soql\AST\Query;
 use Codemitte\ForceToolkit\Soap\Client\APIInterface;
 use Codemitte\Soap\Mapping\GenericResultCollection;
+use Codemitte\ForceToolkit\Soql\AST;
 
 class QueryBuilder implements QueryBuilderInterface
 {
@@ -85,7 +85,7 @@ class QueryBuilder implements QueryBuilderInterface
      */
     public function select($soql)
     {
-        $this->query = new Query();
+        $this->query = new AST\Query();
 
         $this->parameters = array();
 
@@ -126,6 +126,7 @@ class QueryBuilder implements QueryBuilderInterface
     /**
      * @param \Codemitte\ForceToolkit\Soql\AST\LogicalConditionInterface|string $soql
      * @param array $parameters
+     * @throws \InvalidArgumentException
      * @return QueryBuilder
      */
     public function where($soql, array $parameters = array())
@@ -133,100 +134,29 @@ class QueryBuilder implements QueryBuilderInterface
         // STARTOVER ...
         $this->query->setWherePart(null);
 
-        return $this->addWhere($soql, null, false, $parameters);
-    }
-
-    /**
-     * @param \Codemitte\ForceToolkit\Soql\AST\LogicalConditionInterface|string $soql
-     * @param array $parameters
-     * @return QueryBuilder
-     */
-    public function whereNot($soql, array $parameters = array())
-    {
-        // STARTOVER ...
-        $this->query->setWherePart(null);
-
-        return $this->addWhere($soql, null, true, $parameters);
-    }
-
-    /**
-     * @param \Codemitte\ForceToolkit\Soql\AST\LogicalConditionInterface|string $soql
-     * @param array $parameters
-     * @return QueryBuilder
-     */
-    public function andWhere($soql, array $parameters = array())
-    {
-        return $this->addWhere($soql, \Codemitte\ForceToolkit\Soql\AST\LogicalJunction::OP_AND, false, $parameters);
-    }
-
-    /**
-     * @param \Codemitte\ForceToolkit\Soql\AST\LogicalConditionInterface|string $soql
-     * @param array $parameters
-     * @return QueryBuilder
-     */
-    public function andWhereNot($soql, array $parameters = array())
-    {
-        return $this->addWhere($soql, \Codemitte\ForceToolkit\Soql\AST\LogicalJunction::OP_AND, true, $parameters);
-    }
-
-    /**
-     * @param \Codemitte\ForceToolkit\Soql\AST\LogicalConditionInterface|string $soql
-     * @param array $parameters
-     * @return QueryBuilder
-     */
-    public function orWhere($soql, array $parameters = array())
-    {
-        return $this->addWhere($soql, \Codemitte\ForceToolkit\Soql\AST\LogicalJunction::OP_OR, false, $parameters);
-    }
-
-    /**
-     * @param \Codemitte\ForceToolkit\Soql\AST\LogicalConditionInterface|string $soql
-     * @param array $parameters
-     * @return QueryBuilder
-     */
-    public function orWhereNot($soql, array $parameters = array())
-    {
-        return $this->addWhere($soql, \Codemitte\ForceToolkit\Soql\AST\LogicalJunction::OP_OR, true, $parameters);
-    }
-
-    /**
-     * @param \Codemitte\ForceToolkit\Soql\AST\LogicalConditionInterface|string $soql
-     * @param string $operator
-     * @param bool $isNot
-     * @param array $parameters
-     * @return QueryBuilder
-     */
-    public function addWhere($soql, $operator = null, $isNot = false, array $parameters = array())
-    {
         $this->mergeParameters($parameters);
 
-        if(null === $this->query->getWherePart())
-        {
-            $this->query->setWherePart(
-                new \Codemitte\ForceToolkit\Soql\AST\WherePart(
-                    new \Codemitte\ForceToolkit\Soql\AST\LogicalGroup()));
-        }
-        elseif(null === $operator)
-        {
-            $operator = \Codemitte\ForceToolkit\Soql\AST\LogicalJunction::OP_AND;
-        }
+        $group = null;
 
-        $junction = new \Codemitte\ForceToolkit\Soql\AST\LogicalJunction();
-        $junction->setOperator($operator);
-        $junction->setIsNot($isNot);
-
-        if($soql instanceof \Codemitte\ForceToolkit\Soql\AST\LogicalConditionInterface)
+        if($soql instanceof ExpressionBuilderInterface)
         {
-            $junction->setCondition($soql);
+            $group = $soql->getExpression();
+        }
+        elseif($soql instanceof AST\LogicalGroup)
+        {
+            $group = $soql;
+        }
+        elseif(is_string($soql))
+        {
+            $group = new AST\LogicalGroup();
+            $group->addAll($this->parser->parseWhereSoql($soql));
         }
         else
         {
-            $group = new \Codemitte\ForceToolkit\Soql\AST\LogicalGroup();
-            $group->addAll($this->parser->parseWhereSoql($soql));
-            $junction->setCondition($group);
+            throw new \InvalidArgumentException(sprintf('Argument "$soql" must be string, instanceof ExpressionBuilderInterface or instanceof LogicalGroup, "%s" given.', gettype($soql)));
         }
 
-        $this->query->getWherePart()->getLogicalGroup()->add($junction);
+        $this->query->setWherePart(new WherePart($group));
 
         return $this;
     }
@@ -344,92 +274,23 @@ class QueryBuilder implements QueryBuilderInterface
     {
         $this->query->setHavingPart(null);
 
-        return $this->addHaving($soql, null, false);
-    }
+        $group = null;
 
-    /**
-     * @param LogicalJunction|$soql
-     * @return QueryBuilder
-     */
-    public function havingNot($soql)
-    {
-        $this->query->setHavingPart(null);
-
-        return $this->addHaving($soql, null, true);
-    }
-
-    /**
-     * @param string $soql
-     * @return QueryBuilder
-     */
-    public function andHaving($soql)
-    {
-        return $this->addHaving($soql, \Codemitte\ForceToolkit\Soql\AST\LogicalJunction::OP_AND, false);
-    }
-
-    /**
-     * @param string $soql
-     * @return QueryBuilder
-     */
-    public function andHavingNot($soql)
-    {
-        return $this->addHaving($soql, \Codemitte\ForceToolkit\Soql\AST\LogicalJunction::OP_AND, true);
-    }
-
-
-    /**
-     * @param string $soql
-     * @return QueryBuilder
-     */
-    public function orHaving($soql)
-    {
-        return $this->addHaving($soql, \Codemitte\ForceToolkit\Soql\AST\LogicalJunction::OP_OR, false);
-    }
-
-    /**
-     * @param string $soql
-     * @return QueryBuilder
-     */
-    public function orHavingNot($soql)
-    {
-        return $this->addHaving($soql, \Codemitte\ForceToolkit\Soql\AST\LogicalJunction::OP_OR, true);
-    }
-
-    /**
-     * @param \Codemitte\ForceToolkit\Soql\AST\LogicalJunction|string $soql
-     * @param null $operator
-     * @param bool $isNot
-     * @return QueryBuilder
-     */
-    public function addHaving($soql, $operator = null, $isNot = false)
-    {
-        if(null === $this->query->getHavingPart())
+        if($soql instanceof ExpressionBuilderInterface)
         {
-            $this->query->setHavingPart(
-                new \Codemitte\ForceToolkit\Soql\AST\HavingPart(
-                    new \Codemitte\ForceToolkit\Soql\AST\LogicalGroup()));
+            $group = $soql->getExpression();
         }
-        elseif(null === $operator)
+        elseif($soql instanceof AST\LogicalGroup)
         {
-            $operator = \Codemitte\ForceToolkit\Soql\AST\LogicalJunction::OP_AND;
+            $group = $soql;
+        }
+        elseif(is_string($soql))
+        {
+            $group = new AST\LogicalGroup();
+            $group->addAll($this->parser->parseWhereSoql($soql));
         }
 
-        $junction = new \Codemitte\ForceToolkit\Soql\AST\LogicalJunction();
-        $junction->setOperator($operator);
-        $junction->setIsNot($isNot);
-
-        if($soql instanceof \Codemitte\ForceToolkit\Soql\AST\LogicalConditionInterface)
-        {
-            $junction->setCondition($soql);
-        }
-        else
-        {
-            $group = new \Codemitte\ForceToolkit\Soql\AST\LogicalGroup();
-            $group->addAll($this->parser->parseHavingSoql($soql));
-            $junction->setCondition($group);
-        }
-
-        $this->query->getHavingPart()->getLogicalGroup()->add($junction);
+        $this->query->setHavingPart(new AST\HavingPart($group));
 
         return $this;
     }
@@ -617,6 +478,21 @@ class QueryBuilder implements QueryBuilderInterface
     private function mergeParameters(array $parameters)
     {
         $this->parameters = array_merge($this->parameters, $parameters);
+    }
+
+    public function whereExpr()
+    {
+        return $this->newExpr(ExpressionBuilderInterface::CONTEXT_WHERE);
+    }
+
+    public function havingExpr()
+    {
+        return $this->newExpr(ExpressionBuilderInterface::CONTEXT_HAVING);
+    }
+
+    public function newExpr($context)
+    {
+        return new ExpressionBuilder($this->parser, $context);
     }
 
     /**

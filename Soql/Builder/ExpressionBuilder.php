@@ -28,11 +28,11 @@ class ExpressionBuilder implements ExpressionBuilderInterface
      * @param \Codemitte\ForceToolkit\Soql\Parser\QueryParser $parser
      * @param int $context: One of the CONTEXT_* constants (CONTEXT_WHERE, CONTEXT_HAVING)
      */
-    public function __construct(QueryParser $parser, $context)
+    public function __construct(QueryParser $parser, $context = self::CONTEXT_WHERE)
     {
         $this->parser = $parser;
 
-        $this->context = $context;
+        $this->setContext($context);
     }
 
     /**
@@ -110,6 +110,27 @@ class ExpressionBuilder implements ExpressionBuilderInterface
     }
 
     /**
+     * @param int $context: One of the CONTEXT_* constants.
+     * @return void
+     */
+    public function setContext($context)
+    {
+        $this->context = $context;
+    }
+
+    /**
+     * @return AST\LogicalGroup
+     */
+    public function getExpression()
+    {
+        if(null === $this->expression)
+        {
+            $this->expression = new AST\LogicalGroup();
+        }
+        return $this->expression;
+    }
+
+    /**
      * @param string $left: Name, function() or AggregateFunction()
      * @param int $op
      * @param mixed $right: string|collection|subquery
@@ -134,18 +155,6 @@ class ExpressionBuilder implements ExpressionBuilderInterface
         }
 
         return $this;
-    }
-
-    /**
-     * @return AST\LogicalGroup
-     */
-    private function getExpression()
-    {
-        if(null === $this->expression)
-        {
-            $this->expression = new AST\LogicalGroup();
-        }
-        return $this->expression;
     }
 
     /**
