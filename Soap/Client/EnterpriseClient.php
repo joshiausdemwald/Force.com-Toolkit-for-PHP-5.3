@@ -50,7 +50,7 @@ final class EnterpriseClient extends API
      */
     public function getUri()
     {
-        return self::TNS;
+        return static::TNS;
     }
 
     /**

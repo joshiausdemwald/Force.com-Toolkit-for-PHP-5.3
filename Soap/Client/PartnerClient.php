@@ -52,7 +52,7 @@ final class PartnerClient extends API
      */
     public function getUri()
     {
-        return self::TNS;
+        return static::TNS;
     }
 
     /**

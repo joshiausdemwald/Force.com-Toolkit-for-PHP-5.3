@@ -225,7 +225,7 @@ class SfdcConnection extends Connection implements SfdcConnectionInterface
             'exceptions' => true,
             'compression' => SOAP_COMPRESSION_ACCEPT | SOAP_COMPRESSION_GZIP,
             'openssl_version' => self::OPENSSL_VERSION_0,
-            'keep_alive' => true,
+            // 'keep_alive' => true,
 
             // PREPARE STREAM CONTEXT OPTIONS:
             // Salesforce.com supports only the Secure Sockets Layer (SSL) protocol SSLv3 and the Transport Layer

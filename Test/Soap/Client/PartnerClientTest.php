@@ -297,7 +297,7 @@ class PartnerClientTest extends \PHPUnit_Framework_TestCase
     {
         $saveResponses = array();
 
-        for($j=0; $j<5; $j++)
+        for($j = 0; $j < 5; $j++)
         {
             $sobjects = array();
 
@@ -322,7 +322,8 @@ class PartnerClientTest extends \PHPUnit_Framework_TestCase
 
         $queryLocator = $queryResponse->get('result')->get('queryLocator');
 
-        $this->assertInstanceOf('Codemitte\ForceToolkit\Soap\Mapping\Type\QueryLocator', $queryLocator);
+        $this->assertInstanceOf('\Codemitte\ForceToolkit\Soap\Mapping\Type\QueryLocator', $queryLocator);
+        $this->assertGreaterThan(0, (string)$queryLocator);
 
         $queryResponse = self::$client->queryMore($queryLocator);
 
