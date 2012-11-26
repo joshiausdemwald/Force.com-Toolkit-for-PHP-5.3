@@ -14,22 +14,9 @@ use
 class PartnerClientTest extends \PHPUnit_Framework_TestCase
 {
     /**
-     * @var PartnerClient
+     * @return \Codemitte\ForceToolkit\Soap\Client\Connection\SfdcConnection
      */
-    private static $client;
-
-    /**
-     * @var SfdcConnection
-     */
-    private static $connection;
-
-    public static function setUpBeforeClass()
-    {
-        self::setUpConnection();
-        self::setUpClient();
-    }
-
-    private static function setUpConnection()
+    private static function getConnection()
     {
         $credentials = new login(SFDC_USERNAME, SFDC_PASSWORD);
 
@@ -37,28 +24,38 @@ class PartnerClientTest extends \PHPUnit_Framework_TestCase
 
         $serviceLocation = SFDC_SERVICE_LOCATION ? SFDC_SERVICE_LOCATION : null;
 
-        self::$connection = new SfdcConnection($credentials, $wsdl, $serviceLocation, array(), true);
+        $connection = new SfdcConnection($credentials, $wsdl, $serviceLocation, array(), true);
+
+        $connection->login();
+
+        return $connection;
     }
 
-    private static function setUpClient()
+    /**
+     * @return \Codemitte\ForceToolkit\Soap\Client\APIInterface
+     */
+    public static function getClient()
     {
-        self::$connection->login();
-
-        self::$client = new PartnerClient(self::$connection);
+        return new PartnerClient(self::getConnection());
     }
 
     public function testConnection()
     {
-        $this->assertTrue(self::$connection->isLoggedIn());
-        $this->assertTrue(self::$connection->getDebug());
-        $this->assertInstanceOf('\Codemitte\ForceToolkit\Soap\Mapping\Base\LoginResult', self::$connection->getLoginResult());
-        $this->assertInstanceOf('\Codemitte\ForceToolkit\Soap\Mapping\Base\login', self::$connection->getCredentials());
+        $connection = self::getConnection();
+
+        $this->assertTrue($connection->isLoggedIn());
+        $this->assertTrue($connection->getDebug());
+        $this->assertInstanceOf('\Codemitte\ForceToolkit\Soap\Mapping\Base\LoginResult', $connection->getLoginResult());
+        $this->assertInstanceOf('\Codemitte\ForceToolkit\Soap\Mapping\Base\login', $connection->getCredentials());
     }
 
     public function testConnectionInputHeaders()
     {
-        $headers = self::$connection->getSoapInputHeaders();
+        $client = self::getClient();
 
+        $headers = $client->getConnection()->getSoapInputHeaders();
+
+        $this->assertCount(2, $headers);
         $this->assertInstanceOf('\Codemitte\ForceToolkit\Soap\Header\SessionHeader', $headers[0]);
         $this->assertInstanceOf('\Codemitte\ForceToolkit\Soap\Header\CallOptions', $headers[1]);
 
@@ -67,21 +64,23 @@ class PartnerClientTest extends \PHPUnit_Framework_TestCase
 
     public function testLogout()
     {
-        self::$connection->logout();
+        $client = self::getClient();
 
-        $this->assertFalse(self::$connection->isLoggedIn());
-        $this->assertNull(self::$connection->getLoginResult());
-        $this->assertInstanceOf('\Codemitte\ForceToolkit\Soap\Mapping\Base\login', self::$connection->getCredentials());
+        $connection = $client->getConnection();
 
-        self::$connection->login();
+        $connection->logout();
 
-        self::$client = new PartnerClient(self::$connection);
+        $this->assertFalse($connection->isLoggedIn());
+        $this->assertNull($connection->getLoginResult());
+        $this->assertInstanceOf('\Codemitte\ForceToolkit\Soap\Mapping\Base\login', $connection->getCredentials());
     }
 
     public function testClient()
     {
-        $this->assertEquals('urn:partner.soap.sforce.com', self::$client->getUri());
-        $this->assertEquals('26.0', self::$client->getAPIVersion()); // hard coded, should match wsdl. @todo: refactor me.
+        $client = self::getClient();
+
+        $this->assertEquals('urn:partner.soap.sforce.com', $client->getUri());
+        $this->assertEquals('26.0', $client->getAPIVersion()); // hard coded, should match wsdl. @todo: refactor me.
     }
 
     public function testClientToAny()
@@ -93,7 +92,7 @@ class PartnerClientTest extends \PHPUnit_Framework_TestCase
 
         $target = new \stdClass();
 
-        self::$client->toAny($obj, $target);
+        self::getClient()->toAny($obj, $target);
 
         $this->assertNotEmpty($target->any);
 
@@ -102,6 +101,8 @@ class PartnerClientTest extends \PHPUnit_Framework_TestCase
 
     public function testClientFromSobject()
     {
+        $client = self::getClient();
+
         $sobject = new Sobject('Contact', array(
             'Salutation' => 'Mr',
             'Title' => null,
@@ -109,7 +110,7 @@ class PartnerClientTest extends \PHPUnit_Framework_TestCase
             'LastName' => 'Wurst'
         ));
 
-        $result = self::$client->fromSobject($sobject);
+        $result = $client->fromSobject($sobject);
 
         $this->assertInstanceOf('\stdClass', $result);
 
@@ -124,6 +125,8 @@ class PartnerClientTest extends \PHPUnit_Framework_TestCase
 
     public function testDML()
     {
+        $client = self::getClient();
+
         $sobject = new Sobject('Contact', array(
             'Salutation' => 'Mr',
             'Title' => null,
@@ -131,7 +134,7 @@ class PartnerClientTest extends \PHPUnit_Framework_TestCase
             'LastName' => 'Wurst'
         ));
 
-        $createResponse = self::$client->create($sobject);
+        $createResponse = $client->create($sobject);
 
         $this->assertInstanceOf('\Codemitte\Soap\Mapping\GenericResult', $createResponse);
         $this->assertNotEmpty(true, $createResponse->get('result'));
@@ -148,7 +151,7 @@ class PartnerClientTest extends \PHPUnit_Framework_TestCase
             'Title' => 'Graf'
         ));
 
-        $updateResponse = self::$client->update($sobject);
+        $updateResponse = $client->update($sobject);
 
         $this->assertInstanceOf('\Codemitte\Soap\Mapping\GenericResult', $updateResponse);
         $this->assertNotEmpty(true, $updateResponse->get('result'));
@@ -156,7 +159,7 @@ class PartnerClientTest extends \PHPUnit_Framework_TestCase
         $this->assertNotCount(0, $updateResponse->get('result'));
         $this->assertEquals(1, $updateResponse->get('result')->get(0)->get('success'));
 
-        $deleteResponse = self::$client->delete($createResponse->get('result')->get(0)->get('id'));
+        $deleteResponse = $client->delete($createResponse->get('result')->get(0)->get('id'));
 
         $this->assertInstanceOf('\Codemitte\Soap\Mapping\GenericResult', $deleteResponse);
         $this->assertNotEmpty(true, $deleteResponse->get('result'));
@@ -170,6 +173,8 @@ class PartnerClientTest extends \PHPUnit_Framework_TestCase
      */
     public function testReUpdateDML()
     {
+        $client = self::getClient();
+
         $sobject = new Sobject('Contact', array(
             'Salutation' => 'Mr',
             'Title' => null,
@@ -177,9 +182,9 @@ class PartnerClientTest extends \PHPUnit_Framework_TestCase
             'LastName' => 'Wurst'
         ));
 
-        $createResponse = self::$client->create($sobject);
+        $createResponse = $client->create($sobject);
 
-        $queryResponse = self::$client->query('SELECT Id, Salutation, Title, FirstName, LastName FROM Contact WHERE Id=\'' . $createResponse->get('result')->get(0)->get('id') . '\'');
+        $queryResponse = $client->query('SELECT Id, Salutation, Title, FirstName, LastName FROM Contact WHERE Id=\'' . $createResponse->get('result')->get(0)->get('id') . '\'');
 
         $this->assertInstanceOf('\Codemitte\ForceToolkit\Soap\Mapping\QueryResult', $queryResponse->result);
         $this->assertEquals(1, $queryResponse->result->getSize());
@@ -195,7 +200,7 @@ class PartnerClientTest extends \PHPUnit_Framework_TestCase
 
         try
         {
-            $updateResponse = self::$client->update($toUpdate);
+            $updateResponse = $client->update($toUpdate);
         }
         catch(\Exception $e)
         {
@@ -217,7 +222,7 @@ class PartnerClientTest extends \PHPUnit_Framework_TestCase
         $exThrown = null;
         try
         {
-            self::$client->create($sobject);
+            self::getClient()->create($sobject);
         }
         catch(\Exception $e)
         {
@@ -229,7 +234,7 @@ class PartnerClientTest extends \PHPUnit_Framework_TestCase
 
     public function testDescribeSobject()
     {
-        $response = self::$client->describeSobject('Contact');
+        $response = self::getClient()->describeSobject('Contact');
 
         $this->assertNotEmpty($response);
         $this->assertInstanceOf('\Codemitte\Soap\Mapping\GenericResult', $response);
@@ -239,7 +244,7 @@ class PartnerClientTest extends \PHPUnit_Framework_TestCase
 
     public function testDescribeLayout()
     {
-        $response = self::$client->describeLayout('Contact');
+        $response = self::getClient()->describeLayout('Contact');
 
         $this->assertNotEmpty($response);
         $this->assertInstanceOf('\Codemitte\Soap\Mapping\GenericResult', $response);
@@ -249,6 +254,8 @@ class PartnerClientTest extends \PHPUnit_Framework_TestCase
 
     public function testQuery()
     {
+        $client = self::getClient();
+
         $sobject = new Sobject('Contact', array(
             'Salutation' => 'Mr',
             'Title' => null,
@@ -256,9 +263,9 @@ class PartnerClientTest extends \PHPUnit_Framework_TestCase
             'LastName' => 'Wurst'
         ));
 
-        $createResponse= self::$client->create($sobject);
+        $createResponse= $client->create($sobject);
 
-        $queryResponse = self::$client->query('SELECT Id, Salutation, Title, FirstName, LastName FROM Contact WHERE Id = \'' . $createResponse->get('result')->get(0)->get('id') . '\'');
+        $queryResponse = $client->query('SELECT Id, Salutation, Title, FirstName, LastName FROM Contact WHERE Id = \'' . $createResponse->get('result')->get(0)->get('id') . '\'');
 
         $this->assertNotEmpty($queryResponse);
         $this->assertInstanceOf('\Codemitte\Soap\Mapping\GenericResult', $queryResponse);
@@ -272,7 +279,7 @@ class PartnerClientTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('Hans', $queryResponse->get('result')->getRecords()->get(0)->get('FirstName'));
         $this->assertEquals('Wurst', $queryResponse->get('result')->getRecords()->get(0)->get('LastName'));
 
-        self::$client->delete($createResponse->get('result')->get(0)->get('id'));
+        $client->delete($createResponse->get('result')->get(0)->get('id'));
     }
 
     public function testQueryNegative()
@@ -281,7 +288,7 @@ class PartnerClientTest extends \PHPUnit_Framework_TestCase
 
         try
         {
-            self::$client->query('FROM Dingsda SELECT Nix');
+            self::getClient()->query('FROM Dingsda SELECT Nix');
         }
         catch(\Exception $e)
         {
@@ -295,6 +302,8 @@ class PartnerClientTest extends \PHPUnit_Framework_TestCase
 
     public function testQueryMore()
     {
+        $client = self::getClient();
+
         $saveResponses = array();
 
         for($j = 0; $j < 5; $j++)
@@ -310,14 +319,14 @@ class PartnerClientTest extends \PHPUnit_Framework_TestCase
                     'LastName' => 'Lastname_' . $j . $i
                 ));
             }
-            $saveResponses[] = self::$client->create($sobjects);
+            $saveResponses[] = $client->create($sobjects);
         }
 
-        $queryResponse = self::$client->query('SELECT Salutation, Title, FirstName, LastName FROM Contact', 750);
+        $queryResponse = $client->query('SELECT Salutation, Title, FirstName, LastName FROM Contact', 750);
 
         $this->assertNotEmpty($queryResponse->get('result'));
         $this->assertNotEmpty($queryResponse->get('result')->get('queryLocator'));
-        $this->assertNotEquals(1, $queryResponse->get('result')->get('done'));
+        $this->assertNotEquals(true, $queryResponse->get('result')->get('done'));
         $this->assertGreaterThan(750, $queryResponse->get('result')->get('size'));
 
         $queryLocator = $queryResponse->get('result')->get('queryLocator');
@@ -325,11 +334,11 @@ class PartnerClientTest extends \PHPUnit_Framework_TestCase
         $this->assertInstanceOf('\Codemitte\ForceToolkit\Soap\Mapping\Type\QueryLocator', $queryLocator);
         $this->assertGreaterThan(0, (string)$queryLocator);
 
-        $queryResponse = self::$client->queryMore($queryLocator);
+        $queryResponse = $client->queryMore($queryLocator);
 
         $this->assertNotEmpty($queryResponse->get('result'));
         $this->assertNotEmpty($queryResponse->get('result')->get('queryLocator'));
-        $this->assertNotEquals(1, $queryResponse->get('result')->get('done'));
+        $this->assertEquals(true, $queryResponse->get('result')->get('done'));
         $this->assertGreaterThan(750, $queryResponse->get('result')->get('size'));
 
         foreach($saveResponses AS $saveResponse)
@@ -340,12 +349,14 @@ class PartnerClientTest extends \PHPUnit_Framework_TestCase
             {
                 $ids[] = $res->get('id');
             }
-            self::$client->delete($ids);
+            $client->delete($ids);
         }
     }
 
     public function testQueryAll()
     {
+        $client = self::getClient();
+
         $sobject = new Sobject('Contact', array(
             'Salutation' => 'Mr',
             'Title' => null,
@@ -353,11 +364,11 @@ class PartnerClientTest extends \PHPUnit_Framework_TestCase
             'LastName' => 'Wurst'
         ));
 
-        $createResponse= self::$client->create($sobject);
+        $createResponse= $client->create($sobject);
 
-        self::$client->delete($createResponse->get('result')->get(0)->get('id'));
+        $client->delete($createResponse->get('result')->get(0)->get('id'));
 
-        $queryResponse = self::$client->queryAll('SELECT Id, Salutation, Title, FirstName, LastName FROM Contact WHERE Id = \'' . $createResponse->get('result')->get(0)->get('id') . '\'');
+        $queryResponse = $client->queryAll('SELECT Id, Salutation, Title, FirstName, LastName FROM Contact WHERE Id = \'' . $createResponse->get('result')->get(0)->get('id') . '\'');
 
         $this->assertNotEmpty($queryResponse);
         $this->assertInstanceOf('\Codemitte\Soap\Mapping\GenericResult', $queryResponse);
