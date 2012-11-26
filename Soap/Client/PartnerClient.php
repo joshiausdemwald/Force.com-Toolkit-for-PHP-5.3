@@ -66,8 +66,7 @@ final class PartnerClient extends API
         Header\DisableFeedTrackingHeader $disableFeedTrackingHeader = null,
         Header\AllOrNoneHeader $allOrNoneHeader = null,
         Header\EmailHeader $emailHeader = null
-    )
-    {
+    ) {
         $sobjects = is_array($d) ? $d : array($d);
 
         $data = array();
@@ -143,7 +142,11 @@ final class PartnerClient extends API
         {
             if($value !== null && $value !== '')
             {
-                if(is_scalar($value))
+                if('Id' === $key)
+                {
+                    $target->Id = (string)$value;
+                }
+                elseif(is_scalar($value))
                 {
                     $v = $value;
                     $anyStr .= <<<EOF
@@ -154,12 +157,6 @@ EOF;
                 elseif($value instanceof Sobject)
                 {
                     $target->$key = $this->fromSobject($value);
-                }
-
-                // REGARD RENEWED ID HANDLING ...
-                elseif($value instanceof ID)
-                {
-                    $target->Id = (string)$value;
                 }
 
                 // RELATED LIST?
