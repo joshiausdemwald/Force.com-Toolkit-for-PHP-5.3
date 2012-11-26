@@ -8,6 +8,9 @@ use
     Codemitte\ForceToolkit\Soap\Mapping\Sobject
 ;
 
+/**
+ * @group PartnerClient
+ */
 class PartnerClientTest extends \PHPUnit_Framework_TestCase
 {
     /**
@@ -160,6 +163,52 @@ class PartnerClientTest extends \PHPUnit_Framework_TestCase
         $this->assertInstanceOf('\Codemitte\Soap\Mapping\GenericResultCollection', $deleteResponse->get('result'));
         $this->assertNotCount(0, $deleteResponse->get('result'));
         $this->assertEquals(1, $deleteResponse->get('result')->get(0)->get('success'));
+    }
+
+    /**
+     * Tests insert, fetch, re-update (duplicate ID problem)
+     */
+    public function testReUpdateDML()
+    {
+        $sobject = new Sobject('Contact', array(
+            'Salutation' => 'Mr',
+            'Title' => null,
+            'FirstName' => 'Hans',
+            'LastName' => 'Wurst'
+        ));
+
+        $createResponse = self::$client->create($sobject);
+
+        $queryResponse = self::$client->query('SELECT Id, Salutation, Title, FirstName, LastName FROM Contact WHERE Id=\'' . $createResponse->get('result')->get(0)->get('id') . '\'');
+
+        $this->assertInstanceOf('\Codemitte\ForceToolkit\Soap\Mapping\QueryResult', $queryResponse->result);
+        $this->assertEquals(1, $queryResponse->result->getSize());
+        $toUpdate = $queryResponse->result->getRecords()->get(0);
+
+        $this->assertInstanceOf('\Codemitte\ForceToolkit\Soap\Mapping\Sobject', $toUpdate);
+
+        $toUpdate['FirstName'] = 'Updated firstname';
+
+        $exThrown = null;
+
+        $updateResult = null;
+
+        try
+        {
+            $updateResponse = self::$client->update($toUpdate);
+        }
+        catch(\Exception $e)
+        {
+            $exThrown = $e;
+        }
+
+        $this->assertNull($exThrown);
+
+        $this->assertNotNull($updateResponse);
+        $this->assertNotEmpty($updateResponse->result);
+        $this->assertCount(1, $updateResponse->result);
+        $this->assertEquals($toUpdate['Id'], $updateResponse->result[0]->id);
+        $this->assertEquals(1, $updateResponse->result[0]->success);
     }
 
     public function testCreateSobjectNegative()

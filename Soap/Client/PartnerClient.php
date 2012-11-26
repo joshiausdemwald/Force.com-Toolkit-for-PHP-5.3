@@ -100,7 +100,6 @@ final class PartnerClient extends API
         {
             $data[] = $this->fromSobject($sobject);
         }
-
         return parent::update($data, $assignmentRuleHeader, $mruHeader, $allowFieldTruncationHeader, $disableFeedTrackingHeader, $allOrNoneHeader, $emailHeader);
     }
 
@@ -113,6 +112,7 @@ final class PartnerClient extends API
     {
         $retVal = new \stdClass();
 
+        // "FLATTENS" duplicate ID attributes
         if(null !== $sobject->getId())
         {
             $retVal->Id = (string)$sobject->getId();
