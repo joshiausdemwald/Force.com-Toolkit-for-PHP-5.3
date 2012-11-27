@@ -300,7 +300,7 @@ class PartnerClientTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('MALFORMED_QUERY: unexpected token: FROM', $exThrown->getMessage());
     }
 
-    public function testQueryMore()
+    /*public function testQueryMore()
     {
         $client = self::getClient();
 
@@ -351,8 +351,9 @@ class PartnerClientTest extends \PHPUnit_Framework_TestCase
             }
             $client->delete($ids);
         }
-    }
+    }*/
 
+    /*
     public function testQueryAll()
     {
         $client = self::getClient();
@@ -381,6 +382,6 @@ class PartnerClientTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(null, $queryResponse->get('result')->getRecords()->get(0)->get('Title'));
         $this->assertEquals('Hans', $queryResponse->get('result')->getRecords()->get(0)->get('FirstName'));
         $this->assertEquals('Wurst', $queryResponse->get('result')->getRecords()->get(0)->get('LastName'));
-    }
+    }*/
 }
 

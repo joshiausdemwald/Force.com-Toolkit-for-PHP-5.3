@@ -203,37 +203,5 @@ class EnterpriseClientTest extends \PHPUnit_Framework_TestCase
         $this->assertInstanceOf('\Codemitte\Soap\Client\Connection\TracedSoapFault', $exThrown);
         $this->assertEquals('MALFORMED_QUERY: unexpected token: FROM', $exThrown->getMessage());
     }
-
-    public function testQueryAll()
-    {
-        $client = self::getClient();
-
-        $sobject = new Sobject('Contact', array(
-            'Salutation' => 'Mr',
-            'Title' => null,
-            'FirstName' => 'Hans',
-            'LastName' => 'Wurst'
-        ));
-
-        $createResponse= $client->create($sobject);
-
-        $client->delete($createResponse->get('result')->get(0)->get('id'));
-
-        $queryResponse = $client->queryAll('SELECT Id, Salutation, Title, FirstName, LastName FROM Contact WHERE Id = \'' . $createResponse->get('result')->get(0)->get('id') . '\'');
-
-        $this->assertNotEmpty($queryResponse);
-        $this->assertInstanceOf('\Codemitte\Soap\Mapping\GenericResult', $queryResponse);
-        $this->assertNotEmpty($queryResponse->get('result'));
-        // $this->assertInstanceOf('\Codemitte\ForceToolkit\Soap\Mapping\QueryResult', $queryResponse->get('result'));
-        $this->assertNotCount(0, $queryResponse->get('result')->getRecords());
-        $this->assertEquals(1, $queryResponse->get('result')->getSize());
-        $this->assertInstanceOf('\Codemitte\ForceToolkit\Soap\Mapping\SobjectInterface', $queryResponse->get('result')->getRecords()->get(0));
-        $this->assertEquals('Mr', $queryResponse->get('result')->getRecords()->get(0)->get('Salutation'));
-        $this->assertEquals(null, $queryResponse->get('result')->getRecords()->get(0)->get('Title'));
-        $this->assertEquals('Hans', $queryResponse->get('result')->getRecords()->get(0)->get('FirstName'));
-        $this->assertEquals('Wurst', $queryResponse->get('result')->getRecords()->get(0)->get('LastName'));
-
-
-    }
 }
 
