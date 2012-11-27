@@ -78,5 +78,43 @@ class ExpressionBuilderTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(NULL, $junctions[0]->getOperator());
         $this->assertEquals('OR', $junctions[1]->getOperator());
         $this->assertEquals('OR', $junctions[2]->getOperator());
+        $conditions = array(
+            $junctions[0]->getCondition(),
+            $junctions[1]->getCondition(),
+            $junctions[2]->getCondition(),
+        );
+        $this->assertInstanceOf('\Codemitte\ForceToolkit\Soql\AST\LogicalCondition', $conditions[0]);
+        $this->assertInstanceOf('\Codemitte\ForceToolkit\Soql\AST\LogicalCondition', $conditions[1]);
+        $this->assertInstanceOf('\Codemitte\ForceToolkit\Soql\AST\LogicalGroup', $conditions[2]);
+        $this->assertInstanceOf('\Codemitte\ForceToolkit\Soql\AST\SoqlExpression', $conditions[0]->getLeft());
+        $this->assertInstanceOf('\Codemitte\ForceToolkit\Soql\AST\SoqlExpression', $conditions[1]->getLeft());
+        $this->assertEquals('Salutation', (string)$conditions[0]->getLeft());
+        $this->assertEquals('Salutation', (string)$conditions[1]->getLeft());
+        $this->assertEquals("NULL", (string)$conditions[0]->getRight());
+        $this->assertEquals("'Mr.'", (string)$conditions[1]->getRight());
+        $this->assertEquals('!=', $conditions[0]->getOperator());
+        $this->assertEquals('=', $conditions[1]->getOperator());
+
+        $junctions = $conditions[2]->getJunctions();
+
+        $this->assertCount(2, $junctions);
+        $this->assertInstanceOf('\Codemitte\ForceToolkit\Soql\AST\LogicalJunction', $junctions[0]);
+        $this->assertInstanceOf('\Codemitte\ForceToolkit\Soql\AST\LogicalJunction', $junctions[1]);
+        $this->assertFalse($junctions[0]->getIsNot());
+        $this->assertFalse($junctions[1]->getIsNot());
+        $this->assertEquals(NULL, $junctions[0]->getOperator());
+        $this->assertEquals('AND', $junctions[1]->getOperator());
+        $conditions = array(
+            $junctions[0]->getCondition(),
+            $junctions[1]->getCondition(),
+        );
+        $this->assertInstanceOf('\Codemitte\ForceToolkit\Soql\AST\LogicalCondition', $conditions[0]);
+        $this->assertInstanceOf('\Codemitte\ForceToolkit\Soql\AST\LogicalCondition', $conditions[1]);
+        $this->assertInstanceOf('\Codemitte\ForceToolkit\Soql\AST\SoqlExpression', $conditions[0]->getLeft());
+        $this->assertInstanceOf('\Codemitte\ForceToolkit\Soql\AST\SoqlExpression', $conditions[1]->getLeft());
+        $this->assertEquals('SampleMultiPicklist__c', (string)$conditions[0]->getLeft());
+        $this->assertEquals('AccountId', (string)$conditions[1]->getLeft());
+        $this->assertEquals("('wert1', 'wert2', 'wert3')", (string)$conditions[0]->getRight());
+        $this->assertInstanceOf('\Codemitte\ForceToolkit\Soql\AST\Subquery', $conditions[1]->getRight());
     }
 }
