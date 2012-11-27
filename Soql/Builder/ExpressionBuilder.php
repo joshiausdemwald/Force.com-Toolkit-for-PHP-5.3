@@ -132,27 +132,39 @@ class ExpressionBuilder implements ExpressionBuilderInterface
 
     /**
      * @param string $left: Name, function() or AggregateFunction()
-     * @param int $op
+     * @param int $comparison: =, >, <, "LIKE", [...]
      * @param mixed $right: string|collection|subquery
-     * @param string|null $junction; NULL|"AND"|"OR"
+     * @param null $logical: NULL, 'AND', 'OR'
      * @param bool $not
+     * @throws \InvalidArgumentException
      * @return ExpressionBuilderInterface
      */
-    private function buildExpression($left, $op = null, $right = null, $junction = null, $not = false)
+    private function buildExpression($left, $comparison = null, $right = null, $logical = null, $not = false)
     {
-        $expression = $this->getExpression();
+        $junction = null;
 
         // NESTED EXPRESSION
         if($left instanceof ExpressionBuilderInterface)
         {
-            $expression->add(new AST\LogicalJunction($not, $junction, $left->getExpression()));
+            $junction = new AST\LogicalJunction($not, $logical, $left->getExpression());
         }
 
         // NAME
+        elseif(is_string($left))
+        {
+            $junction = new AST\LogicalJunction($not, $logical, new AST\LogicalCondition(
+                $this->buildLeftExpression($left),
+                $comparison,
+                $this->buildRightExpression($right)
+            ));
+        }
+
         else
         {
-            $expression->add(new AST\LogicalJunction($not, $junction, new AST\LogicalCondition($this->buildLeftExpression($left), $op, $this->buildRightExpression($right))));
+            throw new \InvalidArgumentException('Argument "$left" must be of type "string" or "%s", "%s" given.', __CLASS__, gettype($left));
         }
+
+        $this->getExpression()->add($junction);
 
         return $this;
     }

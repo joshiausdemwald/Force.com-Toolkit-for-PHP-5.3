@@ -15,18 +15,68 @@ class ExpressionBuilderTest extends \PHPUnit_Framework_TestCase
     public function testBuilder()
     {
         $parser = new QueryParser(new Tokenizer());
+
         $builder = new ExpressionBuilder($parser, ExpressionBuilder::CONTEXT_WHERE);
+        $builder2 = new ExpressionBuilder($parser, ExpressionBuilder::CONTEXT_WHERE);
+        $builder3 = new ExpressionBuilder($parser, ExpressionBuilder::CONTEXT_WHERE);
 
         $builder
         ->xpr('FirstName', ExpressionBuilder::OP_EQ, "'hanswurst'")
-        ->andXpr('LastName', ExpressionBuilder::OP_LIKE, "'Meier%'")
-        ->andXpr($builder
+        ->andNotXpr('LastName', ExpressionBuilder::OP_LIKE, "'Meier%'")
+        ->andXpr($builder2
             ->xpr('Salutation', ExpressionBuilder::OP_NEQ, 'NULL')
             ->orXpr('Salutation', ExpressionBuilder::OP_EQ, "'Mr.'")
-            ->orXpr($builder
+            ->orXpr($builder3
                 ->xpr('SampleMultiPicklist__c', ExpressionBuilder::OP_INCLUDES, "('wert1', 'wert2', 'wert3')")
                 ->andXpr('AccountId', ExpressionBuilder::OP_IN, '(SELECT Id FROM Account LIMIT 5)')
             )
         );
+
+        /** @var $expression \Codemitte\ForceToolkit\Soql\AST\LogicalGroup */
+        $expression = $builder->getExpression();
+
+        $this->assertInstanceOf('\Codemitte\ForceToolkit\Soql\AST\LogicalGroup', $expression);
+
+        $junctions = $expression->getJunctions();
+        $this->assertCount(3, $junctions);
+        $this->assertInstanceOf('\Codemitte\ForceToolkit\Soql\AST\LogicalJunction', $junctions[0]);
+        $this->assertInstanceOf('\Codemitte\ForceToolkit\Soql\AST\LogicalJunction', $junctions[1]);
+        $this->assertInstanceOf('\Codemitte\ForceToolkit\Soql\AST\LogicalJunction', $junctions[2]);
+        $this->assertFalse($junctions[0]->getIsNot());
+        $this->assertTrue($junctions[1]->getIsNot());
+        $this->assertFalse($junctions[2]->getIsNot());
+        $this->assertEquals(NULL, $junctions[0]->getOperator());
+        $this->assertEquals('AND', $junctions[1]->getOperator());
+        $this->assertEquals('AND', $junctions[2]->getOperator());
+        $conditions = array(
+            $junctions[0]->getCondition(),
+            $junctions[1]->getCondition(),
+            $junctions[2]->getCondition(),
+        );
+
+        $this->assertInstanceOf('\Codemitte\ForceToolkit\Soql\AST\LogicalCondition', $conditions[0]);
+        $this->assertInstanceOf('\Codemitte\ForceToolkit\Soql\AST\LogicalCondition', $conditions[1]);
+        $this->assertInstanceOf('\Codemitte\ForceToolkit\Soql\AST\LogicalGroup', $conditions[2]);
+        $this->assertInstanceOf('\Codemitte\ForceToolkit\Soql\AST\SoqlExpression', $conditions[0]->getLeft());
+        $this->assertInstanceOf('\Codemitte\ForceToolkit\Soql\AST\SoqlExpression', $conditions[1]->getLeft());
+        $this->assertEquals('FirstName', (string)$conditions[0]->getLeft());
+        $this->assertEquals('LastName', (string)$conditions[1]->getLeft());
+        $this->assertEquals("'hanswurst'", (string)$conditions[0]->getRight());
+        $this->assertEquals("'Meier%'", (string)$conditions[1]->getRight());
+        $this->assertEquals('=', $conditions[0]->getOperator());
+        $this->assertEquals('LIKE', $conditions[1]->getOperator());
+
+        // SUB-GROUP
+        $junctions = $conditions[2]->getJunctions();
+        $this->assertCount(3, $junctions);
+        $this->assertInstanceOf('\Codemitte\ForceToolkit\Soql\AST\LogicalJunction', $junctions[0]);
+        $this->assertInstanceOf('\Codemitte\ForceToolkit\Soql\AST\LogicalJunction', $junctions[1]);
+        $this->assertInstanceOf('\Codemitte\ForceToolkit\Soql\AST\LogicalJunction', $junctions[2]);
+        $this->assertFalse($junctions[0]->getIsNot());
+        $this->assertFalse($junctions[1]->getIsNot());
+        $this->assertFalse($junctions[2]->getIsNot());
+        $this->assertEquals(NULL, $junctions[0]->getOperator());
+        $this->assertEquals('OR', $junctions[1]->getOperator());
+        $this->assertEquals('OR', $junctions[2]->getOperator());
     }
 }
