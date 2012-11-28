@@ -300,7 +300,7 @@ class PartnerClientTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('MALFORMED_QUERY: unexpected token: FROM', $exThrown->getMessage());
     }
 
-    /*public function testQueryMore()
+    public function testQueryMore()
     {
         $client = self::getClient();
 
@@ -326,7 +326,7 @@ class PartnerClientTest extends \PHPUnit_Framework_TestCase
 
         $this->assertNotEmpty($queryResponse->get('result'));
         $this->assertNotEmpty($queryResponse->get('result')->get('queryLocator'));
-        $this->assertNotEquals(true, $queryResponse->get('result')->get('done'));
+        $this->assertFalse($queryResponse->get('result')->get('done'));
         $this->assertGreaterThan(750, $queryResponse->get('result')->get('size'));
 
         $queryLocator = $queryResponse->get('result')->get('queryLocator');
@@ -338,7 +338,7 @@ class PartnerClientTest extends \PHPUnit_Framework_TestCase
 
         $this->assertNotEmpty($queryResponse->get('result'));
         $this->assertNotEmpty($queryResponse->get('result')->get('queryLocator'));
-        $this->assertEquals(true, $queryResponse->get('result')->get('done'));
+        $this->assertTrue($queryResponse->get('result')->get('done'));
         $this->assertGreaterThan(750, $queryResponse->get('result')->get('size'));
 
         foreach($saveResponses AS $saveResponse)
@@ -351,9 +351,8 @@ class PartnerClientTest extends \PHPUnit_Framework_TestCase
             }
             $client->delete($ids);
         }
-    }*/
+    }
 
-    /*
     public function testQueryAll()
     {
         $client = self::getClient();
@@ -382,6 +381,6 @@ class PartnerClientTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(null, $queryResponse->get('result')->getRecords()->get(0)->get('Title'));
         $this->assertEquals('Hans', $queryResponse->get('result')->getRecords()->get(0)->get('FirstName'));
         $this->assertEquals('Wurst', $queryResponse->get('result')->getRecords()->get(0)->get('LastName'));
-    }*/
+    }
 }
 

@@ -75,6 +75,8 @@ use
  * @copyright 2012 code mitte GmbH, Cologne, Germany
  * @package Sfdc
  * @subpackage Soql
+ *
+ * @todo: Regard "typeof", new Salesforce API 26.0 beta feature
  */
 class QueryParser implements QueryParserInterface
 {
