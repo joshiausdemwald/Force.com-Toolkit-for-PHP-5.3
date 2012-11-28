@@ -214,6 +214,9 @@ class PartnerClientTest extends \PHPUnit_Framework_TestCase
         $this->assertCount(1, $updateResponse->result);
         $this->assertEquals($toUpdate['Id'], $updateResponse->result[0]->id);
         $this->assertEquals(1, $updateResponse->result[0]->success);
+
+        // CLEANUP
+        $this->getClient()->delete($createResponse->get('result')->get(0)->get('id'));
     }
 
     public function testCreateSobjectNegative()
