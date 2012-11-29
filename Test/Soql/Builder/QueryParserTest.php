@@ -102,5 +102,10 @@ class QueryParserTest extends \PHPUnit_Framework_TestCase
 
         $this->assertEquals($soql, 'SELECT fielda, fieldb, TYPEOF field1 WHEN type1 THEN field1 END, fieldc, fieldd FROM dings');
 
+        $soql = $builder
+            ->prepareStatement('SELECT fielda, fieldb, TYPEOF field1 WHEN type1 THEN field1 END, TYPEOF f1 WHEN t1 THEN f2 END, fieldc, fieldd FROM dings')
+            ->getSoql();
+
+        $this->assertEquals($soql, 'SELECT fielda, fieldb, TYPEOF field1 WHEN type1 THEN field1 END, TYPEOF f1 WHEN t1 THEN f2 END, fieldc, fieldd FROM dings');
     }
 }
