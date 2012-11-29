@@ -73,4 +73,34 @@ class QueryParserTest extends \PHPUnit_Framework_TestCase
             ->fetch();
 
     }
+
+    public function testTypeofSelectClause()
+    {
+        $builder = $this->newBuilder();
+
+        $soql = $builder
+            ->prepareStatement('SELECT TYPEOF object1 WHEN type1 THEN field1 END FROM dings')
+            ->getSoql();
+
+        $this->assertEquals($soql, 'SELECT TYPEOF object1 WHEN type1 THEN field1 END FROM dings');
+
+        $soql = $builder
+            ->prepareStatement('SELECT name, TYPEOF object1 WHEN type1 THEN field1 END FROM dings')
+            ->getSoql();
+
+        $this->assertEquals($soql, 'SELECT name, TYPEOF object1 WHEN type1 THEN field1 END FROM dings');
+
+        $soql = $builder
+            ->prepareStatement('SELECT TYPEOF field1 WHEN type1 THEN field1 END, field2 FROM dings')
+            ->getSoql();
+
+        $this->assertEquals($soql, 'SELECT TYPEOF field1 WHEN type1 THEN field1 END, field2 FROM dings');
+
+        $soql = $builder
+            ->prepareStatement('SELECT fielda, fieldb, TYPEOF field1 WHEN type1 THEN field1 END, fieldc, fieldd FROM dings')
+            ->getSoql();
+
+        $this->assertEquals($soql, 'SELECT fielda, fieldb, TYPEOF field1 WHEN type1 THEN field1 END, fieldc, fieldd FROM dings');
+
+    }
 }

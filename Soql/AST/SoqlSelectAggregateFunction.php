@@ -1,7 +1,7 @@
 <?php
 namespace Codemitte\ForceToolkit\Soql\AST;
 
-class SoqlSelectAggregateFunction extends SoqlAggregateFunction implements SelectableInterface
+class SoqlSelectAggregateFunction extends SoqlAggregateFunction implements SelectableFieldInterface
 {
     protected $alias;
 

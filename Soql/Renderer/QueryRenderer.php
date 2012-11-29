@@ -93,16 +93,71 @@ class QueryRenderer
     {
         $retVal = null;
 
-        if($selectField instanceof AST\Subquery)
+        // SUBQUERIES; FUNCTIONS/AGGREGATES; SUBQUERS (EVERYTHING HAVING AN ALIAS)
+        if($selectField instanceof AST\SelectableFieldInterface)
         {
-            $retVal = '(' . $this->renderQuery($selectField->getQuery()) . ')';
-        }
-        else
-        {
-            $retVal = $selectField->getName();
+            if($selectField instanceof AST\Subquery)
+            {
+                $retVal = '(' . $this->renderQuery($selectField->getQuery()) . ')';
+            }
+            else
+            {
+                $retVal = $selectField->getName();
+            }
+
+            return $retVal . $this->renderAlias($selectField->getAlias());
         }
 
-        return $retVal . $this->renderAlias($selectField->getAlias());
+        // TYPEOF SelectPart
+        elseif($selectField instanceof AST\SelectableInterface)
+        {
+            if($selectField instanceof AST\TypeofSelectPart)
+            {
+                return $this->renderTypeofSelectPart($selectField);
+            }
+        }
+    }
+
+    /**
+     * @param \Codemitte\ForceToolkit\Soql\AST\TypeofSelectPart $typeofSelectPart
+     * @return string
+     */
+    private function renderTypeofSelectPart(AST\TypeofSelectPart $typeofSelectPart)
+    {
+        $retVal = 'TYPEOF ' . $typeofSelectPart->getSobjectType();
+
+        /** @var $condition AST\TypeofCondition */
+        foreach($typeofSelectPart->getConditions() AS $condition)
+        {
+            $retVal .= ' WHEN ' . $condition->getSobjectType() . ' THEN ';
+
+            $fields = array();
+
+            foreach($condition->getSelectPart()->getSelectFields() AS $selectField)
+            {
+                $fields[] = $this->renderSelectField($selectField);
+            }
+
+            $retVal .= implode(', ', $fields);
+        }
+
+        $else = $typeofSelectPart->getElse();
+
+        if(null !== $else)
+        {
+            $retVal .= ' ELSE ';
+
+            $fields = array();
+
+            foreach($typeofSelectPart->getElse()->getSelectFields() AS $selectField)
+            {
+                $fields[] = $this->renderSelectField($selectField);
+            }
+
+            $retVal .= implode(', ', $fields);
+        }
+
+        return $retVal . ' END';
     }
 
     /**

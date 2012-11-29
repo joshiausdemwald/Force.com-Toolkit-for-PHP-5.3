@@ -116,7 +116,14 @@ class Tokenizer implements TokenizerInterface
         'ASC',
         'NULLS',
         'FIRST',
-        'LAST'
+        'LAST',
+
+        // SOQL/WINTER `13 FEATUREs
+        'TYPEOF',
+        'WHEN',
+        'THEN',
+        'ELSE',
+        'END'
     );
 
     /**

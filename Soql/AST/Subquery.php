@@ -26,6 +26,6 @@ class Subquery extends AbstractSelectable implements ComparableInterface
 
     public function __toString()
     {
-        return null;
+        return '';
     }
 }

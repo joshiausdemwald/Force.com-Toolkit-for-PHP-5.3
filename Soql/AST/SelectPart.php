@@ -9,11 +9,11 @@ class SelectPart
     private $selectFields;
 
     /**
-     *
+     * @param array $selectFields
      */
-    public function __construct()
+    public function __construct(array $selectFields = array())
     {
-        $this->selectFields = array();
+        $this->addSelectFields($selectFields);
     }
 
     /**

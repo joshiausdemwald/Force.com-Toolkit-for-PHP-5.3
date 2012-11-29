@@ -1,12 +1,13 @@
 <?php
 namespace Codemitte\ForceToolkit\Soql\AST;
 
-abstract class AbstractSelectable implements SelectableInterface
+abstract class AbstractSelectable implements SelectableFieldInterface
 {
     protected $alias;
 
     /**
      * @param Alias $alias
+     * @return void
      */
     public function setAlias(Alias $alias)
     {
