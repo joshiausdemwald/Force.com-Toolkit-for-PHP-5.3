@@ -29,7 +29,16 @@ class Factory
                 $retVal = new Aggregate\Avg($arguments);
                 break;
             case 'COUNT':
-                $retVal = new Aggregate\Cnt($arguments);
+                // SONDERLOCKE
+                if($context === SoqlFunctionInterface::CONTEXT_SELECT && 0 === count($arguments))
+                {
+                    $retVal = new Count();
+                }
+                else
+                {
+                    $retVal = new Aggregate\Cnt($arguments);
+
+                }
                 break;
             case 'COUNT_DISTINCT':
                 $retVal = new Aggregate\CntDistinct($arguments);

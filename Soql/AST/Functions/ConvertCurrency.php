@@ -10,6 +10,8 @@ namespace Codemitte\ForceToolkit\Soql\AST\Functions;
  */
 class ConvertCurrency extends SoqlFunction
 {
+    protected $name = 'convertCurrency';
+
     /**
      * @return int: Bitmask calculated out of one or more of
      *              the CONTEXT_* interface constants.

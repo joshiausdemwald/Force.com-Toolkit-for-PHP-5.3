@@ -3,6 +3,8 @@ namespace Codemitte\ForceToolkit\Soql\AST\Functions;
 
 class Count extends SoqlFunction
 {
+    protected $name = 'COUNT';
+
     /**
      * @return int: Bitmask calculated out of one or more of
      *              the CONTEXT_* interface constants.

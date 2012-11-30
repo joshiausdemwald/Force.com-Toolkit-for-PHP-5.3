@@ -3,6 +3,8 @@ namespace Codemitte\ForceToolkit\Soql\AST\Functions;
 
 class Geolocation extends SoqlFunction
 {
+    protected $name = 'GEOLOCATION';
+
     /**
      * @return int: Bitmask calculated out of one or more of
      *              the CONTEXT_* interface constants.

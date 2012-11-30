@@ -27,6 +27,8 @@ abstract class SoqlFunction implements SoqlFunctionInterface
     public function setArguments(array $arguments)
     {
         $this->arguments = $arguments;
+
+        $this->validateArguments();
     }
 
     /**
@@ -35,14 +37,6 @@ abstract class SoqlFunction implements SoqlFunctionInterface
     public function getArguments()
     {
         return $this->arguments;
-    }
-
-    /**
-     * @param $argument
-     */
-    public function addArgument($argument)
-    {
-        $this->arguments[] = $argument;
     }
 
     /**
@@ -61,5 +55,42 @@ abstract class SoqlFunction implements SoqlFunctionInterface
     public function getNumArguments()
     {
         return count($this->getAllowedArguments());
+    }
+
+    private function validateArguments()
+    {
+        $arguments = $this->getArguments();
+
+        $currentCount = count($arguments);
+
+        $requiredCount = $this->getNumArguments();
+
+        if($currentCount < $requiredCount)
+        {
+            throw new \InvalidArgumentException(sprintf('Missing argument(s) for function "%s": %d provided, %d required', $this->getName(), $currentCount, $requiredCount));
+        }
+        elseif ($currentCount > $requiredCount)
+        {
+            throw new \InvalidArgumentException(sprintf('Too many arguments provided for function "%s": %d required, %d given.', $this->getName(), $requiredCount, $currentCount));
+        }
+
+        $allowedArguments = $this->getAllowedArguments();
+
+        foreach($arguments AS $i => $argument)
+        {
+            $definition = $allowedArguments[$i];
+
+            if( ! is_array($definition))
+            {
+                $definition = array($definition);
+            }
+
+            $clazz = get_class($argument);
+
+            if( ! in_array($clazz, $definition))
+            {
+                throw new \InvalidArgumentException(sprintf('Argument %d must be one of type "%s", "%s" given.', $i, implode('", "', $definition), $clazz));
+            }
+        }
     }
 }

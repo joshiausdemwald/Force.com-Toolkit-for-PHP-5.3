@@ -34,11 +34,6 @@ interface SoqlFunctionInterface
     public function getArguments();
 
     /**
-     * @param $argument
-     */
-    public function addArgument($argument);
-
-    /**
      * @return string
      */
     public function getName();

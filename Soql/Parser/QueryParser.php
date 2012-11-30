@@ -983,6 +983,9 @@ class QueryParser implements QueryParserInterface
 
             if($this->tokenizer->is(TokenType::COMMA))
             {
+                // ADVANCE TO NEXT ARGUMENT, OR CLOSING PARENTHESIS
+                $this->tokenizer->readNextToken();
+
                 continue;
             }
             break;

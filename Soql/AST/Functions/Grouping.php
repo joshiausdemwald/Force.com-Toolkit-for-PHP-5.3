@@ -3,6 +3,7 @@ namespace Codemitte\ForceToolkit\Soql\AST\Functions;
 
 class Grouping extends SoqlFunction
 {
+    protected $name = 'GROUPING';
 
     /**
      * @return int: Bitmask calculated out of one or more of
