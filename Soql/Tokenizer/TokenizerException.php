@@ -17,7 +17,7 @@ class TokenizerException extends \Exception
      * @internal param int $line
      * @internal param \Exception $pos
      */
-    public function __construct($message, $soqlLineNo, $soqlLinePos, $input)
+    public function __construct($message, $soqlLineNo, $soqlLinePos, $input, \Exception $previousException = null)
     {
         $this->input = $input;
 
@@ -25,7 +25,7 @@ class TokenizerException extends \Exception
 
         $this->soqlLinePos  = $soqlLinePos;
 
-        parent::__construct(rtrim($message, ' .;:!') . ' near line ' . $soqlLineNo. ', position ' . $soqlLinePos . ": \n\n" . $this->getMarkedInput());
+        parent::__construct(rtrim($message, ' .;:!') . ' near line ' . $soqlLineNo. ', position ' . $soqlLinePos . ": \n\n" . $this->getMarkedInput(), 0, $previousException);
     }
 
     /**

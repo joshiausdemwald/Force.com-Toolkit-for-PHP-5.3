@@ -958,8 +958,14 @@ class QueryParser implements QueryParserInterface
     {
         $this->tokenizer->expect(TokenType::LEFT_PAREN);
 
-        $retVal = SoqlFunctionFactory::getInstance($funcname, $context, $this->tokenizer, $this->parseFunctionArguments($funcname, $context));
-
+        try
+        {
+            $retVal = SoqlFunctionFactory::getInstance($funcname, $context, $this->tokenizer, $this->parseFunctionArguments($funcname, $context));
+        }
+        catch(\Exception $e)
+        {
+            throw new ParseException($e->getMessage(), $this->tokenizer->getLine(), $this->tokenizer->getLinePos(), $this->tokenizer->getTokenValue(), $e);
+        }
         $this->tokenizer->expect(TokenType::RIGHT_PAREN);
 
         return $retVal;
@@ -976,6 +982,12 @@ class QueryParser implements QueryParserInterface
     private function parseFunctionArguments($funcName, $context)
     {
         $args = array();
+
+        // NO ARGS, RETURN
+        if($this->tokenizer->is(TokenType::RIGHT_PAREN))
+        {
+            return $args;
+        }
 
         while(true)
         {
