@@ -124,7 +124,7 @@ class QueryBuilder implements QueryBuilderInterface
     }
 
     /**
-     * @param AST\LogicalConditionInterface|string $soql
+     * @param string $soql
      * @param array $parameters
      * @throws \InvalidArgumentException
      * @return QueryBuilder

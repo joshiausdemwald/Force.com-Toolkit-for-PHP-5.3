@@ -1,10 +1,10 @@
 <?php
 namespace Codemitte\ForceToolkit\Soql\AST;
 
-class LogicalCondition implements LogicalConditionInterface
+class LogicalCondition
 {
     /**
-     * @var SoqlExpressionInterface
+     * @var SoqlName|\Codemitte\ForceToolkit\Soql\AST\Functions\SoqlFunctionInterface
      */
     private $left;
 
@@ -19,11 +19,11 @@ class LogicalCondition implements LogicalConditionInterface
     private $right;
 
     /**
-     * @param SoqlExpressionInterface $left
+     * @param SoqlName|\Codemitte\ForceToolkit\Soql\AST\Functions\SoqlFunctionInterface $left
      * @param string|null $operator
-     * @param ComparableInterface $right
+     * @param mixed $right
      */
-    public function __construct(SoqlExpressionInterface $left = null, $operator = null, ComparableInterface $right = null)
+    public function __construct($left = null, $operator = null, $right = null)
     {
         $this->left = $left;
 
@@ -33,9 +33,9 @@ class LogicalCondition implements LogicalConditionInterface
     }
 
     /**
-     * @param SoqlExpressionInterface $left
+     * @param SoqlName|\Codemitte\ForceToolkit\Soql\AST\Functions\SoqlFunctionInterface $left
      */
-    public function setLeft(SoqlExpressionInterface $left)
+    public function setLeft($left)
     {
         $this->left = $left;
     }
@@ -49,15 +49,15 @@ class LogicalCondition implements LogicalConditionInterface
     }
 
     /**
-     * @param ComparableInterface $right
+     * @param mixed $right
      */
-    public function setRight(ComparableInterface $right)
+    public function setRight($right)
     {
         $this->right = $right;
     }
 
     /**
-     * @return \Codemitte\ForceToolkit\Soql\AST\SoqlExpression
+     * @return SoqlName|\Codemitte\ForceToolkit\Soql\AST\Functions\SoqlFunctionInterface
      */
     public function getLeft()
     {
@@ -73,7 +73,7 @@ class LogicalCondition implements LogicalConditionInterface
     }
 
     /**
-     * @return \Codemitte\ForceToolkit\Soql\AST\ComparableInterface
+     * @return mixed
      */
     public function getRight()
     {

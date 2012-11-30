@@ -26,9 +26,9 @@ class LogicalJunction
     /**
      * @param boolean|null $isNot
      * @param string $operator: "AND"/"OR", on the of OP_* constants
-     * @param LogicalConditionInterface $condition: Can be logical condition or another logical (sub-) group
+     * @param LogicalGroup|LogicalCondition $condition: Can be logical condition or another logical (sub-) group
      */
-    public function __construct($isNot = null, $operator = null, LogicalConditionInterface $condition = null)
+    public function __construct($isNot = null, $operator = null, $condition = null)
     {
         $this->isNot = $isNot;
 
@@ -48,15 +48,15 @@ class LogicalJunction
     /**
      * @param $operator: One of the OP_* constants, "AND"/"OR"
      */
-    public function setOperator($operator)
+    public function setOperator($operator = null)
     {
         $this->operator = $operator;
     }
 
     /**
-     * @param LogicalConditionInterface $condition
+     * @param LogicalGroup|LogicalCondition $condition
      */
-    public function setCondition(LogicalConditionInterface $condition)
+    public function setCondition($condition)
     {
         $this->condition = $condition;
     }

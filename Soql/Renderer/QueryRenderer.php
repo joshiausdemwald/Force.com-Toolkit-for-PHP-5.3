@@ -376,10 +376,10 @@ class QueryRenderer
     }
 
     /**
-     * @param \Codemitte\ForceToolkit\Soql\AST\LogicalConditionInterface $condition
+     * @param \Codemitte\ForceToolkit\Soql\AST\LogicalCondition $condition
      * @return string
      */
-    private function renderCondition(AST\LogicalConditionInterface $condition)
+    private function renderCondition(AST\LogicalCondition $condition)
     {
         $retVal = null;
 
@@ -400,21 +400,21 @@ class QueryRenderer
     }
 
     /**
-     * @param \Codemitte\ForceToolkit\Soql\AST\SoqlExpression|\Codemitte\ForceToolkit\Soql\AST\SoqlExpressionInterface $expression
+     * @param mixed $expression
      * @return string
      * @todo: CLEANUP, see RenderExpression
      */
-    private function renderExpression(AST\SoqlExpressionInterface $expression = null)
+    private function renderExpression($expression = null)
     {
         if(null === $expression)
         {
             return '';
         }
-        if($expression instanceof \Codemitte\ForceToolkit\Soql\AST\SoqlFunction)
+        if($expression instanceof \Codemitte\ForceToolkit\Soql\AST\Functions\SoqlFunction)
         {
             return $this->renderFunction($expression);
         }
-        return $expression->getExpression();
+        return (string)$expression;
     }
 
     /**
@@ -439,17 +439,17 @@ class QueryRenderer
     }
 
     /**
-     * @param \Codemitte\ForceToolkit\Soql\AST\SoqlFunctionArgumentInterface $argument
+     * @param $argument
      * @return string
      * @todo: CLEANUP, see RenderExpression
      */
-    private function renderFunctionArgument(AST\SoqlFunctionArgumentInterface $argument)
+    private function renderFunctionArgument($argument)
     {
         if($argument instanceof \Codemitte\ForceToolkit\Soql\AST\SoqlFunction)
         {
             return $this->renderFunction($argument);
         }
-        return $argument->getExpression();
+        return (string)$argument;
     }
 
     /**

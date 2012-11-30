@@ -175,7 +175,7 @@ class ExpressionBuilder implements ExpressionBuilderInterface
      * AggregateFunction()
      *
      * @param string $right
-     * @return \Codemitte\ForceToolkit\Soql\AST\SoqlExpressionInterface
+     * @return \Codemitte\ForceToolkit\Soql\AST\SoqlExpression
      */
     private function buildRightExpression($right)
     {
@@ -195,7 +195,7 @@ class ExpressionBuilder implements ExpressionBuilderInterface
      * AggregateFunction()
      *
      * @param $left
-     * @return \Codemitte\ForceToolkit\Soql\AST\SoqlExpressionInterface
+     * @return mixed
      */
     private function buildLeftExpression($left)
     {

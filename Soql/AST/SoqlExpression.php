@@ -1,7 +1,7 @@
 <?php
 namespace Codemitte\ForceToolkit\Soql\AST;
 
-class SoqlExpression implements SoqlExpressionInterface, SoqlFunctionArgumentInterface
+class SoqlExpression
 {
     /**
      * @var string
@@ -14,14 +14,6 @@ class SoqlExpression implements SoqlExpressionInterface, SoqlFunctionArgumentInt
     public function __construct($expression)
     {
         $this->expression = $expression;
-    }
-
-    /**
-     * @return string
-     */
-    public function getExpression()
-    {
-        return $this->expression;
     }
 
     public function __toString()

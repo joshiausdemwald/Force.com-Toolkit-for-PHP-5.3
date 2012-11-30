@@ -2,19 +2,14 @@
 namespace Codemitte\ForceToolkit\Test\Soql\Builder;
 
 use
-    Codemitte\ForceToolkit\Soap\Mapping\Base\login,
     Codemitte\ForceToolkit\Soap\Client\Connection\SfdcConnection,
     Codemitte\ForceToolkit\Soap\Client\PartnerClient,
-    Codemitte\ForceToolkit\Soql\Builder\QueryBuilder,
     Codemitte\ForceToolkit\Soql\Parser\QueryParser,
-    Codemitte\ForceToolkit\Soql\Tokenizer\Tokenizer,
-    Codemitte\ForceToolkit\Soql\Renderer\QueryRenderer,
-    Codemitte\ForceToolkit\Soql\Type\TypeFactory,
-    Codemitte\ForceToolkit\Soql\Builder\ExpressionBuilderInterface AS Expr
+    Codemitte\ForceToolkit\Soql\Tokenizer\Tokenizer
 ;
 
 /**
- * @group Soql
+ * @group QueryParser
  */
 class QueryParserTest extends \PHPUnit_Framework_TestCase
 {
@@ -28,84 +23,47 @@ class QueryParserTest extends \PHPUnit_Framework_TestCase
      */
     private static $connection;
 
-    public static function setUpBeforeClass()
+    private function newParser()
     {
-        self::setUpConnection();
-        self::setUpClient();
+        return new QueryParser(new Tokenizer());
     }
 
-    private static function setUpConnection()
+    public function testSimpleSelect()
     {
-        $credentials = new login(SFDC_USERNAME, SFDC_PASSWORD);
+        $ast = $this->newParser()->parse('SELECT Id, Name FROM Account WHERE Name = "hanswurst"');
 
-        $wsdl = __DIR__ . '/../../fixtures/partner.wsdl.xml';
-
-        $serviceLocation = SFDC_SERVICE_LOCATION ? SFDC_SERVICE_LOCATION : null;
-
-        self::$connection = new SfdcConnection($credentials, $wsdl, $serviceLocation, array(), true);
+        $this->assertInstanceOf('Codemitte\ForceToolkit\Soql\AST\Query', $ast);
+        $this->assertInstanceOf('Codemitte\ForceToolkit\Soql\AST\SelectPart', $ast->getSelectPart());
+        $this->assertInstanceOf('Codemitte\ForceToolkit\Soql\AST\FromPart', $ast->getFromPart());
+        $this->assertInstanceOf('Codemitte\ForceToolkit\Soql\AST\WherePart', $ast->getWherePart());
+        $this->assertNull($ast->getWithPart());
+        $this->assertNull($ast->getHavingPart());
+        $this->assertNull($ast->getOrderPart());
+        $this->assertNull($ast->getOffset());
+        $this->assertNull($ast->getLimit());
     }
 
-    private static function setUpClient()
+    public function testFullSelect()
     {
-        self::$connection->login();
+        $ast = $this->newParser()->parse('
+            SELECT
+                Id, Name, COUNT(Id)
+            FROM
+                Account
+            WHERE
+                Name = "hanswurst"
+            GROUP BY
+                IsPersonAccount
+         ');
 
-        self::$client = new PartnerClient(self::$connection);
-    }
-
-    private function newBuilder()
-    {
-        return new QueryBuilder(self::$client, new QueryParser(new Tokenizer()), new QueryRenderer(new TypeFactory()));
-    }
-
-    public function testBuilder()
-    {
-        $builder = $this->newBuilder();
-
-        $res = $builder
-            ->select('Id')
-            ->from('Account')
-            ->where($builder
-                ->whereExpr()
-                ->xpr('Name', Expr::OP_NEQ, 'NULL')
-                ->andXpr('AccountNumber', Expr::OP_NEQ, 'NULL')
-            )
-            ->limit(1)
-            ->fetch();
-
-    }
-
-    public function testTypeofSelectClause()
-    {
-        $builder = $this->newBuilder();
-
-        $soql = $builder
-            ->prepareStatement('SELECT TYPEOF object1 WHEN type1 THEN field1 END FROM dings')
-            ->getSoql();
-
-        $this->assertEquals($soql, 'SELECT TYPEOF object1 WHEN type1 THEN field1 END FROM dings');
-
-        $soql = $builder
-            ->prepareStatement('SELECT name, TYPEOF object1 WHEN type1 THEN field1 END FROM dings')
-            ->getSoql();
-
-        $this->assertEquals($soql, 'SELECT name, TYPEOF object1 WHEN type1 THEN field1 END FROM dings');
-
-        $soql = $builder
-            ->prepareStatement('SELECT TYPEOF field1 WHEN type1 THEN field1 END, field2 FROM dings')
-            ->getSoql();
-
-        $this->assertEquals($soql, 'SELECT TYPEOF field1 WHEN type1 THEN field1 END, field2 FROM dings');
-
-        $soql = $builder
-            ->prepareStatement('SELECT fielda, fieldb, TYPEOF field1 WHEN type1 THEN field1 END, fieldc, fieldd FROM dings')
-            ->getSoql();
-
-        $this->assertEquals($soql, 'SELECT fielda, fieldb, TYPEOF field1 WHEN type1 THEN field1 END, fieldc, fieldd FROM dings');
-
-        $soql = $builder
-            ->prepareStatement('SELECT fielda, fieldb, TYPEOF field1 WHEN type1 THEN field1 END, TYPEOF f1 WHEN t1 THEN f2 END, fieldc, fieldd FROM dings')
-            ->getSoql();
-
-        $this->assertEquals($soql, 'SELECT fielda, fieldb, TYPEOF field1 WHEN type1 THEN field1 END, TYPEOF f1 WHEN t1 THEN f2 END, fieldc, fieldd FROM dings');
+        $this->assertInstanceOf('Codemitte\ForceToolkit\Soql\AST\Query', $ast);
+        $this->assertInstanceOf('Codemitte\ForceToolkit\Soql\AST\SelectPart', $ast->getSelectPart());
+        $this->assertInstanceOf('Codemitte\ForceToolkit\Soql\AST\FromPart', $ast->getFromPart());
+        $this->assertInstanceOf('Codemitte\ForceToolkit\Soql\AST\WherePart', $ast->getWherePart());
+        $this->assertNull($ast->getWithPart());
+        $this->assertNull($ast->getHavingPart());
+        $this->assertNull($ast->getOrderPart());
+        $this->assertNull($ast->getOffset());
+        $this->assertNull($ast->getLimit());
     }
 }

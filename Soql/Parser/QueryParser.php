@@ -25,10 +25,9 @@ namespace Codemitte\ForceToolkit\Soql\Parser;
 use Codemitte\ForceToolkit\Soql\Tokenizer\TokenizerInterface;
 use Codemitte\ForceToolkit\Soql\Tokenizer\TokenizerException;
 use Codemitte\ForceToolkit\Soql\Tokenizer\TokenType;
-
-use
-    Codemitte\ForceToolkit\Soql\AST
-;
+use Codemitte\ForceToolkit\Soql\AST\Functions\SoqlFunctionInterface;
+use Codemitte\ForceToolkit\Soql\AST\Functions\Factory AS SoqlFunctionFactory;
+use Codemitte\ForceToolkit\Soql\AST;
 
 /**
  * QueryParser
@@ -38,7 +37,7 @@ use
  * @package Sfdc
  * @subpackage Soql
  *
- * @todo: Regard "typeof", new Salesforce API 26.0 beta feature
+ * @todo: Regard "GEOLOCATION" features
  */
 class QueryParser implements QueryParserInterface
 {
@@ -124,8 +123,6 @@ class QueryParser implements QueryParserInterface
         'WEEK_IN_YEAR',
     );
 
-    private static $ALLOWED_DATE_FUNCTION_FUNCTIONS = array('CONVERTTIMEZONE');
-
     /**
      * @var array
      */
@@ -134,6 +131,16 @@ class QueryParser implements QueryParserInterface
         'GROUPING',
         'TOLABEL',
         'CONVERTCURRENCY'
+    );
+
+    /**
+     * Summer '12 FEATURE ...
+     *
+     * @var array
+     */
+    private static $GEOFUNCTIONS = array(
+        'DISTANCE',
+        'GEOLOCATION'
     );
 
     /**
@@ -164,8 +171,6 @@ class QueryParser implements QueryParserInterface
     /**
      *
      * @param string $soql
-     * @param string $soql
-     * @param array $parameters
      *
      * @return string
      * @return string|void
@@ -459,27 +464,11 @@ class QueryParser implements QueryParserInterface
         {
             $name = $this->tokenizer->getTokenValue();
 
-            $uppercaseName  = strtoupper($this->tokenizer->getTokenValue());
-
-            $oldPos = $this->tokenizer->getLinePos();
-            $oldLine = $this->tokenizer->getLine();
-
             $this->tokenizer->expect(TokenType::EXPRESSION);
 
             if($this->tokenizer->is(TokenType::LEFT_PAREN))
             {
-                if(in_array($uppercaseName, self::$AGGREGATE_FUNCTIONS))
-                {
-                    $retVal = new AST\SelectField($this->parseSelectAggregateFunction($name));
-                }
-                else if(in_array($uppercaseName, self::$SELECT_FUNCTIONS))
-                {
-                    $retVal = new AST\SelectField($this->parseSelectFunction($name));
-                }
-                else
-                {
-                    throw new ParseException(sprintf('Unknown function "%s"', $uppercaseName), $oldLine, $oldPos, $this->tokenizer->getInput());
-                }
+                $retVal = $this->parseFunctionExpression($name, SoqlFunctionInterface::CONTEXT_SELECT);
             }
             else
             {
@@ -705,49 +694,28 @@ class QueryParser implements QueryParserInterface
     }
 
     /**
-     * @return \Codemitte\ForceToolkit\Soql\AST\SoqlExpression|\Codemitte\ForceToolkit\Soql\AST\SoqlFunction
+     * @return \Codemitte\ForceToolkit\Soql\AST\SoqlExpression|\Codemitte\ForceToolkit\Soql\AST\Functions\SoqlFunctionInterface
      * @throws ParseException
      */
     private function parseWhereLeft()
     {
-        $retVal         = null;
+        $name = $this->tokenizer->getTokenValue();
 
-        $name           = $this->tokenizer->getTokenValue();
-
-        $uppercaseName  = strtoupper($name);
-        $oldPos         = $this->tokenizer->getLinePos();
-        $oldLine        = $this->tokenizer->getLine();
-
+        // FUNCTION OR PLAIN VALUE
         $this->tokenizer->expect(TokenType::EXPRESSION);
 
-        // DATE FUNCTION
+        // DATE OR GEOLOCATION FUNCTION (DISTANCE/GEOLOCATION)
         if($this->tokenizer->is(TokenType::LEFT_PAREN))
         {
-            if(in_array($uppercaseName, self::$DATE_FUNCTIONS))
-            {
-                $retVal = new AST\SoqlFunction($name);
-
-                $this->tokenizer->readNextToken();
-
-                $retVal->addArgument($this->parseDateFunctionExpression());
-
-                $this->tokenizer->expect(TokenType::RIGHT_PAREN);
-            }
-            else
-            {
-                throw new ParseException(sprintf('Unexpected function "%s"', $name), $oldLine, $oldPos, $this->tokenizer->getInput());
-            }
+            return $this->parseFunctionExpression($name, SoqlFunctionInterface::CONTEXT_WHERE);
         }
-        else
-        {
-            $retVal = new AST\SoqlExpression($name);
-        }
+        // REGULAR IDENTIFIER
+        return new AST\SoqlName($this->tokenizer->getTokenValue());
 
-        return $retVal;
     }
 
     /**
-     * @return \Codemitte\ForceToolkit\Soql\AST\SoqlExpression
+     * @return string
      */
     private function parseWhereOperator()
     {
@@ -768,6 +736,11 @@ class QueryParser implements QueryParserInterface
     }
 
     /**
+     * WHERE RIGHT MIGHT BE:
+     * - SUBQUERY
+     * - PLAIN/PRIMITIVE VALUE
+     * - COLLECTION
+     * - VARIABLE
      * @return \Codemitte\ForceToolkit\Soql\AST\ComparableInterface
      */
     private function parseWhereRight()
@@ -916,7 +889,6 @@ class QueryParser implements QueryParserInterface
             }
             elseif(in_array($this->tokenizer->getTokenValue(), self::$DATE_CONSTANTS))
             {
-
                 $retVal = new AST\SoqlDateLiteral($this->tokenizer->getTokenValue());
 
                 // ADVANCE ...
@@ -976,48 +948,85 @@ class QueryParser implements QueryParserInterface
     }
 
     /**
-     * @todo: generalize!
+     *
+     * @param string $funcname
+     * @param int $context
      * @throws ParseException
-     * @return \Codemitte\ForceToolkit\Soql\AST\SoqlFunctionArgumentInterface
+     * @return \Codemitte\ForceToolkit\Soql\AST\Functions\SoqlFunctionInterface
      */
-    private function parseDateFunctionExpression()
+    private function parseFunctionExpression($funcname, $context)
     {
-        $retVal = null;
+        $this->tokenizer->expect(TokenType::LEFT_PAREN);
 
-        // DATE_FUNCTION(FIELDNAME | convertTimezone(FIELDNAME))
-        $name = $this->tokenizer->getTokenValue();
+        $retVal = SoqlFunctionFactory::getInstance($funcname, $context, $this->tokenizer, $this->parseFunctionArguments($funcname, $context));
 
-        $uppercaseName = strtoupper($this->tokenizer->getTokenValue());
+        $this->tokenizer->expect(TokenType::RIGHT_PAREN);
 
-        $oldLine = $this->tokenizer->getLine();
-        $oldLinePos = $this->tokenizer->getLinePos();
+        return $retVal;
+    }
 
-        $this->tokenizer->expect(TokenType::EXPRESSION);
+    /**
+     * ToParse: "function(" -> [...] <- ")"
+     * Parenthesis have already been filtered.
+     *
+     * @param string $funcName
+     * @param int $context
+     * @return array
+     */
+    private function parseFunctionArguments($funcName, $context)
+    {
+        $args = array();
 
-        if($this->tokenizer->is(TokenType::LEFT_PAREN))
+        while(true)
         {
-            if(in_array($uppercaseName, self::$ALLOWED_DATE_FUNCTION_FUNCTIONS))
-            {
-                $retVal = new AST\SoqlFunction($name);
+            $args[] = $this->parseFunctionArgument($funcName, $context);
 
+            if($this->tokenizer->is(TokenType::COMMA))
+            {
+                continue;
+            }
+            break;
+        }
+        return $args;
+    }
+
+    /**
+     * Parses a single function argument. Can be expression or
+     * function by itself.
+     *
+     * @param string $funcName
+     * @param int $context
+     * @throws \Exception
+     * @return SoqlFunctionInterface|\Codemitte\ForceToolkit\Soql\AST\SoqlName
+     */
+    private function parseFunctionArgument($funcName, $context)
+    {
+        try
+        {
+            return $this->parsePrimitiveValue();
+        }
+        catch(\Exception $e)
+        {
+            // NAME/IDENTIFIER OR FUNCTION/AGGREGATE FUNCTION NAME
+            if($this->tokenizer->is(TokenType::EXPRESSION))
+            {
+                $name = $this->tokenizer->getTokenValue();
+
+                // ADVANCE
                 $this->tokenizer->readNextToken();
 
-                $retVal->addArgument(new AST\SoqlExpression($this->tokenizer->getTokenValue()));
-
-                $this->tokenizer->expect(TokenType::EXPRESSION);
-
-                $this->tokenizer->expect(TokenType::RIGHT_PAREN);
+                // NESTED FUNCTION
+                if($this->tokenizer->is(TokenType::LEFT_PAREN))
+                {
+                    return $this->parseFunctionExpression($name, $context);
+                }
+                // ARBITRARY IDENTIFIER, e.g. SOQL NAME
+                return new AST\SoqlName($name);
             }
-            else
-            {
-                throw new ParseException(sprintf('Unknown date conversion function "%s"', $name), $oldLine, $oldLinePos, $this->tokenizer->getInput());
-            }
+
+            // OTHERWISE THROW FALLBACK EXCEPTION
+            throw $e;
         }
-        else
-        {
-            $retVal = new AST\SoqlExpression($name);
-        }
-        return $retVal;
     }
 
     /**
@@ -1078,7 +1087,7 @@ class QueryParser implements QueryParserInterface
                 $junction->setCondition($condition = new AST\LogicalCondition());
 
                 // ONLY SIMPLE EXPRESSION ALLOWED
-                $condition->setLeft(new AST\SoqlExpression($this->tokenizer->getTokenValue()));
+                $condition->setLeft(new AST\SoqlName($this->tokenizer->getTokenValue()));
 
                 // ADVANCE ...
                 $this->tokenizer->expect(TokenType::EXPRESSION);
@@ -1251,36 +1260,10 @@ class QueryParser implements QueryParserInterface
         // IS (AGGREGATE?) FUNCTION?
         if($this->tokenizer->is(TokenType::LEFT_PAREN))
         {
-            return $this->parseGroupByAggregateFunction($fieldName);
+            return $this->parseFunctionExpression($fieldName, SoqlFunctionInterface::CONTEXT_GROUP_BY);
         }
 
         return new AST\GroupByField($fieldName);
-    }
-
-    /**
-     * @param string $functionName
-     * @throws ParseException
-     */
-    public function parseGroupByAggregateFunction($functionName)
-    {
-        $uppercaseName  = strtoupper($functionName);
-
-        $oldPos = $this->tokenizer->getLinePos();
-        $oldLine = $this->tokenizer->getLine();
-
-        $this->tokenizer->expect(TokenType::LEFT_PAREN);
-
-        if(in_array($uppercaseName, self::$AGGREGATE_FUNCTIONS))
-        {
-            $field = new AST\SoqlAggregateFunction($functionName, $this->tokenizer->getTokenValue());
-
-            $this->tokenizer->expect(TokenType::EXPRESSION);
-
-            $this->tokenizer->expect(TokenType::RIGHT_PAREN);
-
-            return $field;
-        }
-        throw new ParseException(sprintf('Unknown aggregate function "%s"', $uppercaseName), $oldLine, $oldPos, $this->tokenizer->getInput());
     }
 
     /**
@@ -1388,41 +1371,12 @@ class QueryParser implements QueryParserInterface
 
     /**
      * @throws ParseException
-     * @return AST\SoqlFunction
+     * @return AST\Functions\SoqlFunction
      */
     private function parseHavingLeft()
     {
-        $name = $this->tokenizer->getTokenValue();
-
-        $retVal = new AST\SoqlFunction($name);
-
-        $uppercaseName = strtoupper($this->tokenizer->getTokenValue());
-
-        $oldLine = $this->tokenizer->getLine();
-        $oldLinePos = $this->tokenizer->getLinePos();
-
-        // MOVE ON
-        $this->tokenizer->expect(TokenType::EXPRESSION);
-
-        // MUST BE AGGREGATE FUNCTION
-        $this->tokenizer->expect(TokenType::LEFT_PAREN);
-
-        if(in_array($uppercaseName, self::$AGGREGATE_FUNCTIONS))
-        {
-            $arg = $this->tokenizer->getTokenValue();
-
-            $retVal->addArgument(new AST\SoqlExpression($arg));
-
-            $this->tokenizer->expect(TokenType::EXPRESSION);
-
-            $this->tokenizer->expect(TokenType::RIGHT_PAREN);
-        }
-        else
-        {
-            throw new ParseException('Only aggregate functions allowed', $oldLine, $oldLinePos, $this->tokenizer->getInput());
-        }
-
-        return $retVal;
+        // ONLY AGGREGATE FUNCTIONS ALLOWED
+        return $this->parseFunctionExpression($this->tokenizer->getTokenValue(), self::$AGGREGATE_FUNCTIONS);
     }
 
     /**
@@ -1520,6 +1474,7 @@ class QueryParser implements QueryParserInterface
     /**
      * ORDER BY fieldExpression ASC | DESC ? NULLS FIRST | LAST ?
      *
+     * @throws ParseException
      * @return SortableInterface
      */
     private function  parseOrderByField()
@@ -1528,27 +1483,11 @@ class QueryParser implements QueryParserInterface
 
         $fieldName = $this->tokenizer->getTokenValue();
 
-        $oldPos = $this->tokenizer->getLinePos();
-        $oldLine = $this->tokenizer->getLine();
-
-        $uppercaseName = strtoupper($fieldName);
-
         $this->tokenizer->expect(TokenType::EXPRESSION);
 
         if($this->tokenizer->is(TokenType::LEFT_PAREN))
         {
-            if(in_array($uppercaseName, self::$AGGREGATE_FUNCTIONS))
-            {
-                $retVal = $this->parseOrderByAggregateFunction($fieldName);
-            }
-            else if(in_array($uppercaseName, self::$ORDER_BY_FUNCTIONS))
-            {
-                $retVal = $this->parseOrderByFunction($fieldName);
-            }
-            else
-            {
-                throw new ParseException(sprintf('Unknown function "%s"', $uppercaseName), $oldLine, $oldPos, $this->tokenizer->getInput());
-            }
+            $retVal = $this->parseFunctionExpression($fieldName, SoqlFunctionInterface::CONTEXT_ORDER_BY);
         }
         else
         {
@@ -1589,42 +1528,6 @@ class QueryParser implements QueryParserInterface
         }
 
         return $retVal;
-    }
-
-    /**
-     * @param string $funcname
-     * @return \Codemitte\ForceToolkit\Soql\AST\SoqlOrderByAggregateFunction
-     * @throws ParseException
-     */
-    public function parseOrderByAggregateFunction($funcname)
-    {
-        $this->tokenizer->expect(TokenType::LEFT_PAREN);
-
-        $field = new AST\SoqlOrderByAggregateFunction($funcname, $this->tokenizer->getTokenValue());
-
-        $this->tokenizer->expect(TokenType::EXPRESSION);
-
-        $this->tokenizer->expect(TokenType::RIGHT_PAREN);
-
-        return $field;
-    }
-
-    /**
-     * @param string $funcname
-     * @return \Codemitte\ForceToolkit\Soql\AST\SoqlOrderByAggregateFunction
-     * @throws ParseException
-     */
-    public function parseOrderByFunction($funcname)
-    {
-        $this->tokenizer->expect(TokenType::LEFT_PAREN);
-
-        $field = new AST\SoqlOrderByAggregateFunction($funcname, $this->tokenizer->getTokenValue());
-
-        $this->tokenizer->expect(TokenType::EXPRESSION);
-
-        $this->tokenizer->expect(TokenType::RIGHT_PAREN);
-
-        return $field;
     }
 
     /**
@@ -1687,40 +1590,6 @@ class QueryParser implements QueryParserInterface
         $this->tokenizer->expect(TokenType::ANON_VARIABLE);
 
         return new AST\AnonymousVariable($this->varIndex);
-    }
-
-    private function parseSelectAggregateFunction($functionName)
-    {
-        $this->tokenizer->expect(TokenType::LEFT_PAREN);
-
-        $argument = null;
-        $retVal   = null;
-
-        if( ! $this->tokenizer->is(TokenType::RIGHT_PAREN))
-        {
-            $argument = $this->tokenizer->getTokenValue();
-
-            $this->tokenizer->expect(TokenType::EXPRESSION);
-        }
-
-        $retVal = new AST\SoqlSelectAggregateFunction($functionName, $argument);
-
-        $this->tokenizer->expect(TokenType::RIGHT_PAREN);
-
-        return $retVal;
-    }
-
-    private function parseSelectFunction($functionName)
-    {
-        $this->tokenizer->expect(TokenType::LEFT_PAREN);
-
-        $retVal = new AST\SoqlSelectFunction($functionName, $this->tokenizer->getTokenValue());
-
-        $this->tokenizer->expect(TokenType::EXPRESSION);
-
-        $this->tokenizer->expect(TokenType::RIGHT_PAREN);
-
-        return $retVal;
     }
 
     /**
@@ -1828,28 +1697,12 @@ class QueryParser implements QueryParserInterface
         {
             $name = $this->tokenizer->getTokenValue();
 
-            $uppercaseName  = strtoupper($this->tokenizer->getTokenValue());
-
-            $oldPos = $this->tokenizer->getLinePos();
-            $oldLine = $this->tokenizer->getLine();
-
             $this->tokenizer->expect(TokenType::EXPRESSION);
 
             // REGULAR OR AGGREGATE FUNCTION
             if($this->tokenizer->is(TokenType::LEFT_PAREN))
             {
-                if(in_array($uppercaseName, self::$AGGREGATE_FUNCTIONS))
-                {
-                    $retVal = new AST\SelectField($this->parseSelectAggregateFunction($name));
-                }
-                else if(in_array($uppercaseName, self::$SELECT_FUNCTIONS))
-                {
-                    $retVal = new AST\SelectField($this->parseSelectFunction($name));
-                }
-                else
-                {
-                    throw new ParseException(sprintf('Unknown function "%s"', $uppercaseName), $oldLine, $oldPos, $this->tokenizer->getInput());
-                }
+                $retVal = $this->parseFunctionExpression($name, SoqlFunctionInterface::CONTEXT_SELECT);
             }
 
             // PLAIN FIELDNAME
