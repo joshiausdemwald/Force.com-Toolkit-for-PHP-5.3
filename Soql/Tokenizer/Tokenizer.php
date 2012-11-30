@@ -283,7 +283,7 @@ class Tokenizer implements TokenizerInterface
                     {
                         $this->tokenValue .= '\\' . $n2;
 
-                        $this->nextChar();
+                        continue;
                     }
                     else
                     {
