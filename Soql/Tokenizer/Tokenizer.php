@@ -102,7 +102,7 @@ class Tokenizer implements TokenizerInterface
         'LIMIT',
         'OFFSET',
 
-        // COMPOUND: "WITH DATA CATEGORY"
+        // COMPOUND: "WITH DATA CATEGORY" OR fieldname
         'WITH',
         'DATA',
         'CATEGORY',
@@ -157,7 +157,7 @@ class Tokenizer implements TokenizerInterface
     {
         if (TokenType::EOF === $this->getTokenType())
         {
-            throw new TokenizerException("Cannot read past end of stream.", $this->line, $this->linePos, $this->input);
+            throw new TokenizerException("Cannot read past the end of the stream.", $this->line, $this->linePos, $this->input);
         }
 
         // GET CURRENT; THEN MOVE POINTER
@@ -189,7 +189,7 @@ class Tokenizer implements TokenizerInterface
                 $this->linePos = 0;
             }
 
-            // IS OTHER CNTRL CHAR, LET'S ASSUME IT IS WHITESPACE
+            // IS OTHER CTRL CHAR, LET'S ASSUME IT IS WHITESPACE
             else
             {
                 $this->tokenType = TokenType::WHITESPACE;
@@ -202,6 +202,7 @@ class Tokenizer implements TokenizerInterface
                 }
             }
 
+            // SKIP DA WHITESPACE
             if($this->skipWhitespace)
             {
                 $this->readNextToken();
@@ -228,7 +229,7 @@ class Tokenizer implements TokenizerInterface
                     throw new TokenizerException('Unexpected char "' . $n . '"', $this->line, $this->linePos, $this->input);
                 }
 
-                if('-' === $n)
+                if('-' === $n && $this->tokenType !== TokenType::DATETIME_LITERAL)
                 {
                     $this->tokenType = TokenType::DATE_LITERAL;
                 }
@@ -515,6 +516,17 @@ class Tokenizer implements TokenizerInterface
     public function isKeyword($keyword)
     {
         return $this->is(TokenType::KEYWORD) && $this->isTokenValue($keyword);
+    }
+
+    /**
+     * Returns true if the current token is expression or keyword. Used for
+     * filtering reserved names (like "GROUP") as fieldnames.
+     *
+     * @return bool
+     */
+    public function isExpressionOrKeyword()
+    {
+        return $this->is(TokenType::EXPRESSION) || $this->is(TokenType::KEYWORD);
     }
 
     /**

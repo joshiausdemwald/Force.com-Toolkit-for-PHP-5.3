@@ -21,6 +21,14 @@ interface TokenizerInterface
 
     public function isKeyword($keyword);
 
+    /**
+     * Returns true if the current token is expression or keyword. Used for
+     * filtering reserved names (like "GROUP") as fieldnames.
+     *
+     * @return bool
+     */
+    public function isExpressionOrKeyword();
+
     public function getTokenValue();
 
     public function getTokenType();

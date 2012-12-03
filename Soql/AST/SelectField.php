@@ -1,7 +1,7 @@
 <?php
 namespace Codemitte\ForceToolkit\Soql\AST;
 
-class SelectField extends AbstractSelectable
+class SelectField extends AbstractCanHazAlias implements SelectFieldInterface
 {
     private $name;
 

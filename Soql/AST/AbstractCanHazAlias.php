@@ -1,7 +1,7 @@
 <?php
 namespace Codemitte\ForceToolkit\Soql\AST;
 
-abstract class AbstractSelectable implements SelectableFieldInterface
+abstract class AbstractCanHazAlias implements CanHazAliasInterface
 {
     protected $alias;
 

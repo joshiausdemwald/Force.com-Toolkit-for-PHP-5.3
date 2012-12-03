@@ -1,8 +1,10 @@
 <?php
 namespace Codemitte\ForceToolkit\Soql\AST\Functions;
 
-abstract class DateFunction extends SoqlFunction
+class ConvertTimezone extends SoqlFunction
 {
+    protected $name = 'convertTimezone';
+
     /**
      * @return int: Bitmask calculated out of one or more of
      *              the CONTEXT_* interface constants.
@@ -22,7 +24,7 @@ abstract class DateFunction extends SoqlFunction
     public function getAllowedArguments()
     {
         return array(
-            array('Codemitte\ForceToolkit\Soql\AST\SoqlName', 'Codemitte\ForceToolkit\Soql\AST\Functions\ConvertTimezone')
+            array('Codemitte\ForceToolkit\Soql\AST\SoqlName')
         );
     }
 }

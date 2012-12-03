@@ -1,12 +1,12 @@
 <?php
 namespace Codemitte\ForceToolkit\Soql\AST;
 
-class TypeofSelectPart implements SelectableInterface
+class TypeofSelectPart implements SelectFieldInterface
 {
     /**
      * @var string
      */
-    private $sobjectType;
+    private $sobjectName;
 
     /**
      * @var array<TypeofCondition>
@@ -24,19 +24,19 @@ class TypeofSelectPart implements SelectableInterface
     }
 
     /**
-     * @param strnig $sobjectType
+     * @param strnig $sobjectName
      */
-    public function setSobjectType($sobjectType)
+    public function setSobjectName($sobjectName)
     {
-        $this->sobjectType = $sobjectType;
+        $this->sobjectName = $sobjectName;
     }
 
     /**
      * @return string
      */
-    public function getSobjectType()
+    public function getSobjectName()
     {
-        return $this->sobjectType;
+        return $this->sobjectName;
     }
 
     /**

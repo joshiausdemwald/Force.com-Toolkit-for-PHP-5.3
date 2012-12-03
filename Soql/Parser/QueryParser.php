@@ -421,17 +421,19 @@ class QueryParser implements QueryParserInterface
      * a.custom__r.custom__c
      * Account.Id
      * ID
+     * @throws ParseException
+     * @return \Codemitte\ForceToolkit\Soql\AST\SelectExpression
      */
     private function parseSelectField()
     {
-        $retVal = null;
+        $expression = null;
 
         // IS SUBSELECT
         if($this->tokenizer->is(TokenType::LEFT_PAREN))
         {
             $this->tokenizer->readNextToken(); // "SELECT"
 
-            $retVal = new AST\Subquery($this->parseQuery());
+            $expression = new AST\Subquery($this->parseQuery());
 
             $this->tokenizer->expect(TokenType::RIGHT_PAREN);
         }
@@ -446,33 +448,31 @@ class QueryParser implements QueryParserInterface
                 case 'TYPEOF':
                     $this->tokenizer->readNextToken(); // ADVANCE TO "WHEN"
 
-                    $retVal = $this->parseSelectTypeofExpression();
+                    $expression = $this->parseSelectTypeofExpression();
 
                     // EXPECT "END", ADVANCE TO "FROM"-CLAUSE
                     $this->tokenizer->expectKeyword('end');
-
-                    // DIRECT RETURN, TYPEOF PART HAS NO ALIAS --- hackish
-                    return $retVal;
                 break;
                 default:
                     throw new ParseException(sprintf('Unexpected keyword "%s", expecting "TYPEOF", "LEFT_PAREN" or "FIELDNAME".', $keyword), $this->tokenizer->getLine(), $this->tokenizer->getLinePos(), $this->tokenizer->getInput());
             }
         }
 
-        // FIELD
+        // "ORDINARY" FIELD OR FUNCTION
         elseif($this->tokenizer->is(TokenType::EXPRESSION))
         {
             $name = $this->tokenizer->getTokenValue();
 
             $this->tokenizer->expect(TokenType::EXPRESSION);
 
+            // IS (AGGREGATE) FUNCTION
             if($this->tokenizer->is(TokenType::LEFT_PAREN))
             {
-                $retVal = $this->parseFunctionExpression($name, SoqlFunctionInterface::CONTEXT_SELECT);
+                $expression = new AST\SelectFunction($this->parseFunctionExpression($name, SoqlFunctionInterface::CONTEXT_SELECT));
             }
             else
             {
-                $retVal = new AST\SelectField($name);
+                $expression = new AST\SelectField($name);
             }
         }
         else
@@ -480,13 +480,12 @@ class QueryParser implements QueryParserInterface
             throw new ParseException(sprintf('Unexpected token "%s", expecting Expression or Left Paren', $this->tokenizer->getTokenType()), $this->tokenizer->getLine(), $this->tokenizer->getLinePos(), $this->tokenizer->getInput());
         }
 
-        // ALIAS
-        if($this->tokenizer->is(TokenType::EXPRESSION))
+        // IS THE NEXT TOKEN  AN ALIAS?
+        if($this->tokenizer->is(TokenType::EXPRESSION) && $expression instanceof AST\CanHazAliasInterface)
         {
-            $retVal->setAlias($this->parseAlias());
+            $expression->setAlias($this->parseAlias());
         }
-
-        return $retVal;
+        return $expression;
     }
 
     /**
@@ -509,7 +508,7 @@ class QueryParser implements QueryParserInterface
         $this->tokenizer->expect(TokenType::EXPRESSION);
 
         // HAS ALIAS
-        if($this->tokenizer->is(TokenType::EXPRESSION))
+        if($this->tokenizer->is(TokenType::EXPRESSION) && $retVal instanceof AST\CanHazAliasInterface)
         {
             $retVal->setAlias($this->parseAlias());
         }
@@ -864,6 +863,7 @@ class QueryParser implements QueryParserInterface
 
             $this->tokenizer->readNextToken();
         }
+
         // DATE FORMULA OR DATE CONSTANT OR CURRENCY SYMBOL?
         elseif($this->tokenizer->is(TokenType::EXPRESSION))
         {
@@ -957,7 +957,6 @@ class QueryParser implements QueryParserInterface
     private function parseFunctionExpression($funcname, $context)
     {
         $this->tokenizer->expect(TokenType::LEFT_PAREN);
-
         try
         {
             $retVal = SoqlFunctionFactory::getInstance($funcname, $context, $this->tokenizer, $this->parseFunctionArguments($funcname, $context));
@@ -1022,11 +1021,10 @@ class QueryParser implements QueryParserInterface
         }
         catch(\Exception $e)
         {
-            // NAME/IDENTIFIER OR FUNCTION/AGGREGATE FUNCTION NAME
-            if($this->tokenizer->is(TokenType::EXPRESSION))
-            {
-                $name = $this->tokenizer->getTokenValue();
+            $name = $this->tokenizer->getTokenValue();
 
+            if($name)
+            {
                 // ADVANCE
                 $this->tokenizer->readNextToken();
 
@@ -1035,11 +1033,10 @@ class QueryParser implements QueryParserInterface
                 {
                     return $this->parseFunctionExpression($name, $context);
                 }
+
                 // ARBITRARY IDENTIFIER, e.g. SOQL NAME
                 return new AST\SoqlName($name);
             }
-
-            // OTHERWISE THROW FALLBACK EXCEPTION
             throw $e;
         }
     }
@@ -1051,17 +1048,17 @@ class QueryParser implements QueryParserInterface
     {
         $this->tokenizer->expectKeyword('with');
 
-        $this->tokenizer->expectKeyword('data');
+        if($this->tokenizer->is(TokenType::KEYWORD))
+        {
+            $this->tokenizer->expectKeyword('data');
 
-        $this->tokenizer->expectKeyword('category');
+            $this->tokenizer->expectKeyword('category');
 
+            return new AST\WithPart($this->parseWithDataCategoryLogicalGroup());
+        }
         return new AST\WithPart($this->parseWithLogicalGroup());
     }
 
-    /**
-     * @return LogicalGroup
-     * @throws ParseException
-     */
     private function parseWithLogicalGroup()
     {
         $retVal = new AST\LogicalGroup();
@@ -1071,11 +1068,103 @@ class QueryParser implements QueryParserInterface
         return $retVal;
     }
 
+    private function parseWithConditions()
+    {
+        $retVal = array();
+
+        $precedingOperator = null;
+
+        while(true)
+        {
+            $junction = new AST\LogicalJunction();
+
+            $junction->setOperator($precedingOperator);
+
+            // NOT
+            if(
+                $this->tokenizer->is(TokenType::EXPRESSION) &&
+                $this->tokenizer->isTokenValue('not')) {
+                $junction->setIsNot(true);
+
+                $this->tokenizer->readNextToken();
+            }
+
+            // COND AUF
+            if($this->tokenizer->is(TokenType::LEFT_PAREN))
+            {
+                $this->tokenizer->readNextToken();
+
+                // RECURSE ... returns LogicalGroup
+                $junction->setCondition($this->parseWhereLogicalGroup());
+
+                $this->tokenizer->expect(TokenType::RIGHT_PAREN);
+            }
+
+            // a=b,
+            // dateFunction(a) = b
+            // dateFunction(convertTimezone(a)) <= b
+            // a=b
+            // a IN|INCLUDES|EXCLUDES (a,b,c)
+            // NOT a IN|INCLUDES|EXCLUDES (a,b,c)
+            // a NOT IN (a,b,c)
+            // a NOT IN(SELECT ...)
+            // NOT a = b
+            // NOT a IN b
+            // a LIKE b
+            // NOT a LIKE b
+            else
+            {
+                // PARSE "x=y?" structure
+                $junction->setCondition($this->parseSimpleWhereCondition());
+            }
+
+            $retVal[] = $junction;
+
+            // VERKNÜPFUNG UND VERNEINUNG ...
+            if($this->tokenizer->is(TokenType::EXPRESSION))
+            {
+                if($this->tokenizer->isTokenValue('or'))
+                {
+                    $precedingOperator = AST\LogicalJunction::OP_OR;
+
+                    $this->tokenizer->readNextToken();
+
+                    continue;
+                }
+                elseif($this->tokenizer->isTokenValue('and'))
+                {
+                    $precedingOperator = AST\LogicalJunction::OP_AND;
+
+                    $this->tokenizer->readNextToken();
+
+                    continue;
+                }
+            }
+            break;
+        }
+
+        // WHERE PART
+        return $retVal;
+    }
+
+    /**
+     * @return LogicalGroup
+     * @throws ParseException
+     */
+    private function parseWithDataCategoryLogicalGroup()
+    {
+        $retVal = new AST\LogicalGroup();
+
+        $retVal->addAll($this->parseWithDataCategoryConditions());
+
+        return $retVal;
+    }
+
     /**
      * @return array
      * @throws ParseException
      */
-    private function parseWithConditions()
+    private function parseWithDataCategoryConditions()
     {
         $retVal = array();
 
@@ -1275,7 +1364,7 @@ class QueryParser implements QueryParserInterface
         // IS (AGGREGATE?) FUNCTION?
         if($this->tokenizer->is(TokenType::LEFT_PAREN))
         {
-            return $this->parseFunctionExpression($fieldName, SoqlFunctionInterface::CONTEXT_GROUP_BY);
+            return new AST\GroupByFunction($this->parseFunctionExpression($fieldName, SoqlFunctionInterface::CONTEXT_GROUP_BY));
         }
 
         return new AST\GroupByField($fieldName);
@@ -1390,8 +1479,16 @@ class QueryParser implements QueryParserInterface
      */
     private function parseHavingLeft()
     {
-        // ONLY AGGREGATE FUNCTIONS ALLOWED
-        return $this->parseFunctionExpression($this->tokenizer->getTokenValue(), self::$AGGREGATE_FUNCTIONS);
+        $name = $this->tokenizer->getTokenValue();
+
+        $this->tokenizer->expect(TokenType::EXPRESSION);
+
+        if($this->tokenizer->is(TokenType::LEFT_PAREN))
+        {
+            // ONLY AGGREGATE FUNCTIONS ALLOWED
+            return new AST\HavingFunction($this->parseFunctionExpression($name, self::$AGGREGATE_FUNCTIONS));
+        }
+        return new AST\HavingField($name);
     }
 
     /**
@@ -1502,7 +1599,7 @@ class QueryParser implements QueryParserInterface
 
         if($this->tokenizer->is(TokenType::LEFT_PAREN))
         {
-            $retVal = $this->parseFunctionExpression($fieldName, SoqlFunctionInterface::CONTEXT_ORDER_BY);
+            $retVal = new AST\OrderByFunction($this->parseFunctionExpression($fieldName, SoqlFunctionInterface::CONTEXT_ORDER_BY));
         }
         else
         {
@@ -1617,15 +1714,16 @@ class QueryParser implements QueryParserInterface
      */
     private function parseSelectTypeofExpression()
     {
-        // sobject name
+        // SOBJECT NAME
         $sobjectName = $this->tokenizer->getTokenValue();
-        $this->tokenizer->expect(TokenType::EXPRESSION);
+
+        $this->tokenizer->readNextToken();
 
         // AT LEAST ONE "WHEN" keyword
         $this->tokenizer->expectKeyword('when');
 
         // CONDITION
-        $sobjectType = $this->tokenizer->getTokenValue();
+        $sobjectFieldname = $this->tokenizer->getTokenValue();
         $this->tokenizer->expect(TokenType::EXPRESSION);
 
         $this->tokenizer->expectKeyword('then');
@@ -1634,9 +1732,9 @@ class QueryParser implements QueryParserInterface
         $fieldlist = $this->parseTypeofSelectFields();
 
         $typeofSelectPart = new AST\TypeofSelectPart();
-        $typeofSelectPart->setSobjectType($sobjectName);
+        $typeofSelectPart->setSobjectName($sobjectName);
 
-        $typeofSelectPart->addCondition(new AST\TypeofCondition($sobjectType, new AST\SelectPart($fieldlist)));
+        $typeofSelectPart->addCondition(new AST\TypeofCondition($sobjectFieldname, new AST\SelectPart($fieldlist)));
 
         while(true)
         {
@@ -1644,14 +1742,20 @@ class QueryParser implements QueryParserInterface
             {
                 $this->tokenizer->readNextToken();
 
-                $sobjectType = $this->tokenizer->getTokenValue();
-                $this->tokenizer->expect(TokenType::EXPRESSION);
+                // EXPRESSION AND/OR KEYWORD ("GROUP")
+                $sobjectFieldname = $this->tokenizer->getTokenValue();
+
+                $this->tokenizer->readNextToken();
 
                 $this->tokenizer->expectKeyword('then');
 
                 $fieldlist = $this->parseTypeofSelectFields();
 
-                $typeofSelectPart->addCondition($sobjectType, new AST\SelectPart($fieldlist));
+                $typeofSelectPart->setSobjectName($sobjectName);
+
+                $typeofSelectPart->addCondition(new AST\TypeofCondition($sobjectFieldname, new AST\SelectPart($fieldlist)));
+
+                continue;
             }
             elseif($this->tokenizer->isKeyword('else'))
             {
@@ -1661,18 +1765,14 @@ class QueryParser implements QueryParserInterface
 
                 $typeofSelectPart->setElse(new AST\SelectPart($fieldlist));
 
-                break; // ELSE IS THE END OF THE FAHNENSTANGE
             }
-            else
-            {
-                break;
-            }
+            break; // ELSE IS THE END OF THE FAHNENSTANGE
         }
         return $typeofSelectPart;
     }
 
     /**
-     * @return array<AST\SelectableFieldInterface>
+     * @return array<AST\TypeofSelectField>
      */
     private function parseTypeofSelectFields()
     {
@@ -1702,37 +1802,30 @@ class QueryParser implements QueryParserInterface
     /**
      *
      * @throws ParseException
-     * @return AST\SelectableFieldInterface
+     * @return AST\TypeofSelectField
      */
     private function parseTypeofSelectField()
     {
         $retVal = null;
 
-        if($this->tokenizer->is(TokenType::EXPRESSION))
+        $name = $this->tokenizer->getTokenValue();
+
+        $this->tokenizer->readNextToken();
+
+        // REGULAR OR AGGREGATE FUNCTION
+        if($this->tokenizer->is(TokenType::LEFT_PAREN))
         {
-            $name = $this->tokenizer->getTokenValue();
-
-            $this->tokenizer->expect(TokenType::EXPRESSION);
-
-            // REGULAR OR AGGREGATE FUNCTION
-            if($this->tokenizer->is(TokenType::LEFT_PAREN))
-            {
-                $retVal = $this->parseFunctionExpression($name, SoqlFunctionInterface::CONTEXT_SELECT);
-            }
-
-            // PLAIN FIELDNAME
-            else
-            {
-                $retVal = new AST\SelectField($name);
-            }
+            $retVal = new AST\SelectFunction($this->parseFunctionExpression($name, SoqlFunctionInterface::CONTEXT_SELECT));
         }
+
+        // PLAIN FIELDNAME
         else
         {
-            throw new ParseException(sprintf('Unexpected token "%s", expecting fieldname or (aggregate) function', $this->tokenizer->getTokenType()), $this->tokenizer->getLine(), $this->tokenizer->getLinePos(), $this->tokenizer->getInput());
+            $retVal = new AST\SelectField($name);
         }
 
         // ALIAS
-        if($this->tokenizer->is(TokenType::EXPRESSION))
+        if($this->tokenizer->is(TokenType::EXPRESSION) && $retVal instanceof AST\CanHazAliasInterface)
         {
             $retVal->setAlias($this->parseAlias());
         }

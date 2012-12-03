@@ -6,7 +6,7 @@ class TypeofCondition
     /**
      * @var string
      */
-    private $sobjectType;
+    private $sobjectFieldname;
 
     /**
      * @var SelectPart
@@ -14,12 +14,12 @@ class TypeofCondition
     private $selectPart;
 
     /**
-     * @param string $sobjectType
+     * @param string $sobjectFieldname
      * @param SelectPart $selectPart
      */
-    public function __construct($sobjectType, SelectPart $selectPart)
+    public function __construct($sobjectFieldname, SelectPart $selectPart)
     {
-        $this->sobjectType = $sobjectType;
+        $this->sobjectFieldname = $sobjectFieldname;
 
         $this->selectPart = $selectPart;
     }
@@ -35,8 +35,8 @@ class TypeofCondition
     /**
      * @return string
      */
-    public function getSobjectType()
+    public function getSobjectFieldname()
     {
-        return $this->sobjectType;
+        return $this->sobjectFieldname;
     }
 }

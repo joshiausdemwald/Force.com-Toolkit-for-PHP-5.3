@@ -1,6 +1,11 @@
 <?php
 namespace Codemitte\ForceToolkit\Soql\AST\Functions;
 
+use
+    Codemitte\ForceToolkit\Soql\AST\SelectFieldInterface,
+    Codemitte\ForceToolkit\Soql\AST\CanHazAliasInterface
+;
+
 /**
  * SoqlFunctionInterface
  *
@@ -12,7 +17,7 @@ namespace Codemitte\ForceToolkit\Soql\AST\Functions;
  * @Interface
  * @Abstract
  */
-interface SoqlFunctionInterface
+interface SoqlFunctionInterface extends SelectFieldInterface, CanHazAliasInterface
 {
     const
         CONTEXT_SELECT = 1,

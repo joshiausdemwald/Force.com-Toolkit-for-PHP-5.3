@@ -14,16 +14,16 @@ class OrderPart
     }
 
     /**
-     * @param \Codemitte\ForceToolkit\Soql\AST\SortableInterface $field
+     * @param OrderByFieldInterface $field
      * @return void
      */
-    public function addOrderField(SortableInterface $field)
+    public function addOrderField(OrderByFieldInterface $field)
     {
         $this->orderFields[] = $field;
     }
 
     /**
-     * @param array $fields<SortableInterface>
+     * @param array $fields<OrderByFieldInterface>
      */
     public function addOrderFields(array $fields)
     {

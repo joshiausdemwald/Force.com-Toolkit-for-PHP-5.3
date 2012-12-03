@@ -4,7 +4,7 @@ namespace Codemitte\ForceToolkit\Soql\AST;
 class SelectPart
 {
     /**
-     * @var array<SelectableInterface>
+     * @var array<SelectFieldInterface>
      */
     private $selectFields;
 
@@ -17,11 +17,10 @@ class SelectPart
     }
 
     /**
-     * @param SelectableInterface $field
-     * @internal param $ \Codemitte\ForceToolkit\Soql\AST\Selectable
+     * @param SelectFieldInterface $field
      * @return void
      */
-    public function addSelectField(SelectableInterface $field)
+    public function addSelectField($field)
     {
         $this->selectFields[] = $field;
     }
@@ -38,7 +37,7 @@ class SelectPart
     }
 
     /**
-     * @return array<SelectableInterface>
+     * @return array<SelectFieldInterface>
      */
     public function getSelectFields()
     {

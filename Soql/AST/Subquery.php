@@ -1,7 +1,7 @@
 <?php
 namespace Codemitte\ForceToolkit\Soql\AST;
 
-class Subquery extends AbstractSelectable implements ComparableInterface
+class Subquery extends AbstractCanHazAlias implements SelectFieldInterface, ComparableInterface
 {
     /**
      * @var Query

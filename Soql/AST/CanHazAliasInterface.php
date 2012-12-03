@@ -1,24 +1,21 @@
 <?php
 namespace Codemitte\ForceToolkit\Soql\AST;
 
-interface SelectableFieldInterface extends SelectableInterface
+interface CanHazAliasInterface
 {
     /**
-     * @abstract
      * @param Alias $alias
-     * @return Alias
+     * @return void
      */
     public function setAlias(Alias $alias);
 
     /**
-     * @abstract
-     * @return Alias
+     * @return string
      */
     public function getAlias();
 
     /**
-     * @abstract
-     * @return boolean
+     * @return bool
      */
     public function hasAlias();
 }

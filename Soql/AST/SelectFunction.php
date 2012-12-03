@@ -3,7 +3,7 @@ namespace Codemitte\ForceToolkit\Soql\AST;
 
 use Codemitte\ForceToolkit\Soql\AST\Functions\SoqlFunctionInterface;
 
-class OrderByFunction extends AbstractOrderByField
+class SelectFunction extends AbstractCanHazAlias implements SelectFieldInterface
 {
     /**
      * @var Functions\SoqlFunctionInterface

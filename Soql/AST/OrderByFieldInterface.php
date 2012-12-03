@@ -1,7 +1,7 @@
 <?php
 namespace Codemitte\ForceToolkit\Soql\AST;
 
-interface SortableInterface
+interface OrderByFieldInterface
 {
     const DIRECTION_ASC = 'ASC';
     const DIRECTION_DESC = 'DESC';

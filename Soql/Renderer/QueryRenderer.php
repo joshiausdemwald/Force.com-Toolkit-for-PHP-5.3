@@ -86,15 +86,15 @@ class QueryRenderer
     }
 
     /**
-     * @param \Codemitte\ForceToolkit\Soql\AST\SelectableInterface $selectField
+     * @param \Codemitte\ForceToolkit\Soql\AST\SelectField|\Codemitte\ForceToolkit\Soql\AST\TypeofSelectPart $selectField
      * @return string
      */
-    private function renderSelectField(AST\SelectableInterface $selectField)
+    private function renderSelectField($selectField)
     {
         $retVal = null;
 
         // SUBQUERIES; FUNCTIONS/AGGREGATES; SUBQUERS (EVERYTHING HAVING AN ALIAS)
-        if($selectField instanceof AST\SelectableFieldInterface)
+        if($selectField instanceof AST\SelectField)
         {
             if($selectField instanceof AST\Subquery)
             {
@@ -109,7 +109,7 @@ class QueryRenderer
         }
 
         // TYPEOF SelectPart
-        elseif($selectField instanceof AST\SelectableInterface)
+        elseif($selectField instanceof AST\SelectField)
         {
             if($selectField instanceof AST\TypeofSelectPart)
             {

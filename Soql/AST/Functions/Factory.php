@@ -19,6 +19,8 @@ class Factory
     {
         $uppercaseName = strtoupper($name);
 
+        $retVal = null;
+
         switch ($uppercaseName)
         {
             // AGGREGATE FUNCTIONS
@@ -37,7 +39,6 @@ class Factory
                 else
                 {
                     $retVal = new Aggregate\Cnt($arguments);
-
                 }
                 break;
             case 'COUNT_DISTINCT':
@@ -102,6 +103,10 @@ class Factory
                 $retVal = new ConvertCurrency($arguments);
                 break;
 
+            case 'CONVERTTIMEZONE':
+                $retVal = new ConvertTimezone($arguments);
+                break;
+
             // GEOFUNCTIONS (CURRENTLY ONLY SUPPORTED IN WHERE CLAUSE)
             case 'DISTANCE':
                 $retVal = new Distance($arguments);
@@ -109,6 +114,9 @@ class Factory
             case 'GEOLOCATION':
                 $retVal = new Geolocation($arguments);
                 break;
+
+            default:
+                throw new ParseException(sprintf('Unknown function "%s" in context "%s"', $name, $context), $tokenizer->getLine(), $tokenizer->getLinePos(), $tokenizer->getInput());
         }
 
         if( ! ($retVal->getAllowedContext() & $context))

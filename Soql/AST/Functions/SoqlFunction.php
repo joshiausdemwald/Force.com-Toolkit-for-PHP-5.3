@@ -1,7 +1,9 @@
 <?php
 namespace Codemitte\ForceToolkit\Soql\AST\Functions;
 
-abstract class SoqlFunction implements SoqlFunctionInterface
+use Codemitte\ForceToolkit\Soql\AST\AbstractCanHazAlias;
+
+abstract class SoqlFunction extends AbstractCanHazAlias implements SoqlFunctionInterface
 {
     /**
      * @var array

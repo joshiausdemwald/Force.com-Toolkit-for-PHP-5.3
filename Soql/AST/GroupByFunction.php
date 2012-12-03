@@ -3,7 +3,7 @@ namespace Codemitte\ForceToolkit\Soql\AST;
 
 use Codemitte\ForceToolkit\Soql\AST\Functions\SoqlFunctionInterface;
 
-class OrderByFunction extends AbstractOrderByField
+class GroupByFunction implements GroupableInterface
 {
     /**
      * @var Functions\SoqlFunctionInterface
@@ -19,7 +19,7 @@ class OrderByFunction extends AbstractOrderByField
     }
 
     /**
-     * @return Functions\SoqlFunctionInterface
+     * @return \Codemitte\ForceToolkit\Soql\AST\Functions\SoqlFunctionInterface
      */
     public function getFunction()
     {
