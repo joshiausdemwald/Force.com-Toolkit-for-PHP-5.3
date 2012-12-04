@@ -508,7 +508,12 @@ WHERE Amount > USD5000");
 FROM Opportunity
 GROUP BY Name
 HAVING MAX(Amount) > 10000");
+    }
 
+    public function testParseKeywordsAsExpressions()
+    {
+        $this->newParser()->parse("SELECT MAX(dingsda) FROM bums HAVING MAX(dingsda) > 100");
 
+        $this->newParser()->parse("SELECT min, MAX(dingsda) max FROM group HAVING MAX(dingsda) > 100");
     }
 }

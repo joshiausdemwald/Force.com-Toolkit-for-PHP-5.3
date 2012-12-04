@@ -522,11 +522,19 @@ class Tokenizer implements TokenizerInterface
      * Returns true if the current token is expression or keyword. Used for
      * filtering reserved names (like "GROUP") as fieldnames.
      *
+     * @param string|array $excludeKeywords: List of Keywords to exclude
      * @return bool
      */
-    public function isExpressionOrKeyword()
+    public function isExpressionOrKeyword($excludeKeywords = array())
     {
-        return $this->is(TokenType::EXPRESSION) || $this->is(TokenType::KEYWORD);
+        if(! is_array($excludeKeywords))
+        {
+            $excludeKeywords = array($excludeKeywords);
+        }
+
+        array_walk($excludeKeywords, function( &$value ){ $value = strtolower($value); });
+
+        return $this->is(TokenType::EXPRESSION) || ($this->is(TokenType::KEYWORD) && ! in_array(strtolower($this->getTokenValue()), $excludeKeywords));
     }
 
     /**

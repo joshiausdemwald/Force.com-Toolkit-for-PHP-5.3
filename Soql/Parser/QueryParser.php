@@ -25,9 +25,8 @@ namespace Codemitte\ForceToolkit\Soql\Parser;
 use Codemitte\ForceToolkit\Soql\Tokenizer\TokenizerInterface;
 use Codemitte\ForceToolkit\Soql\Tokenizer\TokenizerException;
 use Codemitte\ForceToolkit\Soql\Tokenizer\TokenType;
-use Codemitte\ForceToolkit\Soql\AST\Functions\SoqlFunctionInterface;
-use Codemitte\ForceToolkit\Soql\AST\Functions\Factory AS SoqlFunctionFactory;
-use Codemitte\ForceToolkit\Soql\AST;
+use Codemitte\ForceToolkit\Soql\AST\Functions AS Functions;
+use Codemitte\ForceToolkit\Soql\AST AS AST;
 
 /**
  * QueryParser
@@ -422,7 +421,7 @@ class QueryParser implements QueryParserInterface
      * Account.Id
      * ID
      * @throws ParseException
-     * @return \Codemitte\ForceToolkit\Soql\AST\SelectExpression
+     * @return AST\SelectField
      */
     private function parseSelectField()
     {
@@ -459,28 +458,24 @@ class QueryParser implements QueryParserInterface
         }
 
         // "ORDINARY" FIELD OR FUNCTION
-        elseif($this->tokenizer->is(TokenType::EXPRESSION))
+        elseif($this->tokenizer->isExpressionOrKeyword('from'))
         {
             $name = $this->tokenizer->getTokenValue();
 
-            $this->tokenizer->expect(TokenType::EXPRESSION);
+            $this->tokenizer->readNextToken();
 
             // IS (AGGREGATE) FUNCTION
             if($this->tokenizer->is(TokenType::LEFT_PAREN))
             {
-                $expression = new AST\SelectFunction($this->parseFunctionExpression($name, SoqlFunctionInterface::CONTEXT_SELECT));
+                $expression = new AST\SelectFunction($this->parseFunctionExpression($name, Functions\SoqlFunctionInterface::CONTEXT_SELECT));
             }
             else
             {
                 $expression = new AST\SelectField($name);
             }
         }
-        else
-        {
-            throw new ParseException(sprintf('Unexpected token "%s", expecting Expression or Left Paren', $this->tokenizer->getTokenType()), $this->tokenizer->getLine(), $this->tokenizer->getLinePos(), $this->tokenizer->getInput());
-        }
 
-        // IS THE NEXT TOKEN  AN ALIAS?
+        // IS THE NEXT TOKEN AN ALIAS?
         if($this->tokenizer->is(TokenType::EXPRESSION) && $expression instanceof AST\CanHazAliasInterface)
         {
             $expression->setAlias($this->parseAlias());
@@ -505,10 +500,10 @@ class QueryParser implements QueryParserInterface
     {
         $retVal = new AST\FromPart($this->tokenizer->getTokenValue());
 
-        $this->tokenizer->expect(TokenType::EXPRESSION);
+        $this->tokenizer->readNextToken();
 
         // HAS ALIAS
-        if($this->tokenizer->is(TokenType::EXPRESSION) && $retVal instanceof AST\CanHazAliasInterface)
+        if($this->tokenizer->is(TokenType::EXPRESSION))
         {
             $retVal->setAlias($this->parseAlias());
         }
@@ -693,7 +688,7 @@ class QueryParser implements QueryParserInterface
     }
 
     /**
-     * @return \Codemitte\ForceToolkit\Soql\AST\SoqlExpression|\Codemitte\ForceToolkit\Soql\AST\Functions\SoqlFunctionInterface
+     * @return AST\SoqlExpression|Functions\SoqlFunctionInterface
      * @throws ParseException
      */
     private function parseWhereLeft()
@@ -706,7 +701,7 @@ class QueryParser implements QueryParserInterface
         // DATE OR GEOLOCATION FUNCTION (DISTANCE/GEOLOCATION)
         if($this->tokenizer->is(TokenType::LEFT_PAREN))
         {
-            return $this->parseFunctionExpression($name, SoqlFunctionInterface::CONTEXT_WHERE);
+            return $this->parseFunctionExpression($name, Functions\SoqlFunctionInterface::CONTEXT_WHERE);
         }
         // REGULAR IDENTIFIER
         return new AST\SoqlName($this->tokenizer->getTokenValue());
@@ -952,14 +947,14 @@ class QueryParser implements QueryParserInterface
      * @param string $funcname
      * @param int $context
      * @throws ParseException
-     * @return \Codemitte\ForceToolkit\Soql\AST\Functions\SoqlFunctionInterface
+     * @return Functions\SoqlFunctionInterface
      */
     private function parseFunctionExpression($funcname, $context)
     {
         $this->tokenizer->expect(TokenType::LEFT_PAREN);
         try
         {
-            $retVal = SoqlFunctionFactory::getInstance($funcname, $context, $this->tokenizer, $this->parseFunctionArguments($funcname, $context));
+            $retVal = Functions\Factory::getInstance($funcname, $context, $this->tokenizer, $this->parseFunctionArguments($funcname, $context));
         }
         catch(\Exception $e)
         {
@@ -1011,7 +1006,7 @@ class QueryParser implements QueryParserInterface
      * @param string $funcName
      * @param int $context
      * @throws \Exception
-     * @return SoqlFunctionInterface|\Codemitte\ForceToolkit\Soql\AST\SoqlName
+     * @return Functions\SoqlFunctionInterface|AST\SoqlName
      */
     private function parseFunctionArgument($funcName, $context)
     {
@@ -1364,7 +1359,7 @@ class QueryParser implements QueryParserInterface
         // IS (AGGREGATE?) FUNCTION?
         if($this->tokenizer->is(TokenType::LEFT_PAREN))
         {
-            return new AST\GroupByFunction($this->parseFunctionExpression($fieldName, SoqlFunctionInterface::CONTEXT_GROUP_BY));
+            return new AST\GroupByFunction($this->parseFunctionExpression($fieldName, Functions\SoqlFunctionInterface::CONTEXT_GROUP_BY));
         }
 
         return new AST\GroupByField($fieldName);
@@ -1599,7 +1594,7 @@ class QueryParser implements QueryParserInterface
 
         if($this->tokenizer->is(TokenType::LEFT_PAREN))
         {
-            $retVal = new AST\OrderByFunction($this->parseFunctionExpression($fieldName, SoqlFunctionInterface::CONTEXT_ORDER_BY));
+            $retVal = new AST\OrderByFunction($this->parseFunctionExpression($fieldName, Functions\SoqlFunctionInterface::CONTEXT_ORDER_BY));
         }
         else
         {
@@ -1815,7 +1810,7 @@ class QueryParser implements QueryParserInterface
         // REGULAR OR AGGREGATE FUNCTION
         if($this->tokenizer->is(TokenType::LEFT_PAREN))
         {
-            $retVal = new AST\SelectFunction($this->parseFunctionExpression($name, SoqlFunctionInterface::CONTEXT_SELECT));
+            $retVal = new AST\SelectFunction($this->parseFunctionExpression($name, Functions\SoqlFunctionInterface::CONTEXT_SELECT));
         }
 
         // PLAIN FIELDNAME
