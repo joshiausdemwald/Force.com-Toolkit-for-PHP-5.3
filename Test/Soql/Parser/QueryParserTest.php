@@ -1,5 +1,5 @@
 <?php
-namespace Codemitte\ForceToolkit\Test\Soql\Builder;
+namespace Codemitte\ForceToolkit\Test\Soql\Parser;
 
 use
     Codemitte\ForceToolkit\Soap\Client\Connection\SfdcConnection,

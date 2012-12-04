@@ -17,5 +17,11 @@
         <testsuite name="Soql_Builder">
             <directory>Test/Soql/Builder</directory>
         </testsuite>
+        <testsuite name="Soql_Query_Parser">
+            <directory>Test/Soql/Parser</directory>
+        </testsuite>
+        <testsuite name="Soql_Query_Renderer">
+            <directory>Test/Soql/Renderer</directory>
+        </testsuite>
     </testsuites>
 </phpunit>

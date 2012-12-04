@@ -2,7 +2,8 @@
 namespace Codemitte\ForceToolkit\Soql\Renderer;
 
 use
-    Codemitte\ForceToolkit\Soql\AST,
+    Codemitte\ForceToolkit\Soql\AST AS AST,
+    Codemitte\ForceToolkit\Soql\AST\Functions AS Functions,
     Codemitte\ForceToolkit\Soql\Type\TypeFactory;
 
 
@@ -86,10 +87,10 @@ class QueryRenderer
     }
 
     /**
-     * @param \Codemitte\ForceToolkit\Soql\AST\SelectField|\Codemitte\ForceToolkit\Soql\AST\TypeofSelectPart $selectField
+     * @param AST\SelectFieldInterface $selectField
      * @return string
      */
-    private function renderSelectField($selectField)
+    private function renderSelectField(AST\SelectFieldInterface $selectField)
     {
         $retVal = null;
 
@@ -109,12 +110,9 @@ class QueryRenderer
         }
 
         // TYPEOF SelectPart
-        elseif($selectField instanceof AST\SelectField)
+        elseif($selectField instanceof AST\TypeofSelectPart)
         {
-            if($selectField instanceof AST\TypeofSelectPart)
-            {
-                return $this->renderTypeofSelectPart($selectField);
-            }
+            return $this->renderTypeofSelectPart($selectField);
         }
     }
 
