@@ -13,22 +13,22 @@ class QueryResult implements ClassInterface, MapInterface
     /**
      * @var string
      */
-    public $queryLocator;
+    private $queryLocator;
 
     /**
      * @var bool
      */
-    public $done;
+    private $done;
 
     /**
      * @var array
      */
-    public $records;
+    private $records;
 
     /**
      * @var int
      */
-    public $size;
+    private $size;
 
     /**
      * @return string
@@ -179,7 +179,8 @@ class QueryResult implements ClassInterface, MapInterface
      */
     public function get($key)
     {
-        return $this->$key;
+        $method = 'get' . ucfirst($key);
+        return $this->$method();
     }
 
     /**
