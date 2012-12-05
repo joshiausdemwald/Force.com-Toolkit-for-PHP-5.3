@@ -10,7 +10,7 @@ class Sobject implements SobjectInterface
     /**
      * @var \Codemitte\ForceToolkit\Soap\Mapping\Type\ID
      */
-    public $Id;
+    private $Id;
 
     /**
      * @var string
@@ -60,7 +60,6 @@ class Sobject implements SobjectInterface
                 $retVal[] = $key;
             }
         }
-
         return count($retVal) > 0 ? $retVal : null;
     }
 
@@ -71,7 +70,7 @@ class Sobject implements SobjectInterface
      */
     public function getId()
     {
-        // "DUPLICATE ID FEATURE"
+        // DUPLICATE ID "FEATURE"
         if(is_array($this->Id))
         {
             $this->Id = $this->Id[0];
@@ -81,7 +80,6 @@ class Sobject implements SobjectInterface
 
     /**
      * Returns the sobject type.
-     *
      *
      * @return string
      */
@@ -174,7 +172,13 @@ class Sobject implements SobjectInterface
     {
         $this->convertAny();
 
-        if(property_exists($this, $key))
+        $method = 'get' . ucfirst($key);
+
+        if(method_exists($this, $method))
+        {
+            return $this->$method();
+        }
+        elseif(property_exists($this, $key))
         {
             return $this->$key;
         }
