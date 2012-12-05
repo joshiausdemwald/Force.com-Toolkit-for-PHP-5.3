@@ -10,7 +10,7 @@ interface CanHazAliasInterface
     public function setAlias(Alias $alias);
 
     /**
-     * @return string
+     * @return Alias
      */
     public function getAlias();
 

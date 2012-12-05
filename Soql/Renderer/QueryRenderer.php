@@ -47,12 +47,15 @@ class QueryRenderer
     }
 
     /**
-     * @param \Codemitte\ForceToolkit\Soql\AST\Query $query
-     * @throws \RuntimeException
+     * QueryInterface:
+     * May pass query or subquery to render (Subqueries are aliasable.)
+     *
+     * @param \Codemitte\ForceToolkit\Soql\AST\QueryInterface $query
      * @return string
      */
-    private function renderQuery(AST\Query $query)
+    private function renderQuery(AST\QueryInterface $query)
     {
+        $query = $query->getQuery();
         return
             $this->renderSelect($query->getSelectPart()) .
             $this->renderFrom($query->getFromPart()) .
@@ -94,37 +97,43 @@ class QueryRenderer
     {
         $retVal = null;
 
-        // SUBQUERIES; FUNCTIONS/AGGREGATES; SUBQUERS (EVERYTHING HAVING AN ALIAS)
+        // SUBQUERIES; FUNCTIONS/AGGREGATES; SUBQUERIES (EVERYTHING HAVING AN ALIAS)
         if($selectField instanceof AST\SelectField)
         {
             if($selectField instanceof AST\Subquery)
             {
                 $retVal = '(' . $this->renderQuery($selectField->getQuery()) . ')';
             }
+            elseif($selectField instanceof AST\TypeofSelectPart)
+            {
+                $retVal = $this->renderTypeofSelectPart($selectField);
+            }
+            elseif($selectField instanceof AST\SelectFunction)
+            {
+                $retVal = $this->renderFunction($selectField->getFunction());
+            }
             else
             {
                 $retVal = $selectField->getName();
             }
-
-            return $retVal . $this->renderAlias($selectField->getAlias());
         }
 
-        // TYPEOF SelectPart
-        elseif($selectField instanceof AST\TypeofSelectPart)
+        if($selectField instanceof AST\CanHazAliasInterface)
         {
-            return $this->renderTypeofSelectPart($selectField);
+            $retVal .= $this->renderAlias($selectField);
         }
+
+        return $retVal;
     }
 
     /**
-     * @param \Codemitte\ForceToolkit\Soql\AST\TypeofSelectPart $typeofSelectPart
+     * @param AST\TypeofSelectPart $typeofSelectPart
      * @return string
      */
     private function renderTypeofSelectPart(AST\TypeofSelectPart $typeofSelectPart)
     {
         $retVal = 'TYPEOF ' . $typeofSelectPart->getSobjectType();
 
-        /** @var $condition AST\TypeofCondition */
         foreach($typeofSelectPart->getConditions() AS $condition)
         {
             $retVal .= ' WHEN ' . $condition->getSobjectType() . ' THEN ';
@@ -164,22 +173,26 @@ class QueryRenderer
      */
     private function renderFrom(AST\FromPart $fromPart)
     {
-        return ' FROM ' .
-            $fromPart->getFromObject() .
-            $this->renderAlias($fromPart->getAlias());
+        $retVal = ' FROM ' . $fromPart->getFromObject();
+
+        if($fromPart instanceof AST\CanHazAliasInterface)
+        {
+            $retVal .= $this->renderAlias($fromPart->getAlias());
+        }
+        return $retVal;
     }
 
     /**
-     * @param \Codemitte\ForceToolkit\Soql\AST\Alias $alias
+     * @param \Codemitte\ForceToolkit\Soql\AST\CanHazAliasInterface $alias
      * @return string
      */
-    private function renderAlias(AST\Alias $alias = null)
+    private function renderAlias(AST\CanHazAliasInterface $alias)
     {
-        if(null === $alias)
+        if($alias->hasAlias())
         {
-            return '';
+            return ' AS ' . $alias->getAlias()->getName();
         }
-        return ' AS ' . $alias->getName();
+        return '';
     }
 
     /**
@@ -326,10 +339,44 @@ class QueryRenderer
 
         foreach($orderFields AS $orderField)
         {
-            $parts[] = (string) $orderField;
+            $parts[] = $this->renderOrderByField($orderField);
         }
 
         return implode(', ', $parts);
+    }
+
+    /**
+     * May pass function/aggregate function and/or plain fieldnames.
+     *
+     * @param AST\OrderByFieldInterface $orderByField
+     * @return string
+     */
+    private function renderOrderByField(AST\OrderByFieldInterface $orderByField)
+    {
+        $retVal = '';
+
+        if($orderByField instanceof AST\OrderByFunction)
+        {
+            $retVal .= $this->renderFunction($orderByField->getFunction());
+        }
+
+        // PLAIN FIELD
+        else
+        {
+            $retVal .= $orderByField->getName();
+        }
+
+        if($dir = $orderByField->getDirection())
+        {
+            $retVal .= ' ' . $dir;
+        }
+
+        if($nulls = $orderByField->getNulls())
+        {
+            $retVal .=  ' ' . $nulls;
+        }
+
+        return $retVal;
     }
 
     /**
@@ -374,10 +421,10 @@ class QueryRenderer
     }
 
     /**
-     * @param \Codemitte\ForceToolkit\Soql\AST\LogicalCondition $condition
+     * @param \Codemitte\ForceToolkit\Soql\AST\LogicalConditionInterface $condition
      * @return string
      */
-    private function renderCondition(AST\LogicalCondition $condition)
+    private function renderCondition(AST\LogicalConditionInterface $condition)
     {
         $retVal = null;
 
@@ -416,11 +463,10 @@ class QueryRenderer
     }
 
     /**
-     * @param \Codemitte\ForceToolkit\Soql\AST\SoqlFunction $function
+     * @param \Codemitte\ForceToolkit\Soql\AST\Functions\SoqlFunctionInterface $function
      * @return string
-     * @todo: CLEANUP, see RenderExpression
      */
-    private function renderFunction(AST\SoqlFunction $function)
+    private function renderFunction(Functions\SoqlFunctionInterface $function)
     {
         $retVal = $function->getName() . '(';
 
@@ -439,11 +485,10 @@ class QueryRenderer
     /**
      * @param $argument
      * @return string
-     * @todo: CLEANUP, see RenderExpression
      */
     private function renderFunctionArgument($argument)
     {
-        if($argument instanceof \Codemitte\ForceToolkit\Soql\AST\SoqlFunction)
+        if($argument instanceof AST\Functions\SoqlFunctionInterface)
         {
             return $this->renderFunction($argument);
         }
@@ -456,7 +501,7 @@ class QueryRenderer
      */
     private function renderComparable(AST\ComparableInterface $comparable)
     {
-        if($comparable instanceof \Codemitte\ForceToolkit\Soql\AST\Subquery)
+        if($comparable instanceof AST\Subquery)
         {
             return '(' . $this->renderQuery($comparable) . ')';
         }

@@ -1,7 +1,7 @@
 <?php
 namespace Codemitte\ForceToolkit\Soql\AST;
 
-class Query
+class Query implements QueryInterface
 {
     /**
      * @var SelectPart $selectPart;
@@ -191,5 +191,13 @@ class Query
     public function getWithPart()
     {
         return $this->withPart;
+    }
+
+    /**
+     * @return Query
+     */
+    public function getQuery()
+    {
+        return $this;
     }
 }

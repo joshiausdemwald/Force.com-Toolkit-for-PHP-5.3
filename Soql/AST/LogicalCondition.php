@@ -1,7 +1,7 @@
 <?php
 namespace Codemitte\ForceToolkit\Soql\AST;
 
-class LogicalCondition
+class LogicalCondition implements LogicalConditionInterface
 {
     /**
      * @var SoqlName|\Codemitte\ForceToolkit\Soql\AST\Functions\SoqlFunctionInterface

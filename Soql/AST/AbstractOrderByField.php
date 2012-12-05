@@ -26,26 +26,4 @@ abstract class AbstractOrderByField implements OrderByFieldInterface
     {
         return $this->nulls;
     }
-
-    public function getName()
-    {
-        return $this->name;
-    }
-
-    public function __toString()
-    {
-        $retVal = $this->getName();
-
-        if($dir = $this->getDirection())
-        {
-            $retVal .= ' ' . $dir;
-        }
-
-        if($nulls = $this->getNulls())
-        {
-            $retVal .=  ' ' . $nulls;
-        }
-
-        return $retVal;
-    }
 }

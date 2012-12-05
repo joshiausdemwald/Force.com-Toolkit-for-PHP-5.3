@@ -16,6 +16,4 @@ interface OrderByFieldInterface
     public function setNulls($nulls);
 
     public function getNulls();
-
-    public function __toString();
 }

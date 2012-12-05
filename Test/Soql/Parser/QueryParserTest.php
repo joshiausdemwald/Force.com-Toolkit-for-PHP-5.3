@@ -219,9 +219,28 @@ WHERE Id IN
     WHERE totalPrice > 10000
   )");
 
-        $this->newParser()->parse("SELECT Id
+        $ast = $this->newParser()->parse("SELECT Id
  FROM Idea
  WHERE (Id IN (SELECT ParentId FROM Vote WHERE CreatedDate > LAST_WEEK AND Parent.Type='Idea'))");
+
+        // RENDERING FAILS, CHECK AST INTEGRITY
+        $this->assertInstanceOf('Codemitte\ForceToolkit\Soql\AST\QueryInterface', $ast);
+        $wherePart = $ast->getQuery()->getWherePart();
+        $this->assertInstanceOf('Codemitte\ForceToolkit\Soql\AST\WherePart', $wherePart);
+        $logicalGroup1 = $wherePart->getLogicalGroup();
+        $this->assertInstanceOf('Codemitte\ForceToolkit\Soql\AST\LogicalGroup', $logicalGroup1);
+        $logicalJunctions1 = $logicalGroup1->getJunctions();
+        $this->assertCount(1, $logicalJunctions1);
+        $logicalGroup11 = $logicalJunctions1[0]->getCondition();
+        $this->assertInstanceOf('Codemitte\ForceToolkit\Soql\AST\LogicalGroup', $logicalGroup11);
+        $logicalJunctions11 = $logicalGroup11->getJunctions();
+        $this->assertCount(1, $logicalJunctions11);
+        $logicalCondition11 = $logicalJunctions11[0]->getCondition();
+        $this->assertInstanceOf('Codemitte\ForceToolkit\Soql\AST\LogicalCondition', $logicalCondition11);
+        $this->assertInstanceOf('Codemitte\ForceToolkit\Soql\AST\SoqlName', $logicalCondition11->getLeft());
+        $this->assertEquals('IN', $logicalCondition11->getOperator());
+        $this->assertInstanceOf('Codemitte\ForceToolkit\Soql\AST\Subquery', $logicalCondition11->getRight());
+        // AST INTEGRITY OF THE WHERE PART SEEMS TO BE VALID
 
         $this->newParser()->parse("SELECT Id, Name
 FROM Account

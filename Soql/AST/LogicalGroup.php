@@ -1,7 +1,7 @@
 <?php
 namespace Codemitte\ForceToolkit\Soql\AST;
 
-class LogicalGroup
+class LogicalGroup implements LogicalConditionInterface
 {
     /**
      * @var array
