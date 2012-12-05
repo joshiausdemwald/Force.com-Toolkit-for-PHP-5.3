@@ -125,12 +125,34 @@ class QueryBuilderTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals($soql, "SELECT fielda, fieldb FROM sobject1 WHERE DISTANCE(geofield__c, GEOLOCATION(37.7, -122.3), 'mi') > 3");
     }
 
-    /*public function testNumber()
+    public function testNumber()
     {
         $builder = $this->newBuilder();
 
         $soql = $builder->prepareStatement('SELECT Id FROM Account WHERE Amount__c > 32.3')->getSoql();
 
         $this->assertEquals('SELECT Id FROM Account WHERE Amount__c > 32.3', $soql);
-    }*/
+    }
+
+    public function testAlias()
+    {
+        $res = $this->newBuilder()->prepareStatement('
+                SELECT
+                    b.Id,
+                    b.Name,
+                    b.Competitor__c,
+                    b.Country__c,
+                    b.ID2__c
+                FROM
+                    Brand__c b
+                WHERE
+                    b.Name = :brandname
+                LIMIT 1
+                ',
+            array(
+                'brandname' => 'Philipps'
+            ))->getSoql();
+
+        $this->assertEquals("SELECT b.Id, b.Name, b.Competitor__c, b.Country__c, b.ID2__c FROM Brand__c AS b WHERE b.Name = 'Philipps' LIMIT 1", $res);
+    }
 }

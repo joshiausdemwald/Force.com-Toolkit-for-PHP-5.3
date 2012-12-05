@@ -505,8 +505,15 @@ class QueryParser implements QueryParserInterface
         $this->tokenizer->readNextToken();
 
         // HAS ALIAS
-        if($this->tokenizer->is(TokenType::EXPRESSION))
-        {
+        if($this->tokenizer->isExpressionOrKeyword(array(
+            'where',
+            'with',
+            'group',
+            'having',
+            'order',
+            'limit',
+            'offset'
+        ))) {
             $retVal->setAlias($this->parseAlias());
         }
         return $retVal;

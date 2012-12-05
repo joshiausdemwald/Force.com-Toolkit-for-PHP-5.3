@@ -175,10 +175,8 @@ class QueryRenderer
     {
         $retVal = ' FROM ' . $fromPart->getFromObject();
 
-        if($fromPart instanceof AST\CanHazAliasInterface)
-        {
-            $retVal .= $this->renderAlias($fromPart->getAlias());
-        }
+        $retVal .= $this->renderAlias($fromPart);
+
         return $retVal;
     }
 
