@@ -34,6 +34,9 @@ class TokenType
         OP_GTE              = 'SOQL_OP_GTE',
 
         // ALLES ANDERE; FIELDNAMES, FUNCTIONS
-        EXPRESSION          = 'SOQL_EXPRESSION'
+        EXPRESSION          = 'SOQL_EXPRESSION',
+
+        // +/-
+        SIGN                = 'SOQL_SIGN'
     ;
 }

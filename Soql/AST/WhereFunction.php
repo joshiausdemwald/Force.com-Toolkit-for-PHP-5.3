@@ -3,7 +3,7 @@ namespace Codemitte\ForceToolkit\Soql\AST;
 
 use Codemitte\ForceToolkit\Soql\AST\Functions\SoqlFunctionInterface;
 
-class HavingFunction implements HavingFieldInterface, ConditionLeftOperandFunctionInterface
+class WhereFunction implements WhereFieldInterface, ConditionLeftOperandFunctionInterface
 {
     /**
      * @var Functions\SoqlFunctionInterface

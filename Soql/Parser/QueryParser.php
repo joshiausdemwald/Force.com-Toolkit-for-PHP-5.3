@@ -219,7 +219,25 @@ class QueryParser implements QueryParserInterface
 
         $this->tokenizer->expect(TokenType::BOF);
 
-        return $this->parseWhereConditions();
+        return $this->parseWhereLogicalGroup();
+    }
+
+    public function parseLeftWhereSoql($soql)
+    {
+        $this->tokenizer->setInput($soql);
+
+        $this->tokenizer->expect(TokenType::BOF);
+
+        return $this->parseWhereConditionLeft();
+    }
+
+    public function parseRightWhereSoql($soql)
+    {
+        $this->tokenizer->setInput($soql);
+
+        $this->tokenizer->expect(TokenType::BOF);
+
+        return $this->parseWhereConditionRight();
     }
 
     /**
@@ -249,6 +267,7 @@ class QueryParser implements QueryParserInterface
     }
 
     /**
+     * SAME AS WHERE, BUT NO JOINGS (HAVING X IN ... HAVING X NOT IN ...)
      * @param $soql
      * @return array<LogicalJunction>
      */
@@ -258,7 +277,7 @@ class QueryParser implements QueryParserInterface
 
         $this->tokenizer->expect(TokenType::BOF);
 
-        return $this->parseHavingConditions();
+        return $this->parseHavingLogicalGroup();
     }
 
     /**
@@ -274,31 +293,13 @@ class QueryParser implements QueryParserInterface
         return $this->parseOrderByExpression();
     }
 
-    public function parseLeftWhereSoql($soql)
-    {
-        $this->tokenizer->setInput($soql);
-
-        $this->tokenizer->expect(TokenType::BOF);
-
-        return $this->parseWhereLeft();
-    }
-
     public function parseLeftHavingSoql($soql)
     {
         $this->tokenizer->setInput($soql);
 
         $this->tokenizer->expect(TokenType::BOF);
 
-        return $this->parseHavingLeft();
-    }
-
-    public function parseRightWhereSoql($soql)
-    {
-        $this->tokenizer->setInput($soql);
-
-        $this->tokenizer->expect(TokenType::BOF);
-
-        return $this->parseWhereRight();
+        return $this->parseHavingConditionLeft();
     }
 
     public function parseRightHavingSoql($soql)
@@ -307,7 +308,7 @@ class QueryParser implements QueryParserInterface
 
         $this->tokenizer->expect(TokenType::BOF);
 
-        return $this->parseHavingRight();
+        return $this->parseHavingConditionRight();
     }
 
     /**
@@ -334,12 +335,12 @@ class QueryParser implements QueryParserInterface
 
         if($this->tokenizer->isKeyword('where'))
         {
-            $retVal->setWherePart($this->parseWhere());
+            $retVal->setWherePart($this->parseWhereConditionExpression());
         }
 
         if($this->tokenizer->isKeyword('with'))
         {
-            $retVal->setWithPart($this->parseWith());
+            $retVal->setWithPart($this->parseWithfilteringExpression());
         }
 
         if($this->tokenizer->isKeyword('group'))
@@ -349,7 +350,7 @@ class QueryParser implements QueryParserInterface
 
         if($this->tokenizer->isKeyword('having'))
         {
-            $retVal->setHavingPart($this->parseHaving());
+            $retVal->setHavingPart($this->parseHavingConditionExpression());
         }
 
         if($this->tokenizer->isKeyword('order'))
@@ -437,7 +438,7 @@ class QueryParser implements QueryParserInterface
             $this->tokenizer->expect(TokenType::RIGHT_PAREN);
         }
 
-        // TYPEOF, [WHEN, ELSE] KEYWORD
+        // TYPEOF sobject WHEN ... THEN ... [ELSE]
         elseif($this->tokenizer->is(TokenType::KEYWORD))
         {
             $keyword = strtoupper($this->tokenizer->getTokenValue());
@@ -445,6 +446,7 @@ class QueryParser implements QueryParserInterface
             switch($keyword)
             {
                 case 'TYPEOF':
+
                     $this->tokenizer->readNextToken(); // ADVANCE TO "WHEN"
 
                     $expression = $this->parseSelectTypeofExpression();
@@ -544,7 +546,7 @@ class QueryParser implements QueryParserInterface
      *
      * @return WherePart
      */
-    private function parseWhere()
+    private function parseWhereConditionExpression()
     {
         $this->tokenizer->expectKeyword('where');
 
@@ -566,7 +568,7 @@ class QueryParser implements QueryParserInterface
     {
         $retVal = new AST\LogicalGroup();
 
-        $retVal->addAll($this->parseWhereConditions());
+        $retVal->addAll($this->parseWhereLogicalConditions());
 
         return $retVal;
     }
@@ -574,7 +576,7 @@ class QueryParser implements QueryParserInterface
     /**
      * @return array<LogicalJunction>
      */
-    private function parseWhereConditions()
+    private function parseWhereLogicalConditions()
     {
         $retVal = array();
 
@@ -621,7 +623,7 @@ class QueryParser implements QueryParserInterface
             else
             {
                 // PARSE "x=y?" structure
-                $junction->setCondition($this->parseSimpleWhereCondition());
+                $junction->setCondition($this->parseWhereSimpleCondition());
             }
 
             $retVal[] = $junction;
@@ -674,24 +676,24 @@ class QueryParser implements QueryParserInterface
      * @throws ParseException
      * @return LogicalCondition
      */
-    private function parseSimpleWhereCondition()
+    private function parseWhereSimpleCondition()
     {
         $retVal = new AST\LogicalCondition();
 
-        $retVal->setLeft($this->parseWhereLeft());
+        $retVal->setLeft($this->parseWhereConditionLeft());
 
         $retVal->setOperator($this->parseWhereOperator());
 
-        $retVal->setRight($this->parseWhereRight());
+        $retVal->setRight($this->parseWhereConditionRight());
 
         return $retVal;
     }
 
     /**
-     * @return AST\SoqlExpression|Functions\SoqlFunctionInterface
+     * @return AST\WhereFieldInterface
      * @throws ParseException
      */
-    private function parseWhereLeft()
+    private function parseWhereConditionLeft()
     {
         $name = $this->tokenizer->getTokenValue();
 
@@ -701,11 +703,10 @@ class QueryParser implements QueryParserInterface
         // DATE OR GEOLOCATION FUNCTION (DISTANCE/GEOLOCATION)
         if($this->tokenizer->is(TokenType::LEFT_PAREN))
         {
-            return $this->parseFunctionExpression($name, Functions\SoqlFunctionInterface::CONTEXT_WHERE);
+            return new AST\WhereFunction($this->parseFunctionExpression($name, Functions\SoqlFunctionInterface::CONTEXT_WHERE));
         }
         // REGULAR IDENTIFIER
-        return new AST\SoqlName($this->tokenizer->getTokenValue());
-
+        return new AST\WhereField($name);
     }
 
     /**
@@ -737,7 +738,403 @@ class QueryParser implements QueryParserInterface
      * - VARIABLE
      * @return \Codemitte\ForceToolkit\Soql\AST\ComparableInterface
      */
-    private function parseWhereRight()
+    private function parseWhereConditionRight()
+    {
+        $retVal = null;
+
+        if($this->tokenizer->is(TokenType::LEFT_PAREN))
+        {
+            $this->tokenizer->readNextToken();
+
+            if($this->tokenizer->isKeyword('select'))
+            {
+                // CREATE SUBQUERY
+                $retVal = new AST\Subquery($this->parseQuery());
+            }
+            else
+            {
+                // COLLECTION
+                $retVal = $this->parseCollectionValue();
+            }
+            $this->tokenizer->expect(TokenType::RIGHT_PAREN);
+        }
+        elseif($this->tokenizer->is(TokenType::COLON))
+        {
+            $retVal = $this->parseNamedVariable();
+        }
+        elseif($this->tokenizer->is(TokenType::QUESTION_MARK))
+        {
+            $retVal = $this->parseAnonVariable();
+        }
+
+        // EXPRESSION
+        else
+        {
+            $retVal = $this->parsePrimitiveValue();
+        }
+        return $retVal;
+    }
+
+    /**
+     * // A <OP> 'B'
+     * // A <OP> 1214
+     * // A <OP> 2011-02-17
+     * // A <OP> 2011-02-17
+     *
+     * @return LogicalGroup
+     */
+    private function parseHavingLogicalGroup()
+    {
+        $retVal = new AST\LogicalGroup();
+
+        $retVal->addAll($this->parseHavingLogicalConditions());
+
+        return $retVal;
+    }
+
+    /**
+     * @return array<LogicalJunction>
+     */
+    private function parseHavingLogicalConditions()
+    {
+        $retVal = array();
+
+        $precedingOperator = null;
+
+        while(true)
+        {
+            $junction = new AST\LogicalJunction();
+
+            $junction->setOperator($precedingOperator);
+
+            // NOT
+            if(
+                $this->tokenizer->is(TokenType::EXPRESSION) &&
+                $this->tokenizer->isTokenValue('not')) {
+                $junction->setIsNot(true);
+
+                $this->tokenizer->readNextToken();
+            }
+
+            // COND AUF
+            if($this->tokenizer->is(TokenType::LEFT_PAREN))
+            {
+                $this->tokenizer->readNextToken();
+
+                // RECURSE ... returns LogicalGroup
+                $junction->setCondition($this->parseHavingLogicalGroup());
+
+                $this->tokenizer->expect(TokenType::RIGHT_PAREN);
+            }
+
+            // a=b,
+            // dateFunction(a) = b
+            // dateFunction(convertTimezone(a)) <= b
+            // a=b
+            // a IN|INCLUDES|EXCLUDES (a,b,c)
+            // NOT a IN|INCLUDES|EXCLUDES (a,b,c)
+            // a NOT IN (a,b,c)
+            // NOT a = b
+            // NOT a IN b
+            // a LIKE b
+            // NOT a LIKE b
+            else
+            {
+                // PARSE "x=y?" structure
+                $junction->setCondition($this->parseHavingSimpleCondition());
+            }
+
+            $retVal[] = $junction;
+
+            // VERKNÜPFUNG UND VERNEINUNG ...
+            if($this->tokenizer->is(TokenType::EXPRESSION))
+            {
+                if($this->tokenizer->isTokenValue('or'))
+                {
+                    $precedingOperator = AST\LogicalJunction::OP_OR;
+
+                    $this->tokenizer->readNextToken();
+
+                    continue;
+                }
+                elseif($this->tokenizer->isTokenValue('and'))
+                {
+                    $precedingOperator = AST\LogicalJunction::OP_AND;
+
+                    $this->tokenizer->readNextToken();
+
+                    continue;
+                }
+            }
+            break;
+        }
+
+        // WHERE PART
+        return $retVal;
+    }
+
+    /**
+     * VORSICHT:
+     * Account[] accs = [SELECT Id FROM Account WHERE Name NOT IN ('hans') LIMIT 1];   // geht!
+     * Account[] accs = [SELECT Id FROM Account WHERE NOT Name IN ('hans') LIMIT 1];   // geht!
+     * Account[] accs = [SELECT Id FROM Account WHERE Name NOT LIKE ('hans') LIMIT 1]; // ERROR!
+     * Account[] accs = [SELECT Id FROM Account WHERE NOT Name LIKE ('hans') LIMIT 1]; // geht!
+     *
+     * // a=b,
+     * // a=b
+     * // NOT a IN|INCLUDES|EXCLUDES (a,b,c)
+     * // a IN|INCLUDES|EXCLUDES (a,b,c)
+     * // a NOT IN (a,b,c)
+     * // NOT a = b
+     * // NOT a IN b
+     * // a LIKE b
+     * // NOT a LIKE b
+     *
+     * @throws ParseException
+     * @return LogicalCondition
+     */
+    private function parseHavingSimpleCondition()
+    {
+        $retVal = new AST\LogicalCondition();
+
+        $retVal->setLeft($this->parseHavingConditionLeft());
+
+        $retVal->setOperator($this->parseHavingOperator());
+
+        $retVal->setRight($this->parseHavingConditionRight());
+
+        return $retVal;
+    }
+
+    /**
+     * @return AST\HavingFieldInterface
+     * @throws ParseException
+     */
+    private function parseHavingConditionLeft()
+    {
+        $name = $this->tokenizer->getTokenValue();
+
+        // FUNCTION OR PLAIN VALUE
+        $this->tokenizer->expect(TokenType::EXPRESSION);
+
+        // DATE OR GEOLOCATION FUNCTION (DISTANCE/GEOLOCATION)
+        if($this->tokenizer->is(TokenType::LEFT_PAREN))
+        {
+            return new AST\HavingFunction($this->parseFunctionExpression($name, Functions\SoqlFunctionInterface::CONTEXT_HAVING));
+        }
+        // REGULAR IDENTIFIER
+        return new AST\HavingField($name);
+    }
+
+    private function parseHavingOperator()
+    {
+        // OPERATOR
+        $operator = $this->tokenizer->getTokenValue();
+
+        // NOT IN ...
+        if('NOT' === $operator)
+        {
+            $this->tokenizer->readNextToken();
+
+            $operator .= ' ' . $this->tokenizer->getTokenValue();
+        }
+
+        $this->tokenizer->readNextToken();
+
+        return $operator;
+    }
+
+    private function parseHavingConditionRight()
+    {
+        $retVal = null;
+
+        if($this->tokenizer->is(TokenType::LEFT_PAREN))
+        {
+            $this->tokenizer->readNextToken();
+
+            // COLLECTION
+            $retVal = $this->parseCollectionValue();
+
+            $this->tokenizer->expect(TokenType::RIGHT_PAREN);
+        }
+        elseif($this->tokenizer->is(TokenType::COLON))
+        {
+            $retVal = $this->parseNamedVariable();
+        }
+        elseif($this->tokenizer->is(TokenType::QUESTION_MARK))
+        {
+            $retVal = $this->parseAnonVariable();
+        }
+
+        // EXPRESSION
+        else
+        {
+            $retVal = $this->parsePrimitiveValue();
+        }
+        return $retVal;
+    }
+
+    /**
+     * @return \Codemitte\ForceToolkit\Soql\AST\WithPart
+     */
+    private function parseWithFilteringExpression()
+    {
+        $this->tokenizer->expectKeyword('with');
+
+        // WITH DATA CATEGORY?
+        if($this->tokenizer->isKeyword('data'))
+        {
+            $this->tokenizer->readNextToken();
+
+            $this->tokenizer->expectKeyword('category');
+
+            return new AST\WithPart($this->parseWithDataCategoryLogicalGroup());
+        }
+        return new AST\WithPart($this->parseWithLogicalGroup());
+    }
+
+    private function parseWithLogicalGroup()
+    {
+        $retVal = new AST\LogicalGroup();
+
+        $retVal->addAll($this->parseWithLogicalConditions());
+
+        return $retVal;
+    }
+
+    /**
+     * The WITH clause is used in a SELECT statement to filter records based on field values.
+     * Unlike the WHERE clause which only supports fields from the object specified in the FROM clause,
+     * WITH allows you to filter by other related criteria. For example, you can use the WITH clause to
+     * filter articles based on their classification in one or more data category groups. The WITH clause
+     * can only be used in the following cases:
+     * To filter records based on their categorization. See WITH DATA CATEGORYfilteringExpression.
+     * To query and retrieve record changes tracked in a user profile feed. See UserProfileFeed in the
+     * Object Reference for Salesforce and Force.com.
+     * @return array
+     */
+    private function parseWithLogicalConditions()
+    {
+        $retVal = array();
+
+        $precedingOperator = null;
+
+        while(true)
+        {
+            $junction = new AST\LogicalJunction();
+
+            $junction->setOperator($precedingOperator);
+
+            // NOT
+            if(
+                $this->tokenizer->is(TokenType::EXPRESSION) &&
+                $this->tokenizer->isTokenValue('not')) {
+                $junction->setIsNot(true);
+
+                $this->tokenizer->readNextToken();
+            }
+
+            // COND AUF
+            if($this->tokenizer->is(TokenType::LEFT_PAREN))
+            {
+                $this->tokenizer->readNextToken();
+
+                // RECURSE ... returns LogicalGroup
+                $junction->setCondition($this->parseWithLogicalGroup());
+
+                $this->tokenizer->expect(TokenType::RIGHT_PAREN);
+            }
+
+            // a=b,
+            // dateFunction(a) = b
+            // dateFunction(convertTimezone(a)) <= b
+            // a=b
+            // a IN|INCLUDES|EXCLUDES (a,b,c)
+            // NOT a IN|INCLUDES|EXCLUDES (a,b,c)
+            // a NOT IN (a,b,c)
+            // a NOT IN(SELECT ...)
+            // NOT a = b
+            // NOT a IN b
+            // a LIKE b
+            // NOT a LIKE b
+            else
+            {
+                // PARSE "x=y?" structure
+                $junction->setCondition($this->parseWithSimpleCondition());
+            }
+
+            $retVal[] = $junction;
+
+            // VERKNÜPFUNG UND VERNEINUNG ...
+            if($this->tokenizer->is(TokenType::EXPRESSION))
+            {
+                if($this->tokenizer->isTokenValue('or'))
+                {
+                    $precedingOperator = AST\LogicalJunction::OP_OR;
+
+                    $this->tokenizer->readNextToken();
+
+                    continue;
+                }
+                elseif($this->tokenizer->isTokenValue('and'))
+                {
+                    $precedingOperator = AST\LogicalJunction::OP_AND;
+
+                    $this->tokenizer->readNextToken();
+
+                    continue;
+                }
+            }
+            break;
+        }
+
+        // WHERE PART
+        return $retVal;
+    }
+
+    private function parseWithSimpleCondition()
+    {
+        $retVal = new AST\LogicalCondition();
+
+        $retVal->setLeft($this->parseWithConditionLeft());
+
+        $retVal->setOperator($this->parseWithOperator());
+
+        $retVal->setRight($this->parseWithConditionRight());
+
+        return $retVal;
+    }
+
+    private function parseWithConditionLeft()
+    {
+        $name = $this->tokenizer->getTokenValue();
+
+        // FUNCTION OR PLAIN VALUE
+        $this->tokenizer->expect(TokenType::EXPRESSION);
+
+        // REGULAR IDENTIFIER
+        return new AST\WithField($name);
+    }
+
+    private function parseWithOperator()
+    {
+        // OPERATOR
+        $operator = $this->tokenizer->getTokenValue();
+
+        // NOT IN ...
+        if('NOT' === $operator)
+        {
+            $this->tokenizer->readNextToken();
+
+            $operator .= ' ' . $this->tokenizer->getTokenValue();
+        }
+
+        $this->tokenizer->readNextToken();
+
+        return $operator;
+    }
+
+    private function parseWithConditionRight()
     {
         $retVal = null;
 
@@ -772,9 +1169,142 @@ class QueryParser implements QueryParserInterface
         {
             $retVal = $this->parsePrimitiveValue();
         }
+        return $retVal;
+    }
 
+    /**
+     * @return LogicalGroup
+     * @throws ParseException
+     */
+    private function parseWithDataCategoryLogicalGroup()
+    {
+        $retVal = new AST\LogicalGroup();
+
+        $retVal->addAll($this->parseWithDataCategoryConditions());
 
         return $retVal;
+    }
+
+    /**
+     * @return array
+     * @throws ParseException
+     */
+    private function parseWithDataCategoryConditions()
+    {
+        $retVal = array();
+
+        $precedingOperator = null;
+
+        while(true)
+        {
+            $junction = new AST\LogicalJunction();
+
+            $junction->setOperator($precedingOperator);
+
+            // NEW LOGICAL GROUP
+            if($this->tokenizer->is(TokenType::LEFT_PAREN))
+            {
+                $this->tokenizer->readNextToken();
+
+                $junction->setCondition($this->parseWithLogicalGroup());
+
+                $this->tokenizer->expect(TokenType::RIGHT_PAREN);
+            }
+            else
+            {
+                // RIGHT
+                $junction->setCondition($condition = new AST\LogicalCondition());
+
+                // ONLY SIMPLE EXPRESSION ALLOWED
+                $condition->setLeft(new AST\WithField($this->tokenizer->getTokenValue()));
+
+                // ADVANCE ...
+                $this->tokenizer->expect(TokenType::EXPRESSION);
+
+                // ABOVE, BELOW, AT, ABOVE_OR_BELOW
+                $operator = $this->tokenizer->getTokenValue();
+
+                $uppercaseOperator = strtoupper($operator);
+
+                $oldLine = $this->tokenizer->getLine();
+                $oldPos  = $this->tokenizer->getLinePos();
+
+                $condition->setOperator($operator);
+
+                $this->tokenizer->expect(TokenType::KEYWORD);
+
+                if(in_array($uppercaseOperator, self::$DATA_CATEGORY_COMPARISON_OPERATORS))
+                {
+                    // (field1, field2) | fieldname
+                    $condition->setRight($this->parseWithDataCategoryRightCondition());
+                }
+                else
+                {
+                    throw new ParseException(sprintf('Unexpected operator "%s"', $operator), $oldLine, $oldPos, $this->tokenizer->getInput());
+                }
+            }
+
+            $retVal[] = $junction;
+
+            // You can only use the AND logical operator. The following syntax is incorrect as OR is not supported:
+            if($this->tokenizer->is(TokenType::EXPRESSION) && $this->tokenizer->isTokenValue('AND'))
+            {
+                $precedingOperator = AST\LogicalJunction::OP_AND;
+
+                $this->tokenizer->readNextToken();
+
+                continue;
+            }
+            break;
+        }
+        return $retVal;
+    }
+
+    /**
+     * @return \Codemitte\ForceToolkit\Soql\AST\ComparableInterface
+     */
+    private function parseWithDataCategoryRightCondition()
+    {
+        $retVal = null;
+
+        // COLLECTION
+        if($this->tokenizer->is(TokenType::LEFT_PAREN))
+        {
+            $retVal = new AST\SoqlValueCollection();
+
+            $this->tokenizer->readNextToken();
+
+            while(true)
+            {
+                $retVal->addValue($this->parseWithDataCategoryRightConditionField());
+
+                if($this->tokenizer->is(TokenType::COMMA))
+                {
+                    $this->tokenizer->readNextToken();
+
+                    continue;
+                }
+                break;
+            }
+
+            $this->tokenizer->expect(TokenType::RIGHT_PAREN);
+        }
+
+        // EXPRESSION
+        else
+        {
+            $retVal = $this->parseWithDataCategoryRightConditionField();
+        }
+        return $retVal;
+    }
+
+    private function parseWithDataCategoryRightConditionField()
+    {
+        $name = $this->tokenizer->getTokenValue();
+
+        $this->tokenizer->expect(TokenType::EXPRESSION);
+
+        return new AST\SoqlExpression($name);
     }
 
     /**
@@ -846,6 +1376,20 @@ class QueryParser implements QueryParserInterface
 
             $this->tokenizer->readNextToken();
         }
+
+        // SIGNED NUMBERS
+        elseif($this->tokenizer->is(TokenType::SIGN))
+        {
+            $sign = $this->tokenizer->getTokenValue();
+
+            $this->tokenizer->readNextToken();
+
+            $retVal = new AST\SoqlNumber($sign . $this->tokenizer->getTokenValue());
+
+            $this->tokenizer->expect(TokenType::NUMBER);
+        }
+
+        // UNSIGNED NUMBERS
         elseif($this->tokenizer->is(TokenType::NUMBER))
         {
             $retVal = new AST\SoqlNumber($this->tokenizer->getTokenValue());
@@ -862,6 +1406,12 @@ class QueryParser implements QueryParserInterface
         // DATE FORMULA OR DATE CONSTANT OR CURRENCY SYMBOL?
         elseif($this->tokenizer->is(TokenType::EXPRESSION))
         {
+            $val          = $this->tokenizer->getTokenValue();
+
+            $line         = $this->tokenizer->getLine();
+            $col          = $this->tokenizer->getLinePos();
+            $input        = $this->tokenizer->getInput();
+
             $uppervaseVal = strtoupper($this->tokenizer->getTokenValue());
 
             if(self::BOOL_TRUE === $uppervaseVal)
@@ -900,7 +1450,9 @@ class QueryParser implements QueryParserInterface
             }
             else
             {
-                throw new ParseException(sprintf('Unexpected expression "%s"', $this->tokenizer->getTokenValue()), $this->tokenizer->getLine(), $this->tokenizer->getLinePos(), $this->tokenizer->getInput());
+                throw new ParseException(sprintf('Unexpected expression "%s"', $val), $line, $col, $input);
+                // ONLY USED IN WITH DATA CATEGORY [...] CLAUSE AS RIGHT OPERAND [...]
+                $retVal = new AST\SoqlExpression($val);
             }
         }
         else
@@ -1037,248 +1589,6 @@ class QueryParser implements QueryParserInterface
     }
 
     /**
-     * @return \Codemitte\ForceToolkit\Soql\AST\WithPart
-     */
-    private function parseWith()
-    {
-        $this->tokenizer->expectKeyword('with');
-
-        if($this->tokenizer->is(TokenType::KEYWORD))
-        {
-            $this->tokenizer->expectKeyword('data');
-
-            $this->tokenizer->expectKeyword('category');
-
-            return new AST\WithPart($this->parseWithDataCategoryLogicalGroup());
-        }
-        return new AST\WithPart($this->parseWithLogicalGroup());
-    }
-
-    private function parseWithLogicalGroup()
-    {
-        $retVal = new AST\LogicalGroup();
-
-        $retVal->addAll($this->parseWithConditions());
-
-        return $retVal;
-    }
-
-    private function parseWithConditions()
-    {
-        $retVal = array();
-
-        $precedingOperator = null;
-
-        while(true)
-        {
-            $junction = new AST\LogicalJunction();
-
-            $junction->setOperator($precedingOperator);
-
-            // NOT
-            if(
-                $this->tokenizer->is(TokenType::EXPRESSION) &&
-                $this->tokenizer->isTokenValue('not')) {
-                $junction->setIsNot(true);
-
-                $this->tokenizer->readNextToken();
-            }
-
-            // COND AUF
-            if($this->tokenizer->is(TokenType::LEFT_PAREN))
-            {
-                $this->tokenizer->readNextToken();
-
-                // RECURSE ... returns LogicalGroup
-                $junction->setCondition($this->parseWhereLogicalGroup());
-
-                $this->tokenizer->expect(TokenType::RIGHT_PAREN);
-            }
-
-            // a=b,
-            // dateFunction(a) = b
-            // dateFunction(convertTimezone(a)) <= b
-            // a=b
-            // a IN|INCLUDES|EXCLUDES (a,b,c)
-            // NOT a IN|INCLUDES|EXCLUDES (a,b,c)
-            // a NOT IN (a,b,c)
-            // a NOT IN(SELECT ...)
-            // NOT a = b
-            // NOT a IN b
-            // a LIKE b
-            // NOT a LIKE b
-            else
-            {
-                // PARSE "x=y?" structure
-                $junction->setCondition($this->parseSimpleWhereCondition());
-            }
-
-            $retVal[] = $junction;
-
-            // VERKNÜPFUNG UND VERNEINUNG ...
-            if($this->tokenizer->is(TokenType::EXPRESSION))
-            {
-                if($this->tokenizer->isTokenValue('or'))
-                {
-                    $precedingOperator = AST\LogicalJunction::OP_OR;
-
-                    $this->tokenizer->readNextToken();
-
-                    continue;
-                }
-                elseif($this->tokenizer->isTokenValue('and'))
-                {
-                    $precedingOperator = AST\LogicalJunction::OP_AND;
-
-                    $this->tokenizer->readNextToken();
-
-                    continue;
-                }
-            }
-            break;
-        }
-
-        // WHERE PART
-        return $retVal;
-    }
-
-    /**
-     * @return LogicalGroup
-     * @throws ParseException
-     */
-    private function parseWithDataCategoryLogicalGroup()
-    {
-        $retVal = new AST\LogicalGroup();
-
-        $retVal->addAll($this->parseWithDataCategoryConditions());
-
-        return $retVal;
-    }
-
-    /**
-     * @return array
-     * @throws ParseException
-     */
-    private function parseWithDataCategoryConditions()
-    {
-        $retVal = array();
-
-        $precedingOperator = null;
-
-        while(true)
-        {
-            $junction = new AST\LogicalJunction();
-
-            $junction->setOperator($precedingOperator);
-
-            // NEW LOGICAL GROUP
-            if($this->tokenizer->is(TokenType::LEFT_PAREN))
-            {
-                $this->tokenizer->readNextToken();
-
-                $junction->setCondition($this->parseWithLogicalGroup());
-
-                $this->tokenizer->expect(TokenType::RIGHT_PAREN);
-            }
-            else
-            {
-                // RIGHT
-                $junction->setCondition($condition = new AST\LogicalCondition());
-
-                // ONLY SIMPLE EXPRESSION ALLOWED
-                $condition->setLeft(new AST\SoqlName($this->tokenizer->getTokenValue()));
-
-                // ADVANCE ...
-                $this->tokenizer->expect(TokenType::EXPRESSION);
-
-                // ABOVE, BELOW, AT, ABOVE_OR_BELOW
-                $operator = $this->tokenizer->getTokenValue();
-
-                $uppercaseOperator = strtoupper($operator);
-
-                $oldLine = $this->tokenizer->getLine();
-                $oldPos  = $this->tokenizer->getLinePos();
-
-                $condition->setOperator($operator);
-
-                $this->tokenizer->expect(TokenType::KEYWORD);
-
-                if(in_array($uppercaseOperator, self::$DATA_CATEGORY_COMPARISON_OPERATORS))
-                {
-                    // (field1, field2) | field
-                    $condition->setRight($this->parseWithFields());
-                }
-                else
-                {
-                    throw new ParseException(sprintf('Unexpected operator "%s"', $operator), $oldLine, $oldPos, $this->tokenizer->getInput());
-                }
-            }
-
-            $retVal[] = $junction;
-
-            // You can only use the AND logical operator. The following syntax is incorrect as OR is not supported:
-            if($this->tokenizer->is(TokenType::EXPRESSION) && $this->tokenizer->isTokenValue('AND'))
-            {
-                $precedingOperator = AST\LogicalJunction::OP_AND;
-
-                $this->tokenizer->readNextToken();
-
-                continue;
-            }
-            break;
-        }
-        return $retVal;
-    }
-
-    /**
-     * @return \Codemitte\ForceToolkit\Soql\AST\ComparableInterface
-     */
-    private function parseWithFields()
-    {
-        $retVal = null;
-
-        // COLLECTION
-        if($this->tokenizer->is(TokenType::LEFT_PAREN))
-        {
-            $retVal = new AST\SoqlValueCollection();
-
-            $this->tokenizer->readNextToken();
-
-            while(true)
-            {
-                $retVal->addValue($this->parseWithField());
-
-                if($this->tokenizer->is(TokenType::COMMA))
-                {
-                    $this->tokenizer->readNextToken();
-
-                    continue;
-                }
-                break;
-            }
-
-            $this->tokenizer->expect(TokenType::RIGHT_PAREN);
-        }
-        else
-        {
-            $retVal = $this->parseWithField();
-        }
-        return $retVal;
-    }
-
-    /**
-     * @return AST\SoqlFieldReference
-     */
-    private function parseWithField()
-    {
-        $retVal = new AST\SoqlFieldReference($this->tokenizer->getTokenValue());
-
-        $this->tokenizer->expect(TokenType::EXPRESSION);
-
-        return $retVal;
-    }
-
-    /**
      * @return GroupPart
      */
     private function parseGroup()
@@ -1368,173 +1678,11 @@ class QueryParser implements QueryParserInterface
     /**
      * @return AST\HavingPart
      */
-    private function parseHaving()
+    private function parseHavingConditionExpression()
     {
         $this->tokenizer->expectKeyword('having');
 
         return new AST\HavingPart($this->parseHavingLogicalGroup());
-    }
-
-    /**
-     * @return LogicalGroup
-     */
-    private function parseHavingLogicalGroup()
-    {
-        $retVal = new AST\LogicalGroup();
-
-        $retVal->addAll($this->parseHavingConditions());
-
-        return $retVal;
-    }
-
-    /**
-     * @return array<LogicalJunction>
-     */
-    private function parseHavingConditions()
-    {
-        $retVal = array();
-
-        $precedingOperator = null;
-
-        while(true)
-        {
-            $junction = new AST\LogicalJunction();
-
-            $junction->setIsNot($this->parseHavingNot());
-
-            $junction->setOperator($precedingOperator);
-
-            // COND AUF
-            if($this->tokenizer->is(TokenType::LEFT_PAREN))
-            {
-                $this->tokenizer->readNextToken();
-
-                // RECURSE ...
-                $junction->setCondition($this->parseHavingLogicalGroup());
-
-                $this->tokenizer->expect(TokenType::RIGHT_PAREN);
-            }
-            else
-            {
-                $condition = new AST\LogicalCondition();
-
-                $condition->setLeft($this->parseHavingLeft());
-
-                $condition->setOperator($this->parseHavingOperator());
-
-                $condition->setRight($this->parseHavingRight());
-
-                $junction->setCondition($condition);
-            }
-
-            $retVal[] = $junction;
-
-            // AND, OR
-            if($this->tokenizer->is(TokenType::EXPRESSION))
-            {
-                if($this->tokenizer->isTokenValue('and'))
-                {
-                    $precedingOperator = AST\LogicalJunction::OP_AND;
-
-                    $this->tokenizer->readNextToken();
-
-                    continue;
-                }
-                elseif($this->tokenizer->isTokenValue('or'))
-                {
-                    $precedingOperator = AST\LogicalJunction::OP_OR;
-
-                    $this->tokenizer->readNextToken();
-
-                    continue;
-                }
-            }
-            break;
-        }
-        return $retVal;
-    }
-
-    /**
-     * @return bool: True if NOT is in statement, otherwise false
-     */
-    private function parseHavingNot()
-    {
-        if($this->tokenizer->is(TokenType::EXPRESSION) && $this->tokenizer->isTokenValue('not'))
-        {
-            $this->tokenizer->expect(TokenType::EXPRESSION);
-
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * @throws ParseException
-     * @return AST\Functions\SoqlFunction
-     */
-    private function parseHavingLeft()
-    {
-        $name = $this->tokenizer->getTokenValue();
-
-        $this->tokenizer->expect(TokenType::EXPRESSION);
-
-        if($this->tokenizer->is(TokenType::LEFT_PAREN))
-        {
-            // ONLY AGGREGATE FUNCTIONS ALLOWED
-            return new AST\HavingFunction($this->parseFunctionExpression($name, self::$AGGREGATE_FUNCTIONS));
-        }
-        return new AST\HavingField($name);
-    }
-
-    /**
-     * @throws ParseException
-     * @return AST\SoqlExpression
-     */
-    private function parseHavingOperator()
-    {
-        $retVal = null;
-
-        $operator = $this->tokenizer->getTokenValue();
-
-        if(in_array($this->tokenizer->getTokenType(), array(
-            TokenType::OP_EQ,
-            TokenType::OP_GT,
-            TokenType::OP_GTE,
-            TokenType::OP_LT,
-            TokenType::OP_LTE,
-            TokenType::OP_NE
-        )))  {
-            $this->tokenizer->readNextToken();
-        }
-        else
-        {
-            throw new ParseException(sprintf('Unexpected "%s"', $operator), $this->tokenizer->getLine(), $this->tokenizer->getLinePos(), $this->tokenizer->getInput());
-        }
-        return $operator;
-    }
-
-    /**
-     * @return \Codemitte\ForceToolkit\Soql\AST\ComparableInterface
-     */
-    private function parseHavingRight()
-    {
-        $retVal = null;
-
-        if($this->tokenizer->is(TokenType::COLON))
-        {
-            $retVal = $this->parseNamedVariable();
-        }
-        elseif($this->tokenizer->is(TokenType::QUESTION_MARK))
-        {
-            $retVal = $this->parseAnonVariable();
-        }
-
-        // EXPRESSION
-        else
-        {
-            $retVal = $this->parsePrimitiveValue();
-        }
-        return $retVal;
     }
 
     /**
@@ -1797,7 +1945,7 @@ class QueryParser implements QueryParserInterface
     /**
      *
      * @throws ParseException
-     * @return AST\TypeofSelectField
+     * @return AST\SelectFieldInterface
      */
     private function parseTypeofSelectField()
     {

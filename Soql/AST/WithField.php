@@ -1,7 +1,7 @@
 <?php
 namespace Codemitte\ForceToolkit\Soql\AST;
 
-class HavingField implements HavingFieldInterface, ConditionLeftOperandInterface
+class WithField implements WithFieldInterface, ConditionLeftOperandInterface
 {
     /**
      * @var string

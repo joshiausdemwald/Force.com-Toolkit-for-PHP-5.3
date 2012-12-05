@@ -237,7 +237,7 @@ WHERE Id IN
         $this->assertCount(1, $logicalJunctions11);
         $logicalCondition11 = $logicalJunctions11[0]->getCondition();
         $this->assertInstanceOf('Codemitte\ForceToolkit\Soql\AST\LogicalCondition', $logicalCondition11);
-        $this->assertInstanceOf('Codemitte\ForceToolkit\Soql\AST\SoqlName', $logicalCondition11->getLeft());
+        $this->assertInstanceOf('Codemitte\ForceToolkit\Soql\AST\WhereField', $logicalCondition11->getLeft());
         $this->assertEquals('IN', $logicalCondition11->getOperator());
         $this->assertInstanceOf('Codemitte\ForceToolkit\Soql\AST\Subquery', $logicalCondition11->getRight());
         // AST INTEGRITY OF THE WHERE PART SEEMS TO BE VALID

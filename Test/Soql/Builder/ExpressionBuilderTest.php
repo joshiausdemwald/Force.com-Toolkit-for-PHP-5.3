@@ -8,7 +8,7 @@ use
 ;
 
 /**
- * @group Soql
+ * @group ExpressionBuilder
  */
 class ExpressionBuilderTest extends \PHPUnit_Framework_TestCase
 {
@@ -57,10 +57,10 @@ class ExpressionBuilderTest extends \PHPUnit_Framework_TestCase
         $this->assertInstanceOf('\Codemitte\ForceToolkit\Soql\AST\LogicalCondition', $conditions[0]);
         $this->assertInstanceOf('\Codemitte\ForceToolkit\Soql\AST\LogicalCondition', $conditions[1]);
         $this->assertInstanceOf('\Codemitte\ForceToolkit\Soql\AST\LogicalGroup', $conditions[2]);
-        $this->assertInstanceOf('\Codemitte\ForceToolkit\Soql\AST\SoqlExpression', $conditions[0]->getLeft());
-        $this->assertInstanceOf('\Codemitte\ForceToolkit\Soql\AST\SoqlExpression', $conditions[1]->getLeft());
-        $this->assertEquals('FirstName', (string)$conditions[0]->getLeft());
-        $this->assertEquals('LastName', (string)$conditions[1]->getLeft());
+        $this->assertInstanceOf('\Codemitte\ForceToolkit\Soql\AST\WhereField', $conditions[0]->getLeft());
+        $this->assertInstanceOf('\Codemitte\ForceToolkit\Soql\AST\WhereField', $conditions[1]->getLeft());
+        $this->assertEquals('FirstName', (string)$conditions[0]->getLeft()->getFieldname());
+        $this->assertEquals('LastName', (string)$conditions[1]->getLeft()->getFieldname());
         $this->assertEquals("'hanswurst'", (string)$conditions[0]->getRight());
         $this->assertEquals("'Meier%'", (string)$conditions[1]->getRight());
         $this->assertEquals('=', $conditions[0]->getOperator());
@@ -86,10 +86,10 @@ class ExpressionBuilderTest extends \PHPUnit_Framework_TestCase
         $this->assertInstanceOf('\Codemitte\ForceToolkit\Soql\AST\LogicalCondition', $conditions[0]);
         $this->assertInstanceOf('\Codemitte\ForceToolkit\Soql\AST\LogicalCondition', $conditions[1]);
         $this->assertInstanceOf('\Codemitte\ForceToolkit\Soql\AST\LogicalGroup', $conditions[2]);
-        $this->assertInstanceOf('\Codemitte\ForceToolkit\Soql\AST\SoqlExpression', $conditions[0]->getLeft());
-        $this->assertInstanceOf('\Codemitte\ForceToolkit\Soql\AST\SoqlExpression', $conditions[1]->getLeft());
-        $this->assertEquals('Salutation', (string)$conditions[0]->getLeft());
-        $this->assertEquals('Salutation', (string)$conditions[1]->getLeft());
+        $this->assertInstanceOf('\Codemitte\ForceToolkit\Soql\AST\WhereField', $conditions[0]->getLeft());
+        $this->assertInstanceOf('\Codemitte\ForceToolkit\Soql\AST\WhereField', $conditions[1]->getLeft());
+        $this->assertEquals('Salutation', (string)$conditions[0]->getLeft()->getFieldname());
+        $this->assertEquals('Salutation', (string)$conditions[1]->getLeft()->getFieldname());
         $this->assertEquals("NULL", (string)$conditions[0]->getRight());
         $this->assertEquals("'Mr.'", (string)$conditions[1]->getRight());
         $this->assertEquals('!=', $conditions[0]->getOperator());
@@ -110,10 +110,10 @@ class ExpressionBuilderTest extends \PHPUnit_Framework_TestCase
         );
         $this->assertInstanceOf('\Codemitte\ForceToolkit\Soql\AST\LogicalCondition', $conditions[0]);
         $this->assertInstanceOf('\Codemitte\ForceToolkit\Soql\AST\LogicalCondition', $conditions[1]);
-        $this->assertInstanceOf('\Codemitte\ForceToolkit\Soql\AST\SoqlExpression', $conditions[0]->getLeft());
-        $this->assertInstanceOf('\Codemitte\ForceToolkit\Soql\AST\SoqlExpression', $conditions[1]->getLeft());
-        $this->assertEquals('SampleMultiPicklist__c', (string)$conditions[0]->getLeft());
-        $this->assertEquals('AccountId', (string)$conditions[1]->getLeft());
+        $this->assertInstanceOf('\Codemitte\ForceToolkit\Soql\AST\WhereField', $conditions[0]->getLeft());
+        $this->assertInstanceOf('\Codemitte\ForceToolkit\Soql\AST\WhereField', $conditions[1]->getLeft());
+        $this->assertEquals('SampleMultiPicklist__c', (string)$conditions[0]->getLeft()->getFieldname());
+        $this->assertEquals('AccountId', (string)$conditions[1]->getLeft()->getFieldname());
         $this->assertEquals("('wert1', 'wert2', 'wert3')", (string)$conditions[0]->getRight());
         $this->assertInstanceOf('\Codemitte\ForceToolkit\Soql\AST\Subquery', $conditions[1]->getRight());
     }

@@ -6,7 +6,7 @@ abstract class SoqlValue implements ComparableInterface
     protected $value;
 
     /**
-     * NULL|FALSE|TRUE|String|Date|DateTime
+     * NULL|FALSE|TRUE|String|Date|DateTime|WITH DATA CATEGORY right Field expression
      * @param $value
      */
     public function __construct($value)

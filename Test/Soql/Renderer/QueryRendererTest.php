@@ -295,7 +295,7 @@ GROUP BY LeadSource
 HAVING COUNT(Name) > 100 and LeadSource > 'Phone'
 "));
 
-        $this->newRenderer()->render($this->newParser()->parse("SELECT Name FROM Account
+        $retVal = $this->newRenderer()->render($this->newParser()->parse("SELECT Name FROM Account
 WHERE CreatedById IN
     (
     SELECT
@@ -305,6 +305,8 @@ WHERE CreatedById IN
         END
     FROM CASE
     )"));
+
+        $this->assertEquals("SELECT Name FROM Account WHERE CreatedById IN (SELECT TYPEOF Owner WHEN User THEN Id WHEN Group THEN CreatedById END FROM CASE)", $retVal);
 
         $this->newRenderer()->render($this->newParser()->parse("SELECT
     TYPEOF What

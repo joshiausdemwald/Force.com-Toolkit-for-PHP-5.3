@@ -98,7 +98,7 @@ class QueryRenderer
         $retVal = null;
 
         // SUBQUERIES; FUNCTIONS/AGGREGATES; SUBQUERIES (EVERYTHING HAVING AN ALIAS)
-        if($selectField instanceof AST\SelectField)
+        if($selectField instanceof AST\SelectFieldInterface)
         {
             if($selectField instanceof AST\Subquery)
             {
@@ -132,11 +132,11 @@ class QueryRenderer
      */
     private function renderTypeofSelectPart(AST\TypeofSelectPart $typeofSelectPart)
     {
-        $retVal = 'TYPEOF ' . $typeofSelectPart->getSobjectType();
+        $retVal = 'TYPEOF ' . $typeofSelectPart->getSobjectName();
 
         foreach($typeofSelectPart->getConditions() AS $condition)
         {
-            $retVal .= ' WHEN ' . $condition->getSobjectType() . ' THEN ';
+            $retVal .= ' WHEN ' . $condition->getSobjectFieldname() . ' THEN ';
 
             $fields = array();
 
@@ -270,10 +270,19 @@ class QueryRenderer
         /** @var $groupField AST\GroupableInterface  */
         foreach($groupFields AS $groupField)
         {
-            $parts[] = $groupField->__toString();
+            $parts[] = $this->renderGroupField($groupField);
         }
 
         return implode(', ', $parts);
+    }
+
+    private function renderGroupField(AST\GroupableInterface $groupField)
+    {
+        if($groupField instanceof AST\GroupByFunction)
+        {
+            return $this->renderFunction($groupField->getFunction());
+        }
+        return $groupField->getName();
     }
 
     /**
@@ -437,29 +446,27 @@ class QueryRenderer
         {
             /** @var $condition \Codemitte\ForceToolkit\Soql\AST\LogicalCondition */
             $retVal =
-                  $this->renderExpression($condition->getLeft()) .
+                  (($lft = $condition->getLeft()) ? $this->renderConditionLeft($lft) : '').
                   ' ' . $condition->getOperator() .
-                  ' ' . $this->renderComparable($condition->getRight());
+                  ' ' . $this->renderConditionRight($condition->getRight());
         }
         return $retVal;
     }
 
     /**
+     * May take the following argument types:
+     * - SoqlName (arbitrary fieldname)
+     * - Where-/Having-(aggregate)function
      * @param mixed $expression
      * @return string
-     * @todo: CLEANUP, see RenderExpression
      */
-    private function renderExpression($expression = null)
+    private function renderConditionLeft(AST\ConditionLeftOperandInterface $expression)
     {
-        if(null === $expression)
+        if($expression instanceof AST\ConditionLeftOperandFunctionInterface)
         {
-            return '';
+            return $this->renderFunction($expression->getFunction());
         }
-        if($expression instanceof Functions\SoqlFunctionInterface)
-        {
-            return $this->renderFunction($expression);
-        }
-        return (string)$expression;
+        return $expression->getFieldname();
     }
 
     /**
@@ -499,7 +506,7 @@ class QueryRenderer
      * @param \Codemitte\ForceToolkit\Soql\AST\ComparableInterface $comparable
      * @return string
      */
-    private function renderComparable(AST\ComparableInterface $comparable)
+    private function renderConditionRight(AST\ComparableInterface $comparable)
     {
         if($comparable instanceof AST\Subquery)
         {

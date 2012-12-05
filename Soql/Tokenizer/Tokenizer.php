@@ -208,12 +208,17 @@ class Tokenizer implements TokenizerInterface
                 $this->readNextToken();
             }
         }
+        elseif(in_array($c, array('+', '-')))
+        {
+            $this->tokenType = TokenType::SIGN;
+        }
 
         // NUMBER, COULD BE
         // INT,
         // RATIONAL NUMNER (DECIMAL, CURRENCY)
         // DATE LITERAL
         // DATE TIME LITERAL
+        // SIGNED NUMBER (+/-)
         elseif(ctype_digit($c))
         {
             // ASSERT: NUMBER
