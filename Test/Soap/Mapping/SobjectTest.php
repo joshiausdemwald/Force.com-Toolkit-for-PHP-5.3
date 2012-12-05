@@ -6,6 +6,9 @@ use
     Codemitte\Soap\Mapping\GenericResultCollection
 ;
 
+/**
+ * @group Sobject
+ */
 class SobjectTest extends \PHPUnit_Framework_TestCase
 {
     public function testSobjectSimpleAccess()

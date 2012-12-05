@@ -285,9 +285,9 @@ class Sobject implements SobjectInterface
 
         if(null === $this->_keyCache)
         {
-            $this->_valueCache = array();
+            $this->_valueCache = array('Id' => $this->getId());
 
-            $this->_keyCache = array();
+            $this->_keyCache = array('Id');
 
             $reflObj = new \ReflectionObject($this);
 
