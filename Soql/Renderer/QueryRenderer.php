@@ -455,7 +455,7 @@ class QueryRenderer
         {
             return '';
         }
-        if($expression instanceof \Codemitte\ForceToolkit\Soql\AST\Functions\SoqlFunction)
+        if($expression instanceof Functions\SoqlFunctionInterface)
         {
             return $this->renderFunction($expression);
         }
