@@ -148,8 +148,7 @@ class QueryBuilder implements QueryBuilderInterface
         }
         elseif(is_string($soql))
         {
-            $group = new AST\LogicalGroup();
-            $group->addAll($this->parser->parseWhereSoql($soql));
+            $group = $this->parser->parseWhereSoql($soql);
         }
         else
         {
@@ -286,8 +285,7 @@ class QueryBuilder implements QueryBuilderInterface
         }
         elseif(is_string($soql))
         {
-            $group = new AST\LogicalGroup();
-            $group->addAll($this->parser->parseWhereSoql($soql));
+            $group = $this->parser->parseHavingSoql($soql);
         }
 
         $this->query->setHavingPart(new AST\HavingPart($group));

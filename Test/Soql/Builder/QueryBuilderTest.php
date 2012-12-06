@@ -155,4 +155,35 @@ class QueryBuilderTest extends \PHPUnit_Framework_TestCase
 
         $this->assertEquals("SELECT b.Id, b.Name, b.Competitor__c, b.Country__c, b.ID2__c FROM Brand__c AS b WHERE b.Name = 'Philipps' LIMIT 1", $res);
     }
+
+    public function testSimpleCollectionQuery()
+    {
+        $res = $this->newBuilder()
+            ->select('Id, AccountNumber, Name')
+            ->from('Account')
+            ->limit(10)
+            ->fetch();
+
+        $this->assertInstanceOf('Codemitte\Soap\Mapping\GenericResultCollection', $res);
+    }
+
+    public function testSimpleSingleSobjectQuery()
+    {
+        $account = new \Codemitte\ForceToolkit\Soap\Mapping\Sobject('Account', array(
+           'AccountNumber' =>  'test12345',
+           'Name' => 'Testcompany Inc.'
+        ));
+
+        $createResponse = self::$client->create($account);
+
+        $res = $this->newBuilder()
+            ->select('Id, AccountNumber, Name')
+            ->from('Account')
+            ->where('Id = :id', array('id' => $createResponse->get('result')->get(0)->get('id')))
+            ->fetchOne();
+
+        $this->assertInstanceOf('\Codemitte\ForceToolkit\Soap\Mapping\Sobject', $res);
+
+        self::$client->delete($createResponse->get('result')->get(0)->get('id'));
+    }
 }
