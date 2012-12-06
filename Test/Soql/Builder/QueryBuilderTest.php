@@ -186,4 +186,31 @@ class QueryBuilderTest extends \PHPUnit_Framework_TestCase
 
         self::$client->delete($createResponse->get('result')->get(0)->get('id'));
     }
+
+    public function testWhereExpressionQuery()
+    {
+        $builder = $this->newBuilder();
+
+        $id = 'xxxxxxxxxxxxxxxxxx';
+
+        $res = $builder
+            ->select('Id, AccountNumber, Name')
+            ->from('Account')
+            ->where(
+                $builder
+                    ->whereExpr()
+                        ->xpr('Id', '=', ':id')
+                        ->andXpr
+                        (
+                            $builder
+                                ->whereExpr()
+                                    ->xpr('Name', '=', "'Supercompany'")
+                                    ->orXpr('AccountNumber', '=', "'12345'")
+                        ),
+                array('id' => $id)
+            )
+            ->getSoql();
+
+        $this->assertEquals("SELECT Id, AccountNumber, Name FROM Account WHERE Id = 'xxxxxxxxxxxxxxxxxx' AND (Name = 'Supercompany' OR AccountNumber = '12345')", $res);
+    }
 }
