@@ -59,6 +59,15 @@ class ID extends GenericType implements SOQLTypeInterface
         return new self($shortId . $suffix);
     }
 
+    public static function URLlize($id)
+    {
+        if(15 === strlen($id))
+        {
+            return $id;
+        }
+        return substr($id, 0, 15);
+    }
+
     /**
      * The target namespace of the type.
      *
