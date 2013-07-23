@@ -27,6 +27,17 @@ class PicklistChoiceList extends SimpleChoiceList implements PicklistChoiceListI
      */
     public function __construct(FieldInterface $field, array $filter = null)
     {
+        parent::__construct($this->collectChoices($field, $filter));
+    }
+
+    /**
+     * @param FieldInterface $field
+     * @param array $filter
+     * @return array
+     * @throws \RuntimeException
+     */
+    private function collectChoices(FieldInterface $field, array $filter = null)
+    {
         $this->field = $field;
 
         $this->filter = $filter;
@@ -47,7 +58,7 @@ class PicklistChoiceList extends SimpleChoiceList implements PicklistChoiceListI
 
             $choices[$entry->getValue()] = $entry->getLabel();
         }
-        parent::__construct($choices);
+        return $choices;
     }
 
     /**

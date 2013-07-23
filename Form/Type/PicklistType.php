@@ -56,12 +56,18 @@ class PicklistType extends AbstractSfdcType
     {
         parent::finishView($view, $form, $options);
 
-        if($form->hasAttribute('controlling_fieldname') && ($controlling_fieldname = $form->getAttribute('controlling_fieldname')))
+        /** @var \Symfony\Component\Form\Test\FormBuilderInterface $builder */
+        $builder = $form->getConfig();
+
+        if($builder->hasAttribute('controlling_fieldname') && ($controlling_fieldname = $builder->getAttribute('controlling_fieldname')))
         {
             foreach(new \RecursiveIteratorIterator(new RecursiveFormIterator($form->getRoot()), \RecursiveIteratorIterator::SELF_FIRST) AS $childForm)
             {
+                /** @var FormBuilderInterface $childBuilder */
+                $childBuilder = $childForm->getConfig();
+
                 /**  @var $childForm FormInterface */
-                if($childForm->hasAttribute('fieldname') && $childForm->getAttribute('fieldname') === $controlling_fieldname)
+                if($childBuilder->hasAttribute('fieldname') && $childBuilder->getAttribute('fieldname') === $controlling_fieldname)
                 {
                     // @TODO: CALCULATE TARGET ID -- THIS IS NOT RELIABLE IN EACH SITUATION, BUT AT FIRST IT'LL FIT
                     $name = $childForm->getName();
@@ -82,9 +88,8 @@ class PicklistType extends AbstractSfdcType
                     // IDENTIFY ID ATTRIBUTE
                     $data = array(
                         'controlling_field' => $targetId,
-                        'valid_for'         => $form->getAttribute('valid_for')
+                        'valid_for'         => $builder->getAttribute('valid_for')
                     );
-
                     $view->vars['data_dependent_picklist'] = json_encode($data);
                 }
             }
