@@ -21,6 +21,7 @@
  */
 
 namespace Codemitte\ForceToolkit\Soap\Client\Connection;
+use Psr\Log\LoggerInterface;
 
 /**
  * ConnectionFactory
@@ -54,4 +55,14 @@ interface ConnectionFactoryInterface
      * @return array|null
      */
     public function getUserConfig($locale = null);
+
+    /**
+     * @return null|LoggerInterface
+     */
+    public function getLogger();
+
+    /**
+     * @param LoggerInterface $logger
+     */
+    public function setLogger(LoggerInterface $logger = null);
 }

@@ -71,6 +71,9 @@ abstract class AbstractCustomWsClient extends BaseClient implements CustomWsClie
             array(),
             $clientConnection->getDebug()
         );
+
+        $myConnection->setLogger($clientConnection->getLogger());
+
         $myConnection->setLoginResult($clientConnection->getLoginResult());
 
         // (RE-)SETS SESSION HEADER
