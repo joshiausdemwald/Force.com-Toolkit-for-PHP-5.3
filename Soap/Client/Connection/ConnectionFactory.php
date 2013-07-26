@@ -22,6 +22,7 @@
 
 namespace Codemitte\ForceToolkit\Soap\Client\Connection;
 
+use Psr\Log\LoggerInterface;
 use Symfony\Component\Locale\Locale;
 
 use Codemitte\ForceToolkit\Soap\Client\Connection\SfdcConnection;
@@ -72,6 +73,11 @@ final class ConnectionFactory implements ConnectionFactoryInterface
      * @var int
      */
     private $connectionTTL;
+
+    /**
+     * @var LoggerInterface
+     */
+    private $logger;
 
     /**
      * Constructor.
@@ -133,6 +139,8 @@ final class ConnectionFactory implements ConnectionFactoryInterface
 
             $connection = new SfdcConnection($credentials, $this->wsdlLocation, $this->soapServiceLocation, array(), $this->debug);
 
+            $connection->setLogger($this->logger);
+
             $connection->login();
 
             $this->connectionStorage->set($currentLocale, $connection);
@@ -177,5 +185,21 @@ final class ConnectionFactory implements ConnectionFactoryInterface
     private function needsRelogin(SfdcConnectionInterface $con)
     {
         return ! $con->isLoggedIn() || (time() - $con->getLastLoginTime()) > $this->connectionTTL;
+    }
+
+    /**
+     * @return \Psr\Log\LoggerInterface
+     */
+    public function getLogger()
+    {
+        return $this->logger;
+    }
+
+    /**
+     * @param LoggerInterface $logger
+     */
+    public function setLogger(LoggerInterface $logger = null)
+    {
+        $this->logger = $logger;
     }
 }
