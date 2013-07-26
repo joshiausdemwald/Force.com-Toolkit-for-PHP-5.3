@@ -4,7 +4,7 @@
 >
     <php>
         <const name="SFDC_USERNAME" value="tester@test.int" />
-        <const name="SFDC_PASSWORD" value="test1test4QYGdSTgYhsZqmU2oeNtDwKt" />
+        <const name="SFDC_PASSWORD" value="test2testqohOJlP8zwE6OsUyhLqcYI2sT" />
         <const name="SFDC_SERVICE_LOCATION" value="" />
     </php>
     <testsuites>
