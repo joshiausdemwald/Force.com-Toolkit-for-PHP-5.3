@@ -23,7 +23,6 @@
 namespace Codemitte\ForceToolkit\Soap\Client\Connection;
 
 use Psr\Log\LoggerInterface;
-use Symfony\Component\Locale\Locale;
 
 use Codemitte\ForceToolkit\Soap\Client\Connection\SfdcConnection;
 use Codemitte\ForceToolkit\Soap\Mapping\Base\login;
@@ -155,7 +154,7 @@ final class ConnectionFactory implements ConnectionFactoryInterface
      */
     public function getCurrentLocale()
     {
-        return Locale::getDefault();
+        return \Locale::getDefault();
     }
 
     /**
