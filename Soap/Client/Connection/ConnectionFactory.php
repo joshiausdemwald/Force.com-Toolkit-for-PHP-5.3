@@ -138,12 +138,13 @@ final class ConnectionFactory implements ConnectionFactoryInterface
 
             $connection = new SfdcConnection($credentials, $this->wsdlLocation, $this->soapServiceLocation, array(), $this->debug);
 
-            $connection->setLogger($this->logger);
-
             $connection->login();
 
             $this->connectionStorage->set($currentLocale, $connection);
         }
+
+        $connection->setLogger($this->logger);
+
         return $connection;
     }
 
