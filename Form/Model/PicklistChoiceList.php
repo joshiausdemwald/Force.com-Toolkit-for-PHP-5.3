@@ -43,7 +43,6 @@ class PicklistChoiceList extends SimpleChoiceList implements PicklistChoiceListI
         $this->filter = $filter;
 
         $choices = array();
-
         if(null === $this->field->getPicklistEntries())
         {
             throw new \RuntimeException('No picklist entries given. Correct field mapping?');

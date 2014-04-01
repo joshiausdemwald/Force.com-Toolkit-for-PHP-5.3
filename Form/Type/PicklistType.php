@@ -160,13 +160,13 @@ class PicklistType extends AbstractSfdcType
                 }
 
                 $field = $options['field'];
-
                 return new PicklistChoiceList
                 (
                     $field,
-                    (isset($options['filter']) ? $options['filter'] : null)
+                    $options['filter']
                 );
-            }
+            },
+            'filter' => null
         ))
         ->setNormalizers(array(
             'field' => function (Options $options, $field)

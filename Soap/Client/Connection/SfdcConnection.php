@@ -240,7 +240,10 @@ class SfdcConnection extends Connection implements SfdcConnectionInterface
 
             // IF DEBUG
             'cache_wsdl' => $debug ? WSDL_CACHE_NONE : WSDL_CACHE_MEMORY
+
             //'cache_wsdl' => WSDL_CACHE_NONE
+
+            //'features' => SOAP_SINGLE_ELEMENT_ARRAYS
         )));
 
         $this->registerClass('GetUserInfoResult', 'Codemitte\\ForceToolkit\\Soap\\Mapping\\Base\\GetUserInfoResult');
