@@ -6,6 +6,19 @@ use Codemitte\ForceToolkit\Soap\Client\Connection\SfdcConnectionInterface;
 class APCStorage implements StorageInterface
 {
     /**
+     * @var String
+     */
+    private $namespace;
+
+    /**
+     * @param $namespace
+     */
+    public function __construct($namespace) {
+
+        $this->namespace = $namespace;
+    }
+
+    /**
      * @param string $locale
      * @return bool|\string[]
      */
@@ -47,7 +60,13 @@ class APCStorage implements StorageInterface
      */
     private function genKey($locale)
     {
-        return base64_encode('__sfdc_client_' . $locale);
+        $key = '__sfdc_client_';
+
+        if($namespace) {
+            $key .= $namespace . '_';
+        }
+
+        return base64_encode($key . $locale);
     }
 
     /**
