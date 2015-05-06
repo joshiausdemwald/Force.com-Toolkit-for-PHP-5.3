@@ -62,8 +62,8 @@ class APCStorage implements StorageInterface
     {
         $key = '__sfdc_client_';
 
-        if($namespace) {
-            $key .= $namespace . '_';
+        if(isset($this->namespace)) {
+            $key .= $this->namespace . '_';
         }
 
         return base64_encode($key . $locale);
