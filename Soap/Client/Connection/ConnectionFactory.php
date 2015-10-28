@@ -26,6 +26,7 @@ use Psr\Log\LoggerInterface;
 
 use Codemitte\ForceToolkit\Soap\Client\Connection\SfdcConnection;
 use Codemitte\ForceToolkit\Soap\Mapping\Base\login;
+use Codemitte\ForceToolkit\Soap\Client\ClientDisabledException;
 use Codemitte\ForceToolkit\Soap\Client\Connection\Storage\StorageInterface;
 
 /**
@@ -42,6 +43,36 @@ final class ConnectionFactory implements ConnectionFactoryInterface
      * @var Storage\StorageInterface
      */
     private $connectionStorage;
+
+    /**
+     * @var \Swift_Mailer
+     */
+    private $mailer;
+
+    /**
+     * @var int
+     */
+    private $loginAttemptLimits;
+
+    /**
+     * @var string
+     */
+    private $notificationEmailFrom;
+
+    /**
+     * @var string
+     */
+    private $notificationEmailTo;
+
+    /**
+     * @var string
+     */
+    private $notificationEmailSubject;
+
+    /**
+     * @var string
+     */
+    private $notificationEmailBody;
 
     /**
      * @var array
@@ -82,6 +113,12 @@ final class ConnectionFactory implements ConnectionFactoryInterface
      * Constructor.
      *
      * @param StorageInterface $connectionStorage
+     * @param \Swift_Mailer $mailer
+     * @param $loginAttemptLimits
+     * @param $notificationEmailFrom
+     * @param $notificationEmailTo
+     * @param $notificationEmailSubject
+     * @param $notificationEmailBody
      * @param $connectionTTL
      * @param array $defaultUserConfig
      * @param array $localeUsersConfig
@@ -91,6 +128,12 @@ final class ConnectionFactory implements ConnectionFactoryInterface
      */
     public function __construct(
         StorageInterface $connectionStorage,
+        \Swift_Mailer $mailer,
+        $loginAttemptLimits,
+        $notificationEmailFrom,
+        $notificationEmailTo,
+        $notificationEmailSubject,
+        $notificationEmailBody,
         $connectionTTL,
         array $defaultUserConfig,
         array $localeUsersConfig,
@@ -99,6 +142,18 @@ final class ConnectionFactory implements ConnectionFactoryInterface
         $debug = false
     ) {
         $this->connectionStorage     = $connectionStorage;
+
+        $this->mailer                = $mailer;
+
+        $this->loginAttemptLimits         = $loginAttemptLimits;
+
+        $this->notification_email_from    = $notificationEmailFrom;
+
+        $this->notification_email_to      = $notificationEmailTo;
+
+        $this->notification_email_subject = $notificationEmailSubject;
+
+        $this->notification_email_body    = $notificationEmailBody;
 
         $this->connectionTTL         = $connectionTTL;
 
@@ -117,7 +172,8 @@ final class ConnectionFactory implements ConnectionFactoryInterface
      * Returns or creates and returns a new
      * client instance based on the current
      * locale.
-     *
+     * After a failed login, the next login attempt is delayed
+     * And an email wiil be sent to alert about these issues
      * @throws \InvalidArgumentException
      * @return SfdcConnectionInterface
      */
@@ -134,13 +190,67 @@ final class ConnectionFactory implements ConnectionFactoryInterface
 
         if( ! ($connection = $this->connectionStorage->get($currentLocale)) || $this->needsRelogin($connection))
         {
+
             $credentials = new login($userConfig['username'], $userConfig['password']);
 
             $connection = new SfdcConnection($credentials, $this->wsdlLocation, $this->soapServiceLocation, array(), $this->debug);
 
-            $connection->login();
+            $loginFirstFail = time();
+            $loginAttempt = 0;
+
+            if (apc_exists('loginFirstFail')) {
+                $loginFirstFail =  apc_fetch('loginFirstFail');
+            }
+            else {
+                apc_store('loginFirstFail', $loginFirstFail);
+            }
+            if (apc_exists('loginAttempt')) {
+                $loginAttempt = apc_fetch('loginAttempt');
+            }
+
+            $delay = 7.5 * pow($loginAttempt, 2);
+
+            if ($loginAttempt >= $this->loginAttemptLimits) {
+                //send email for notification
+                if (!apc_exists('adminNotificated')) {
+                    try {
+                        // Send the message
+                        $message = \Swift_Message::newInstance()
+                            ->setSubject(sprintf($this->notification_email_subject,$loginAttempt))
+                            ->setFrom($this->notification_email_from)
+                            ->setTo(explode(',',$this->notification_email_to))
+                            ->setBody($this->notification_email_body);
+                        $this->mailer->send($message);
+
+                    } catch (\Exception $e) {
+                        $this->logger->error("Could not send email to {$this->notification_email_to} for invalid api user credentials: " . $e->getMessage() );
+                    }
+
+                    apc_store('adminNotificated', true, 60 * 60); //only one email per hour
+                }
+
+                throw new ClientDisabledException('Login disabled');
+            }
+
+            if (time() - $loginFirstFail < $delay ) {
+                throw new ClientDisabledException('Login disabled');
+            }
+
+            try {
+                $connection->login();
+                apc_store('loginAttempt', 0);
+                apc_delete('loginFirstFail');
+            }
+            catch (\Exception $e) {
+                $this->logger->error($e->getMessage());
+                $this->logger->info("delaying login {$delay} seconds");
+                $loginAttempt++;
+                apc_store('loginAttempt', $loginAttempt);
+                throw new ClientDisabledException($e->getMessage());
+            }
 
             $this->connectionStorage->set($currentLocale, $connection);
+
         }
 
         $connection->setLogger($this->logger);
