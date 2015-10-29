@@ -57,6 +57,11 @@ final class ConnectionFactory implements ConnectionFactoryInterface
     /**
      * @var string
      */
+    private $storage_namespace;
+
+    /**
+     * @var string
+     */
     private $notificationEmailFrom;
 
     /**
@@ -115,6 +120,7 @@ final class ConnectionFactory implements ConnectionFactoryInterface
      * @param StorageInterface $connectionStorage
      * @param \Swift_Mailer $mailer
      * @param $loginAttemptLimits
+     * @param $storage_namespace
      * @param $notificationEmailFrom
      * @param $notificationEmailTo
      * @param $notificationEmailSubject
@@ -130,6 +136,7 @@ final class ConnectionFactory implements ConnectionFactoryInterface
         StorageInterface $connectionStorage,
         \Swift_Mailer $mailer,
         $loginAttemptLimits,
+        $storage_namespace,
         $notificationEmailFrom,
         $notificationEmailTo,
         $notificationEmailSubject,
@@ -146,6 +153,8 @@ final class ConnectionFactory implements ConnectionFactoryInterface
         $this->mailer                = $mailer;
 
         $this->loginAttemptLimits         = $loginAttemptLimits;
+
+        $this->storage_namespace          = $storage_namespace;
 
         $this->notification_email_from    = $notificationEmailFrom;
 
@@ -190,29 +199,31 @@ final class ConnectionFactory implements ConnectionFactoryInterface
 
         if( ! ($connection = $this->connectionStorage->get($currentLocale)) || $this->needsRelogin($connection))
         {
-
             $credentials = new login($userConfig['username'], $userConfig['password']);
 
             $connection = new SfdcConnection($credentials, $this->wsdlLocation, $this->soapServiceLocation, array(), $this->debug);
 
             $loginFirstFail = time();
             $loginAttempt = 0;
+            $loginFirstFailCacheKey = $this->storage_namespace . '_loginFirstFail';
+            $loginAttemptCacheKey   = $this->storage_namespace . '_loginAttempt';
+            $adminNotifiedCacheKey = $this->storage_namespace . '_adminNotified';
 
-            if (apc_exists('loginFirstFail')) {
-                $loginFirstFail =  apc_fetch('loginFirstFail');
+            if (apc_exists($loginFirstFailCacheKey)) {
+                $loginFirstFail =  apc_fetch($loginFirstFailCacheKey);
             }
             else {
-                apc_store('loginFirstFail', $loginFirstFail);
+                apc_store($loginFirstFailCacheKey, $loginFirstFail);
             }
-            if (apc_exists('loginAttempt')) {
-                $loginAttempt = apc_fetch('loginAttempt');
+            if (apc_exists($loginAttemptCacheKey)) {
+                $loginAttempt = apc_fetch($loginAttemptCacheKey);
             }
 
             $delay = 7.5 * pow($loginAttempt, 2);
 
             if ($loginAttempt >= $this->loginAttemptLimits) {
                 //send email for notification
-                if (!apc_exists('adminNotificated')) {
+                if (!apc_exists($adminNotifiedCacheKey)) {
                     try {
                         // Send the message
                         $message = \Swift_Message::newInstance()
@@ -226,7 +237,7 @@ final class ConnectionFactory implements ConnectionFactoryInterface
                         $this->logger->error("Could not send email to {$this->notification_email_to} for invalid api user credentials: " . $e->getMessage() );
                     }
 
-                    apc_store('adminNotificated', true, 60 * 60); //only one email per hour
+                    apc_store($adminNotifiedCacheKey, true, 60 * 60); //only one email per hour
                 }
 
                 throw new ClientDisabledException('Login disabled');
@@ -238,14 +249,15 @@ final class ConnectionFactory implements ConnectionFactoryInterface
 
             try {
                 $connection->login();
-                apc_store('loginAttempt', 0);
-                apc_delete('loginFirstFail');
+                apc_store($loginAttemptCacheKey, 0);
+                apc_delete($loginFirstFailCacheKey);
+                apc_delete($adminNotifiedCacheKey);
             }
             catch (\Exception $e) {
                 $this->logger->error($e->getMessage());
                 $this->logger->info("delaying login {$delay} seconds");
                 $loginAttempt++;
-                apc_store('loginAttempt', $loginAttempt);
+                apc_store($loginAttemptCacheKey, $loginAttempt);
                 throw new ClientDisabledException($e->getMessage());
             }
 
